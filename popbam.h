@@ -93,6 +93,11 @@
  */
 #define BAM_HEADERIN 0x80
 
+/*! \def BAM_NOSINGLETONS
+ *  \brief Flag to exclude singleton polymorphisms from the analysis
+ */
+#define BAM_NOSINGLETONS 0x100
+
 /*! \def POPBAM_RELEASE
  *  \brief Version number of popbam program
  */
@@ -136,16 +141,15 @@
  * struct hData_t
  * \brief A structure to represent a haplotype data set
  */
-typedef struct
-{
-    unsigned long long **seq;         //!< binary encoding of haplotype data
-    unsigned int *pos;                //!< reference coordinate for each position
-    unsigned int *idx;                //!< position index of each segregating site
-    unsigned char *ref;               //!< reference allele at each position
-    unsigned char **base;             //!< consensus base at each position in each individual
-    unsigned short **rms;             //!< root mean square mapping score at each position
-    unsigned short **snpq;            //!< SNP quality score at each position
-    unsigned short **num_reads;       //!< number of reads at each position in each individual
+typedef struct {
+	unsigned long long **seq;         //!< binary encoding of haplotype data
+	unsigned int *pos;                //!< reference coordinate for each position
+	unsigned int *idx;                //!< position index of each segregating site
+	unsigned char *ref;               //!< reference allele at each position
+	unsigned char **base;             //!< consensus base at each position in each individual
+	unsigned short **rms;             //!< root mean square mapping score at each position
+	unsigned short **snpq;            //!< SNP quality score at each position
+	unsigned short **num_reads;       //!< number of reads at each position in each individual
 } hData_t;
 
 /*!
@@ -154,16 +158,16 @@ typedef struct
  */
 typedef struct __bam_sample_t
 {
-    int npops;                        //!< Number of populations in the BAM file
-    int b;                            //!< Counter for population configuration
-    int n;                            //!< Number of samples in the BAM file
-    int m;                            //!< Counter for sample configuration
-    char **smpl;                      //!< Pointer to array of sample names
-    char **popul;                     //!< Pointer to array of population names
-    void *rg2smid;                    //!< Pointer to hash for read group to sample id lookup
-    void *sm2popid;                   //!< Pointer to hash for sample to population id lookup
-    void *sm2id;                      //!< Pointer to hash for sample to identifier lookup
-    void *pop2sm;                     //!< Pointer to hash for population to sample lookup
+	int npops;                        //!< Number of populations in the BAM file
+	int b;                            //!< Counter for population configuration
+	int n;                            //!< Number of samples in the BAM file
+	int m;                            //!< Counter for sample configuration
+	char **smpl;                      //!< Pointer to array of sample names
+	char **popul;                     //!< Pointer to array of population names
+	void *rg2smid;                    //!< Pointer to hash for read group to sample id lookup
+	void *sm2popid;                   //!< Pointer to hash for sample to population id lookup
+	void *sm2id;                      //!< Pointer to hash for sample to identifier lookup
+	void *pop2sm;                     //!< Pointer to hash for population to sample lookup
 } bam_sample_t;
 
 /*!
@@ -172,9 +176,9 @@ typedef struct __bam_sample_t
  */
 typedef struct __errmod_coef_t
 {
-    double *fk;                       //!< Pointer to
-    double *beta;                     //!< Pointer to
-    double *lhet;                     //!< Pointer to
+	double *fk;                       //!< Pointer to
+	double *beta;                     //!< Pointer to 
+	double *lhet;                     //!< Pointer to
 } errmod_coef_t;
 
 /*!
@@ -183,8 +187,8 @@ typedef struct __errmod_coef_t
  */
 typedef struct __errmod_t
 {
-    double depcorr;                   //!< Dependency correlation
-    errmod_coef_t *coef;              //!< Pre-computed coefficients
+	double depcorr;                   //!< Dependency correlation
+	errmod_coef_t *coef;              //!< Pre-computed coefficients
 } errmod_t;
 
 /*!
@@ -193,9 +197,9 @@ typedef struct __errmod_t
  */
 typedef struct __call_aux_t
 {
-    double fsum[16];                  //!< Array of
-    double bsum[16];                  //!< Array of
-    unsigned int c[16];               //!< Array of
+	double fsum[16];                  //!< Array of
+	double bsum[16];                  //!< Array of 
+	unsigned int c[16];               //!< Array of
 } call_aux_t;
 
 //
@@ -207,6 +211,33 @@ typedef struct __call_aux_t
  */
 enum popbam_func_t {SNP, DIVERGE, HAPLO, TREE, NUCDIV, LD, SFS};
 
+/*! \def bam_nt16_table[256]
+ *  \brief A lookup table
+ */
+static unsigned char bam_nt16_table[256] = {
+	15,15,15,15, 15,15,15,15, 15,15,15,15, 15,15,15,15,
+	15,15,15,15, 15,15,15,15, 15,15,15,15, 15,15,15,15,
+	15,15,15,15, 15,15,15,15, 15,15,15,15, 15,15,15,15,
+	 1, 2, 4, 8, 15,15,15,15, 15,15,15,15, 15, 0,15,15,
+	15, 1,14, 2, 13,15,15, 4, 11,15,15,12, 15, 3,15,15,
+	15,15, 5, 6,  8,15, 7, 9, 15,10,15,15, 15,15,15,15,
+	15, 1,14, 2, 13,15,15, 4, 11,15,15,12, 15, 3,15,15,
+	15,15, 5, 6,  8,15, 7, 9, 15,10,15,15, 15,15,15,15,
+	15,15,15,15, 15,15,15,15, 15,15,15,15, 15,15,15,15,
+	15,15,15,15, 15,15,15,15, 15,15,15,15, 15,15,15,15,
+	15,15,15,15, 15,15,15,15, 15,15,15,15, 15,15,15,15,
+	15,15,15,15, 15,15,15,15, 15,15,15,15, 15,15,15,15,
+	15,15,15,15, 15,15,15,15, 15,15,15,15, 15,15,15,15,
+	15,15,15,15, 15,15,15,15, 15,15,15,15, 15,15,15,15,
+	15,15,15,15, 15,15,15,15, 15,15,15,15, 15,15,15,15,
+	15,15,15,15, 15,15,15,15, 15,15,15,15, 15,15,15,15
+};
+
+/*! \def iupac[16]
+ *  \brief A lookup table for IUPAC codes
+ */
+const char iupac[16] = {'A','M','R','W','N','C','S','Y','N','N','G','K','N','N','N','T'};
+
 ///
 /// Define classes
 ///
@@ -217,51 +248,51 @@ enum popbam_func_t {SNP, DIVERGE, HAPLO, TREE, NUCDIV, LD, SFS};
  */
 class popbamData
 {
-public:
-    // default constructor
-    popbamData();
+	public:
+		// default constructor
+		popbamData();
 
-    // destructor
-    ~popbamData() {}
+		// destructor
+		~popbamData() {}
 
-    // member functions
-    int bam_smpl_add(void);
-    void bam_smpl_init(void);
-    void bam_smpl_destroy(void);
-    void assign_pops(void);
-    void checkBAM(void);
-    unsigned long long cal_site_type(unsigned long long*);
-    void call_base(int, const bam_pileup1_t*, unsigned long long*);
+		// member functions
+		int bam_smpl_add(void);
+		void bam_smpl_init(void);
+		void bam_smpl_destroy(void);
+		void assign_pops(void);
+		void checkBAM(void);
+		unsigned long long cal_site_type(unsigned long long*);
+		void call_base(int, const bam_pileup1_t*, unsigned long long*);
 
-    // member variables
-    std::string bamfile;                    //!< File name for the input BAM file
-    std::string reffile;                    //!< File name for the input reference Fasta file
-    std::string headfile;                   //!< File name for optional BAM header input file
-    samfile_t *bam_in;                      //!< BAM input file stream
-    faidx_t *fai_file;                      //!< Fasta reference file index
-    bam_header_t *h;                        //!< Pointer to the header text for the input BAM file
-    bam_sample_t *sm;                       //!< Pointer to the sample information for the input BAM file
-    bam_index_t *idx;                       //!< Pointer to the BAM input file index
-    char *ref_base;                         //!< Reference sequence string for specified region
-    int tid;                                //!< Reference chromosome/scaffold identifier
-    int beg;                                //!< Reference coordinate of the beginning of the current region
-    int end;                                //!< Reference coordinate of the end of current region
-    int len;                                //!< Length of the reference sequence for current region
-    unsigned short flag;                    //!< Bit flag to hold user options
-    int num_sites;                          //!< Total number of aligned sites
-    int segsites;                           //!< Total number of segregating sites in entire sample
-    unsigned char *pop_nsmpl;               //!< Sample size per population
-    unsigned long long *types;              //!< The site type for each aligned site
-    unsigned long long *pop_mask;           //!< Bit mask for which individuals are in which population
-    int min_depth;                          //!< User-specified minimumm read depth
-    int max_depth;                          //!< User-specified maximum read depth
-    int min_rmsQ;                           //!< User-specified minimum rms mapping quality
-    int min_snpQ;                           //!< User-specified minimum SNP quality score
-    unsigned char min_mapQ;                 //!< User-specified minimum individual read mapping quality
-    unsigned char min_baseQ;                //!< User-specified minimum inidividual base quality
-    long double het_prior;                  //!< Prior probability of heterozygous genotype
-    errmod_t *em;                           //!< Error model data structure
-    popbam_func_t derived_type;             //!< Type of the derived class
+		// member variables
+		std::string bamfile;                    //!< File name for the input BAM file
+		std::string reffile;                    //!< File name for the input reference Fasta file
+		std::string headfile;                   //!< File name for optional BAM header input file
+		samfile_t *bam_in;                      //!< BAM input file stream
+		faidx_t *fai_file;                      //!< Fasta reference file index
+		bam_header_t *h;                        //!< Pointer to the header text for the input BAM file
+		bam_sample_t *sm;                       //!< Pointer to the sample information for the input BAM file
+		bam_index_t *idx;                       //!< Pointer to the BAM input file index
+		char *ref_base;                         //!< Reference sequence string for specified region
+		int tid;                                //!< Reference chromosome/scaffold identifier
+		int beg;                                //!< Reference coordinate of the beginning of the current region
+		int end;                                //!< Reference coordinate of the end of current region
+		int len;                                //!< Length of the reference sequence for current region
+		unsigned short flag;                    //!< Bit flag to hold user options
+		int num_sites;                          //!< Total number of aligned sites
+		int segsites;                           //!< Total number of segregating sites in entire sample
+		unsigned char *pop_nsmpl;               //!< Sample size per population
+		unsigned long long *types;              //!< The site type for each aligned site
+		unsigned long long *pop_mask;           //!< Bit mask for which individuals are in which population
+		int min_depth;                          //!< User-specified minimumm read depth
+		int max_depth;                          //!< User-specified maximum read depth
+		int min_rmsQ;                           //!< User-specified minimum rms mapping quality
+		int min_snpQ;                           //!< User-specified minimum SNP quality score
+		unsigned char min_mapQ;                 //!< User-specified minimum individual read mapping quality
+		unsigned char min_baseQ;                //!< User-specified minimum inidividual base quality
+		long double het_prior;                  //!< Prior probability of heterozygous genotype
+		errmod_t *em;                           //!< Error model data structure
+		popbam_func_t derived_type;             //!< Type of the derived class
 };
 
 ///
@@ -285,27 +316,26 @@ extern int main_sfs(int, char**);
 #ifdef _MSC_VER
 static inline unsigned int log2int(const unsigned int val)
 {
-    unsigned int re;
+	unsigned int ret;
 
-    __asm
-    {
-        bsr eax, val
-        mov re, eax
-    }
+  __asm {
+	bsr eax, val
+	mov ret, eax
+  }
 
-    return re;
+  return ret;
 }
 #else
 extern __inline unsigned int log2int(const unsigned int val)
 {
-    unsigned int re;
+	unsigned int ret;
 
-    asm ( "\tbsr  %1, %0\n"
-      : "=r" (re)
-              : "r"  (val)
-            );
+	asm ( "\tbsr  %1, %0\n"
+		 : "=r" (ret)
+		 : "r"  (val)
+		 );
 
-    return re;
+	return ret;
 }
 #endif
 
