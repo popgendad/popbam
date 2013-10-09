@@ -16,25 +16,28 @@ int main_nucdiv(int argc, char *argv[])
 	long num_windows;         //! number of windows
 	std::string msg;          //! string for error message
 	bam_plbuf_t *buf;         //! pileup buffer
-	nucdivData t;
+	nucdivData *t;            //! nucdiv data structure
+
+	// allocate memory for nucdiv data structre
+	t = new nucdivData;
 
 	// parse the command line options
-	std::string region = t.parseCommandLine(argc, argv);
+	std::string region = t->parseCommandLine(argc, argv);
 
 	// check input BAM file for errors
-	t.checkBAM();
+	t->checkBAM();
 
 	// initialize the sample data structure
-	t.bam_smpl_init();
+	t->bam_smpl_init();
 
 	// add samples
-	t.bam_smpl_add();
+	t->bam_smpl_add();
 
 	// initialize error model
-	t.em = errmod_init(1.-0.83);
+	t->em = errmod_init(1.-0.83);
 
 	// parse genomic region
-	int k = bam_parse_region(t.h, region, &chr, &beg, &end);
+	int k = bam_parse_region(t->h, region, &chr, &beg, &end);
 	if (k < 0)
 	{
 		msg = "Bad genome coordinates: " + region;
@@ -42,14 +45,14 @@ int main_nucdiv(int argc, char *argv[])
 	}
 
 	// fetch reference sequence
-	t.ref_base = faidx_fetch_seq(t.fai_file, t.h->target_name[chr], 0, 0x7fffffff, &(t.len));
+	t->ref_base = faidx_fetch_seq(t->fai_file, t->h->target_name[chr], 0, 0x7fffffff, &(t->len));
 
 	// calculate the number of windows
-	if (t.flag & BAM_WINDOW)
-		num_windows = ((end-beg)-1)/t.win_size;
+	if (t->flag & BAM_WINDOW)
+		num_windows = ((end-beg)-1)/t->win_size;
 	else
 	{
-		t.win_size = (end-beg);
+		t->win_size = (end-beg);
 		num_windows = 1;
 	}
 
@@ -57,19 +60,19 @@ int main_nucdiv(int argc, char *argv[])
 	for (long cw=0; cw < num_windows; cw++)
 	{
 		// construct genome coordinate string
-		std::string scaffold_name(t.h->target_name[chr]);
+		std::string scaffold_name(t->h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
 		winc.seekp(0, std::ios::end);
-		winc << ":" << beg+(cw*t.win_size)+1 << "-" << ((cw+1)*t.win_size)+(beg-1);
+		winc << ":" << beg+(cw*t->win_size)+1 << "-" << ((cw+1)*t->win_size)+(beg-1);
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
-		t.num_sites = 0;
+		t->num_sites = 0;
 
 		// parse the BAM file and check if region is retrieved from the reference
-		if (t.flag & BAM_WINDOW)
+		if (t->flag & BAM_WINDOW)
 		{
-			k = bam_parse_region(t.h, winCoord, &ref, &(t.beg), &(t.end));
+			k = bam_parse_region(t->h, winCoord, &ref, &(t->beg), &(t->end));
 			if (k < 0)
 			{
 				msg = "Bad window coordinates " + winCoord;
@@ -79,8 +82,8 @@ int main_nucdiv(int argc, char *argv[])
 		else
 		{
 			ref = chr;
-			t.beg = beg;
-			t.end = end;
+			t->beg = beg;
+			t->end = end;
 			if (ref < 0)
 			{
 				msg = "Bad scaffold name: " + region;
@@ -89,20 +92,20 @@ int main_nucdiv(int argc, char *argv[])
 		}
 
 		// initialize nucdiv variables
-		t.init_nucdiv();
+		t->init_nucdiv();
 
 		// create population assignments
-		t.assign_pops();
+		t->assign_pops();
 
 		// set default minimum sample size as
 		// the number of samples in the population
-		t.set_min_pop_n();
+		t->set_min_pop_n();
 
 		// initialize pileup
-		buf = bam_plbuf_init(make_nucdiv, &t);
+		buf = bam_plbuf_init(make_nucdiv, t);
 
 		// fetch region from bam file
-		if ((bam_fetch(t.bam_in->x.bam, t.idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
+		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
 		{
 			msg = "Failed to retrieve region " + region + " due to corrupted BAM index file";
 			fatal_error(msg, __FILE__, __LINE__, 0);
@@ -112,23 +115,24 @@ int main_nucdiv(int argc, char *argv[])
 		bam_plbuf_push(0, buf);
 
 		// calculate nucleotide diversity in window
-		calc_diff_matrix(t);
-		t.calc_nucdiv();
+		calc_diff_matrix(*t);
+		t->calc_nucdiv();
 
 		// print results to stdout
-		t.print_nucdiv(chr);
+		t->print_nucdiv(chr);
 
 		// take out the garbage
-		t.destroy_nucdiv();
+		t->destroy_nucdiv();
 		bam_plbuf_destroy(buf);
 	}
 	// end of window iteration
 
-	errmod_destroy(t.em);
-	samclose(t.bam_in);
-	bam_index_destroy(t.idx);
-	t.bam_smpl_destroy();
-	free(t.ref_base);
+	errmod_destroy(t->em);
+	samclose(t->bam_in);
+	bam_index_destroy(t->idx);
+	t->bam_smpl_destroy();
+	free(t->ref_base);
+	delete t;
 
 	return 0;
 }
@@ -251,40 +255,6 @@ void nucdivData::calc_nucdiv(void)
 	delete [] freq;
 }
 
-//void nucdivData::calc_nucdiv(void)
-//{
-//	int i, j, v, w;
-//	const int npops = sm->npops;
-//	const int n = sm->n;
-//
-//	for (i=0; i < npops; i++)
-//	{
-//		for (j=i; j < npops; j++)
-//		{
-//			// calculate pairwise differences
-//			for (v=0; v < n-1; v++)
-//				for (w=v+1; w < n; w++)
-//				{
-//					if (CHECK_BIT(pop_mask[i], v) && CHECK_BIT(pop_mask[j], w))
-//					{
-//						if (i == j)
-//							piw[i] += (double)diff_matrix[v][w];
-//						else
-//							pib[i*npops+(j-(i+1))] += (double)diff_matrix[v][w];
-//					}
-//				}
-//
-//			if (i != j)
-//				pib[i*npops+(j-(i+1))] *= 1.0/(double)(pop_nsmpl[i]*pop_nsmpl[j]);
-//			else
-//			{
-//				piw[i] *= 2.0/(double)(pop_nsmpl[i]*(pop_nsmpl[i]-1));
-//				if (isnan(piw[i]))
-//					piw[i] = 0.;
-//			}
-//		}
-//	}
-//}
 
 // overloaded calc_diff_matrix functions
 void calc_diff_matrix(nucdivData &h)
