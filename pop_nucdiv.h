@@ -39,6 +39,7 @@ class nucdivData: public popbamData
 		unsigned int win_size;                  //!< Size of sliding window in kilobases
 		unsigned long long **pop_sample_mask;   //!< Bit mask for samples covered from a specific population
 		unsigned short *min_pop_n;              //!< Minimum sample size per population
+		int *num_snps;                          //!< Number of SNPs in a given window
 
 		// member public functions
 		void calc_nucdiv(void);

@@ -5,6 +5,7 @@
 */
 
 #include "pop_diverge.h"
+#include "tables.h"
 
 int main_diverge(int argc, char *argv[])
 {

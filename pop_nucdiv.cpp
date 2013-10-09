@@ -5,6 +5,7 @@
 */
 
 #include "pop_nucdiv.h"
+#include "tables.h"
 
 int main_nucdiv(int argc, char *argv[])
 {
@@ -204,31 +205,49 @@ int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *
 
 void nucdivData::calc_nucdiv(void)
 {
-	int i, j;
-	unsigned long long pop_type;
-	unsigned short *freq = new unsigned short [sm->npops]();
-	
+	int i, j, k;
+	unsigned int sum;
+	unsigned short **freq;
+
+	freq = new unsigned short* [sm->npops];
+	for (i=0; i < sm->npops; i++)
+		freq[i] = new unsigned short [segsites];
+
 	// calculate within population heterozygosity
 	for (i=0; i < sm->npops; i++)
 	{
 		num_snps[i] = 0;
+		sum = 0;
 		for (j=0; j < segsites; j++)
 		{
-			pop_type = types[hap.idx[j]] & pop_mask[i];
-			freq[i] = popcount64(pop_type);
+			unsigned long long pop_type = types[hap.idx[j]] & pop_mask[i];
+			freq[i][j] = popcount64(pop_type);
 
 			// calculate within population heterozygosity
-			if (((flag & BAM_NOSINGLETONS) && (freq[i] > 1)) || !(flag & BAM_NOSINGLETONS))
-				piw[i] += (2.0*freq[i]*(pop_nsmpl[i]-freq[i]))/(double)(pop_nsmpl[i]*pop_nsmpl[i]);
+			if (((flag & BAM_NOSINGLETONS) && (freq[i][j] > 1)) || !(flag & BAM_NOSINGLETONS))
+				sum += 2*freq[i][j]*(pop_nsmpl[i]-freq[i][j]);
 		}
+		if (pop_nsmpl[i] > 1)
+			piw[i] = (double)sum/(double)(pop_nsmpl[i]*(pop_nsmpl[i]-1));
+		else
+			piw[i] = 0.0;
 	}
 
 	// calculate between population heterozygosity
 	// this still will always include singletons
 	for (i=0; i < sm->npops-1; i++)
+	{
 		for (j=i+1; j < sm->npops; j++)
-			pib[i*sm->npops+(j-(i+1))] += (double)(freq[i]*(pop_nsmpl[j]-freq[j])+freq[j]*(pop_nsmpl[i]-freq[i]))/(double)(pop_nsmpl[i]*pop_nsmpl[j]);
+		{
+			sum = 0;
+			for (k=0; k < segsites; k++)
+				sum += freq[i][k]*(pop_nsmpl[j]-freq[j][k])+freq[j][k]*(pop_nsmpl[i]-freq[i][k]);
+			pib[i*sm->npops+(j-(i+1))] = (double)sum / (double)(pop_nsmpl[i]*pop_nsmpl[j]);
+		}
+	}
 
+	for (i=0; i < sm->npops; i++)
+		delete [] freq[i];
 	delete [] freq;
 }
 
