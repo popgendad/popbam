@@ -107,8 +107,8 @@ unsigned long long qfilter(int num_samples, unsigned long long *cb, int min_rmsQ
 
     for (int i=0; i < num_samples; ++i)
     {
-        rms = (cb[i]>>(CHAR_BIT*6))&0xffff;
-        num_reads = (cb[i]>>(CHAR_BIT*2))&0xffff;
+        rms = (cb[i]>>(CHAR_BIT*6)) & 0xffff;
+        num_reads = (cb[i]>>(CHAR_BIT*2)) & 0xffff;
         if ((rms >= min_rmsQ) && (num_reads >= min_depth) && (num_reads <= max_depth))
         {
             cb[i] |= 0x1ULL;
