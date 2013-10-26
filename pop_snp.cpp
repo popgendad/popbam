@@ -182,7 +182,7 @@ int make_snp(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
         // determine how many samples pass the quality filters
         sample_cov = qfilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
 
-        if (popcount64(sample_cov) == t->sm->n)
+        if (bitcount64(sample_cov) == t->sm->n)
         {
             // calculate the site type
             t->types[t->num_sites] = t->cal_site_type(cb);
@@ -256,11 +256,11 @@ void snpData::print_sweep(int chr)
             pop_type = types[hap.idx[i]] & pop_sample_mask[j][i];
 
             // assign derived allele counts and sample sizes
-            pop_n = popcount64(pop_sample_mask[j][i]);
+            pop_n = bitcount64(pop_sample_mask[j][i]);
             if ((flag & BAM_OUTGROUP) && CHECK_BIT(types[hap.idx[i]], outidx))
-                freq = pop_n - popcount64(pop_type);
+                freq = pop_n - bitcount64(pop_type);
             else
-                freq = popcount64(pop_type);
+                freq = bitcount64(pop_type);
             std::cout << "\t" << freq << "\t" << pop_n;
         }
         std::cout << std::endl;

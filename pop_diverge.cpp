@@ -187,7 +187,7 @@ int make_diverge(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t 
 		for (i=0; i < t->sm->npops; i++)
 			t->pop_sample_mask[i] = sample_cov & t->pop_mask[i];
 
-		if (popcount64(sample_cov) == t->sm->n)
+		if (bitcount64(sample_cov) == t->sm->n)
 		{
 			// calculate the site type
 			t->types[t->num_sites] = t->cal_site_type(cb);
@@ -227,7 +227,7 @@ void divergeData::calc_diverge(void)
 		case 0:
 			for (i=0; i < sm->n; i++)
 				for (j=0; j <= SEG_IDX(segsites); j++)
-					ind_div[i] += popcount64(hap.seq[i][j]);
+					ind_div[i] += bitcount64(hap.seq[i][j]);
 			break;
 		case 1:
 			unsigned long long pop_type;
@@ -241,9 +241,9 @@ void divergeData::calc_diverge(void)
 
 					// check if outgroup is different from reference
 					if ((flag & BAM_OUTGROUP) && CHECK_BIT(types[hap.idx[j]], outidx))
-						freq = pop_nsmpl[i]-popcount64(pop_type);
+						freq = pop_nsmpl[i]-bitcount64(pop_type);
 					else
-						freq = popcount64(pop_type);
+						freq = bitcount64(pop_type);
 					if ((freq > 0) && (freq < pop_nsmpl[i]) && !(flag & BAM_NOSINGLETONS))
 						++num_snps[i];
 					else if ((freq > 1) && (freq < pop_nsmpl[i]) && (flag & BAM_NOSINGLETONS))

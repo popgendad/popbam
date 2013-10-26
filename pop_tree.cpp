@@ -175,7 +175,7 @@ int make_tree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl
         for (i=0; i < t->sm->npops; i++)
             t->pop_sample_mask[i] = sample_cov & t->pop_mask[i];
 
-        if (popcount64(sample_cov) == t->sm->n)
+        if (bitcount64(sample_cov) == t->sm->n)
         {
             // calculate the site type
             t->types[t->num_sites] = t->cal_site_type(cb);
@@ -479,7 +479,7 @@ void calc_diff_matrix(treeData &h)
     for (i=0; i < n; i++)
     {
         for (k=0; k <= SEG_IDX(segs); k++)
-            h.diff_matrix[i+1][0] += popcount64(h.hap.seq[i][k]);
+            h.diff_matrix[i+1][0] += bitcount64(h.hap.seq[i][k]);
         h.diff_matrix[0][i+1] = h.diff_matrix[i+1][0];
     }
 

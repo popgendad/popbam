@@ -32,19 +32,18 @@ class nucdivData: public popbamData
 		// destructor
 		~nucdivData() {}
 
-		friend void calc_diff_matrix(nucdivData&);
-
 		// member public variables
-		hData_t hap;                            //!< Structure to hold haplotype data
 		unsigned int win_size;                  //!< Size of sliding window in kilobases
+		unsigned int *pop_cov;
+		unsigned long *ns_within;
+		unsigned long *ns_between;
 		unsigned long long **pop_sample_mask;   //!< Bit mask for samples covered from a specific population
-		unsigned short *min_pop_n;              //!< Minimum sample size per population
 		int *num_snps;                          //!< Number of SNPs in a given window
+		double min_pop;                         //!< Minimum proportion of samples present
 
 		// member public functions
 		void calc_nucdiv(void);
 		std::string parseCommandLine(int, char**);
-		void set_min_pop_n(void);
 		void init_nucdiv(void);
 		void destroy_nucdiv(void);
 		void print_nucdiv(int);
@@ -52,7 +51,6 @@ class nucdivData: public popbamData
 	private:
 		// member private variables
 		int min_sites;                          //!< User-specified minimum number of aligned sites to perform analysis
-		unsigned short **diff_matrix;           //!< Array of pairwise sequence differences
 		double *piw;                            //!< Array of within-population nucleotide diversity
 		double *pib;                            //!< Array of between-population Dxy values
 

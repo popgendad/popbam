@@ -289,14 +289,14 @@ extern int main_sfs(int, char**);
 #ifdef _MSC_VER
 static inline unsigned int log2int(const unsigned int val)
 {
-	unsigned int ret;
+	unsigned int re;
 
   __asm {
 	bsr eax, val
-	mov ret, eax
+	mov re, eax
   }
 
-  return ret;
+  return re;
 }
 #else
 extern __inline unsigned int log2int(const unsigned int val)
@@ -360,13 +360,13 @@ extern int bam_smpl_sm2popid(const bam_sample_t *sm, const char *fn, const char 
 extern void bam_smpl_destroy(bam_sample_t *sm);
 
 /*!
- * \fn unsigned int popcount64(unsigned long long x)
+ * \fn unsigned int bitcount64(unsigned long long x)
  * \brief Function count the number of bits set in a 64-bit integer
  * \param x the 64-bit integer
  * \return unsigned integer
  * Returns the number of bits set
  */
-extern unsigned short popcount64(unsigned long long x);
+extern unsigned short bitcount64(unsigned long long x);
 
 /*!
  * \fn unsigned int hamming_distance(unsigned long long x, unsigned long long y)

@@ -194,7 +194,7 @@ int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
         for (i=0; i < t->sm->npops; i++)
             t->pop_sample_mask[i] = sample_cov & t->pop_mask[i];
 
-        if (popcount64(sample_cov) == t->sm->n)
+        if (bitcount64(sample_cov) == t->sm->n)
         {
             // calculate the site type
             t->types[t->num_sites] = t->cal_site_type(cb);
@@ -253,9 +253,9 @@ void sfsData::calc_sfs(void)
 
             // check if outgroup is different from reference
             if ((flag & BAM_OUTGROUP) && CHECK_BIT(types[hap.idx[j]], outidx))
-                freq = pop_nsmpl[i]-popcount64(pop_type);
+                freq = pop_nsmpl[i]-bitcount64(pop_type);
             else
-                freq = popcount64(pop_type);
+                freq = bitcount64(pop_type);
             ++sfs[i][freq];
             if ((freq > 0) && (freq < pop_nsmpl[i]))
                 ++num_snps[i];

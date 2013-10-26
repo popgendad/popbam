@@ -168,7 +168,7 @@ int make_haplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *p
         for (i=0; i < t->sm->npops; i++)
             t->pop_sample_mask[i] = sample_cov & t->pop_mask[i];
 
-        if (popcount64(sample_cov) == t->sm->n)
+        if (bitcount64(sample_cov) == t->sm->n)
         {
             // calculate the site type
             t->types[t->num_sites] = t->cal_site_type(cb);
@@ -273,7 +273,7 @@ void haploData::calc_ehhs(void)
             for (j=0; j < segsites; j++)
             {
                 pop_type = types[hap.idx[j]] & pop_mask[i];
-                popf = popcount64(pop_type);
+                popf = bitcount64(pop_type);
                 if ((popf > 1) && (popf < pop_nsmpl[i]-1))
                     pop_site.push_back(pop_type);
             }
@@ -313,7 +313,7 @@ void haploData::calc_ehhs(void)
             }
 
             // calculate site heterozygosity
-            popf = popcount64(max_site);
+            popf = bitcount64(max_site);
             sh = (1.0-((double)(SQ(popf)+((pop_nsmpl[i]-popf)*(pop_nsmpl[i]-popf)))/SQ(pop_nsmpl[i])))*(double)(pop_nsmpl[i]/(pop_nsmpl[i]-1));
 
             // calculate site-specific extended haplotype homozygosity

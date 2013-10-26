@@ -40,12 +40,12 @@ KSORT_INIT_GENERIC(uint16_t)
 
 void bam_init_header_hash(bam_header_t *header);
 
-unsigned short popcount64(unsigned long long x)
+unsigned short bitcount64(unsigned long long x)
 {
-    x = (x&0x5555555555555555ULL)+((x>>1)&0x5555555555555555ULL);
-    x = (x&0x3333333333333333ULL)+((x>>2)&0x3333333333333333ULL);
-    x = (x&0x0F0F0F0F0F0F0F0FULL)+((x>>4)&0x0F0F0F0F0F0F0F0FULL);
-    return (x*0x0101010101010101ULL)>>56;
+    x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
+    x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
+    x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
+    return (x * 0x0101010101010101ULL) >> 56;
 }
 
 unsigned int hamming_distance(unsigned long long x, unsigned long long y)
@@ -79,10 +79,10 @@ unsigned long long gl2cns(float q[16], unsigned short k)
     {
         for (j=i; j < NBASES; ++j)
         {
-            likelihood = q[i<<2|j];
+            likelihood = q[i << 2 | j];
             if (likelihood < min)
             {
-                min_ij = i<<2|j;
+                min_ij = i << 2 | j;
                 min_next = min;
                 min = likelihood;
             }
@@ -92,9 +92,9 @@ unsigned long long gl2cns(float q[16], unsigned short k)
     }
 
     // return consensus base
-    snp_quality = (unsigned long long)((min_next-min)+0.499)<<(CHAR_BIT*4);
-    num_reads = (unsigned long long)k<<(CHAR_BIT*2);
-    genotype = (unsigned long long)min_ij<<CHAR_BIT;
+    snp_quality = (unsigned long long)((min_next - min) + 0.499) << (CHAR_BIT*4);
+    num_reads = (unsigned long long)k << (CHAR_BIT*2);
+    genotype = (unsigned long long)min_ij << CHAR_BIT;
 
     return snp_quality+num_reads+genotype;
 }
@@ -107,12 +107,12 @@ unsigned long long qfilter(int num_samples, unsigned long long *cb, int min_rmsQ
 
     for (int i=0; i < num_samples; ++i)
     {
-        rms = (cb[i]>>(CHAR_BIT*6)) & 0xffff;
-        num_reads = (cb[i]>>(CHAR_BIT*2)) & 0xffff;
+        rms = (cb[i] >> (CHAR_BIT*6)) & 0xffff;
+        num_reads = (cb[i] >> (CHAR_BIT*2)) & 0xffff;
         if ((rms >= min_rmsQ) && (num_reads >= min_depth) && (num_reads <= max_depth))
         {
             cb[i] |= 0x1ULL;
-            coverage |= 0x1ULL<<i;
+            coverage |= 0x1ULL << i;
         }
     }
 
@@ -130,10 +130,10 @@ int segbase(int num_samples, unsigned long long *cb, char ref, int min_snpq)
 
     for (i=0; i < num_samples; ++i)
     {
-        genotype = (cb[i]>>CHAR_BIT)&0xff;
-        allele1 = (genotype>>2)&0x3;
-        allele2 = genotype&0x3;
-        snp_quality = (cb[i]>>(CHAR_BIT*4))&0xffff;
+        genotype = (cb[i] >> CHAR_BIT) & 0xff;
+        allele1 = (genotype >> 2) & 0x3;
+        allele2 = genotype & 0x3;
+        snp_quality = (cb[i] >> (CHAR_BIT*4)) & 0xffff;
 
         // if homozygous and different from reference with high SNP quality
         if ((allele1 == allele2) && (iupac[genotype] != ref) && (snp_quality >= min_snpq))
@@ -144,8 +144,8 @@ int segbase(int num_samples, unsigned long long *cb, char ref, int min_snpq)
         // if SNP quality is low, revert both alleles to the reference allele
         else if ((allele1 == allele2) && (iupac[genotype] != ref) && (snp_quality < min_snpq))
         {
-            cb[i] -= (genotype-iupac_rev[(int)ref])<<CHAR_BIT;
-            cb[i] -= (genotype-iupac_rev[(int)ref])<<(CHAR_BIT+2);
+            cb[i] -= (genotype-iupac_rev[(int)ref]) << CHAR_BIT;
+            cb[i] -= (genotype-iupac_rev[(int)ref]) << (CHAR_BIT+2);
         }
         else
             continue;
@@ -169,17 +169,18 @@ int segbase(int num_samples, unsigned long long *cb, char ref, int min_snpq)
 
 void clean_heterozygotes(int num_samples, unsigned long long *cb, int ref, int min_snpq)
 {
+	int i;
     unsigned short snp_quality;
     unsigned char genotype;
     unsigned char allele1;
     unsigned char allele2;
 
-    for (int i=0; i < num_samples; ++i)
+    for (i=0; i < num_samples; ++i)
     {
-        genotype = (cb[i]>>CHAR_BIT)&0xff;
-        allele1 = (genotype>>2)&0x3;
-        allele2 = genotype&0x3;
-        snp_quality = (cb[i]>>(CHAR_BIT*4))&0xffff;
+        genotype = (cb[i] >> CHAR_BIT) & 0xff;
+        allele1 = (genotype >> 2) & 0x3;
+        allele2 = genotype & 0x3;
+        snp_quality = (cb[i] >> (CHAR_BIT*4)) & 0xffff;
 
         // if heterozygous and high quality SNP--make homozygous derived
         if ((allele1 != allele2) && (snp_quality >= min_snpq))
@@ -193,9 +194,9 @@ void clean_heterozygotes(int num_samples, unsigned long long *cb, int ref, int m
         if ((allele1 != allele2) && (snp_quality < min_snpq))
         {
             if (allele1 != iupac_rev[ref])
-                cb[i] += (allele2-allele1)<<(CHAR_BIT+2);
+                cb[i] += (allele2-allele1) << (CHAR_BIT+2);
             if (allele2 != iupac_rev[ref])
-                cb[i] -= (allele2-allele1)<<CHAR_BIT;
+                cb[i] -= (allele2-allele1) << CHAR_BIT;
         }
     }
 }
@@ -248,7 +249,7 @@ static errmod_coef_t *cal_coef(double depcorr, double eta)
     ec->lhet = (double*)calloc(256*256, sizeof(double));
     for (n=0; n < 256; ++n)
         for (k=0; k < 256; ++k)
-            ec->lhet[n<<8|k] = lC[n<<8|k] - M_LN2 * n;
+            ec->lhet[n<<8|k] = lC[n << 8 | k] - M_LN2 * n;
     free(lC);
 
     return ec;
@@ -336,7 +337,7 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
         // heterozygous
         for (k=j+1; k < m; ++k)
         {
-            int cjk = aux.c[j]+aux.c[k];
+            int cjk = aux.c[j] + aux.c[k];
             for (i=0, tmp2=0, tmp1=tmp3=0.0; i < m; ++i)
             {
                 if ((i == j) || (i == k))
@@ -347,14 +348,14 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
             }
             if (tmp2)
             {
-                bar_e = (int)(tmp1/tmp3+0.499);
+                bar_e = (int)(tmp1 / tmp3 + 0.499);
                 if (bar_e > 63)
                     bar_e = 63;
-                q[j*m+k] = q[k*m+j] = -4.343*em->coef->lhet[cjk<<8|aux.c[k]]+tmp1;
+                q[j*m+k] = q[k*m+j] = -4.343 * em->coef->lhet[cjk << 8 | aux.c[k]] + tmp1;
             }
             // all the bases are either j or k
             else
-                q[j*m+k] = q[k*m+j] = -4.343*em->coef->lhet[cjk<<8|aux.c[k]];
+                q[j*m+k] = q[k*m+j] = -4.343 * em->coef->lhet[cjk << 8 | aux.c[k]];
         }
         for (k=0; k != m; ++k)
             if (q[j*m+k] < 0.0)

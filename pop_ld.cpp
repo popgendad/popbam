@@ -169,7 +169,7 @@ int make_ld(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, 
         for (i=0; i < t->sm->npops; i++)
             t->pop_sample_mask[i] = sample_cov & t->pop_mask[i];
 
-        if (popcount64(sample_cov) == t->sm->n)
+        if (bitcount64(sample_cov) == t->sm->n)
         {
             // calculate the site type
             t->types[t->num_sites] = t->cal_site_type(cb);
@@ -220,7 +220,7 @@ void ldData::calc_zns(void)
         {
             // get first site and count of derived allele
             type1 = types[hap.idx[j]] & pop_mask[i];
-            marg1 = popcount64(type1);
+            marg1 = bitcount64(type1);
 
             // if site 1 is variable within the population of interest
             if (marg1 >= min_freq && marg1 <= pop_nsmpl[i]-min_freq)
@@ -231,7 +231,7 @@ void ldData::calc_zns(void)
                 for (k=j+1; k < segsites; k++)
                 {
                     type2 = types[hap.idx[k]] & pop_mask[i];
-                    marg2 = popcount64(type2);
+                    marg2 = bitcount64(type2);
 
                     // if site 2 is variable within the population of interest calculate r2
                     if ((marg2 >= min_freq) && (marg2 <= pop_nsmpl[i]-min_freq))
@@ -239,7 +239,7 @@ void ldData::calc_zns(void)
                         x0 = (double)marg1/pop_nsmpl[i];
                         x1 = (double)marg2/pop_nsmpl[i];
                         c11 = type1 & type2;
-                        x11 = (double)popcount64(c11)/pop_nsmpl[i];
+                        x11 = (double)bitcount64(c11)/pop_nsmpl[i];
                         zns[i] += SQ(x11-x0*x1)/(x0*(1.-x0)*x1*(1.-x1));
                     }
                 }
@@ -294,7 +294,7 @@ void ldData::calc_omegamax(void)
         for (i=0; i < segsites-1; i++)
         {
             type1 = types[hap.idx[i]] & pop_mask[j];
-            marg1 = popcount64(type1);
+            marg1 = bitcount64(type1);
 
             // if site 1 is variable within the population of interest
             if ((marg1 >= min_freq) && (marg1 <= pop_nsmpl[j]-min_freq))
@@ -304,7 +304,7 @@ void ldData::calc_omegamax(void)
                 for (k=i+1; k < segsites; k++)
                 {
                     type2 = types[hap.idx[k]] & pop_mask[j];
-                    marg2 = popcount64(type2);
+                    marg2 = bitcount64(type2);
 
                     // if site 2 is variable within the population of interest
                     if ((marg2 >= min_freq) && (marg2 <= pop_nsmpl[j]-min_freq))
@@ -315,7 +315,7 @@ void ldData::calc_omegamax(void)
                         x0 = (double)marg1/pop_nsmpl[j];
                         x1 = (double)marg2/pop_nsmpl[j];
                         c11 = type1 & type2;
-                        x11 = (double)popcount64(c11)/pop_nsmpl[j];
+                        x11 = (double)bitcount64(c11)/pop_nsmpl[j];
                         r2[count1][count2] = SQ(x11-x0*x1)/(x0*(1.-x0)*x1*(1.-x1));
                         r2[count2][count1] = r2[count1][count2];
                     }

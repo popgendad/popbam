@@ -9,11 +9,13 @@
 
 int main_nucdiv(int argc, char *argv[])
 {
+	int k;
 	int chr;                  //! chromosome identifier
 	int beg;                  //! beginning coordinate for analysis
 	int end;                  //! end coordinate for analysis
 	int ref;                  //! ref
 	long num_windows;         //! number of windows
+	long cw;                  //! counter for windows
 	std::string msg;          //! string for error message
 	bam_plbuf_t *buf;         //! pileup buffer
 	nucdivData *t;            //! nucdiv data structure
@@ -37,7 +39,7 @@ int main_nucdiv(int argc, char *argv[])
 	t->em = errmod_init(1.-0.83);
 
 	// parse genomic region
-	int k = bam_parse_region(t->h, region, &chr, &beg, &end);
+	k = bam_parse_region(t->h, region, &chr, &beg, &end);
 	if (k < 0)
 	{
 		msg = "Bad genome coordinates: " + region;
@@ -49,15 +51,15 @@ int main_nucdiv(int argc, char *argv[])
 
 	// calculate the number of windows
 	if (t->flag & BAM_WINDOW)
-		num_windows = ((end-beg)-1)/t->win_size;
+		num_windows = ((end-beg)-1) / t->win_size;
 	else
 	{
-		t->win_size = (end-beg);
+		t->win_size = end - beg;
 		num_windows = 1;
 	}
 
 	// iterate through all windows along specified genomic region
-	for (long cw=0; cw < num_windows; cw++)
+	for (cw=0; cw < num_windows; cw++)
 	{
 		// construct genome coordinate string
 		std::string scaffold_name(t->h->target_name[chr]);
@@ -97,10 +99,6 @@ int main_nucdiv(int argc, char *argv[])
 		// create population assignments
 		t->assign_pops();
 
-		// set default minimum sample size as
-		// the number of samples in the population
-		t->set_min_pop_n();
-
 		// initialize pileup
 		buf = bam_plbuf_init(make_nucdiv, t);
 
@@ -115,7 +113,6 @@ int main_nucdiv(int argc, char *argv[])
 		bam_plbuf_push(0, buf);
 
 		// calculate nucleotide diversity in window
-		calc_diff_matrix(*t);
 		t->calc_nucdiv();
 
 		// print results to stdout
@@ -174,32 +171,23 @@ int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *
 		// determine how many samples pass the quality filters
 		sample_cov = qfilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
 
-		// if all samples meet the coverage requirements
-		if (popcount64(sample_cov) == t->sm->n)
+		// determine population coverage
+		for (i=0; i < t->sm->npops; ++i)
 		{
-			// calculate the site type
-			t->types[t->num_sites] = t->cal_site_type(cb);
+			unsigned long long pc = 0;
+			pc = sample_cov & t->pop_mask[i];
+			unsigned int ncov = bitcount64(pc);
+			unsigned int req = (unsigned int)((t->min_pop * t->pop_nsmpl[i]) + 0.4999);
+			if (ncov >= req)
+				t->pop_cov[t->num_sites] |= 0x1U << i;
+		}
 
-			// if the base is polymorphic in the total sample
-			if (fq > 0)
-			{
-				t->hap.pos[t->segsites] = pos;
-				t->hap.ref[t->segsites] = (unsigned char)bam_nt16_table[(int)t->ref_base[pos]];
-				for (i=0; i < t->sm->n; i++)
-				{
-					t->hap.rms[i][t->segsites] = (cb[i]>>(CHAR_BIT*6)) & 0xffff;
-					t->hap.snpq[i][t->segsites] = (cb[i]>>(CHAR_BIT*4)) & 0xffff;
-					t->hap.num_reads[i][t->segsites] = (cb[i]>>(CHAR_BIT*2)) & 0xffff;
-					t->hap.base[i][t->segsites] = bam_nt16_table[(int)iupac[(cb[i]>>CHAR_BIT) & 0xff]];
-					if (cb[i] & 0x2ULL)
-						t->hap.seq[i][t->segsites/64] |= 0x1ULL << t->segsites % 64;
-				}
-				for (i=0; i < t->sm->npops; i++)
-					t->pop_sample_mask[i][t->segsites] = sample_cov & t->pop_mask[i];
-				t->hap.idx[t->segsites] = t->num_sites;
-				t->segsites++;
-			}
+		// record site type if the site is variable
+		if (t->pop_cov[t->num_sites] > 0)
+		{
 			t->num_sites++;
+			if (fq > 0)
+				t->types[t->segsites++] = t->cal_site_type(cb);
 		}
 
 		// take out the garbage
@@ -219,6 +207,18 @@ void nucdivData::calc_nucdiv(void)
 	for (i=0; i < sm->npops; i++)
 		freq[i] = new unsigned short [segsites];
 
+	// calculate the number of aligned sites within and between populations
+	for (i=0; i < num_sites; ++i)
+	{
+		for (j=0; j < sm->npops; ++j)
+			if (CHECK_BIT(pop_cov[i],j))
+				++ns_within[j];
+		for (j=0; j < sm->npops-1; ++j)
+			for (k=j+1; k < sm->npops; ++k)
+				if (CHECK_BIT(pop_cov[i],j) && CHECK_BIT(pop_cov[i],k))
+					++ns_within[k-(j+1)];
+	}
+
 	// calculate within population heterozygosity
 	for (i=0; i < sm->npops; i++)
 	{
@@ -226,15 +226,15 @@ void nucdivData::calc_nucdiv(void)
 		sum = 0;
 		for (j=0; j < segsites; j++)
 		{
-			unsigned long long pop_type = types[hap.idx[j]] & pop_mask[i];
-			freq[i][j] = popcount64(pop_type);
+			unsigned long long pop_type = types[j] & pop_mask[i];
+			freq[i][j] = bitcount64(pop_type);
 
 			// calculate within population heterozygosity
 			if (((flag & BAM_NOSINGLETONS) && (freq[i][j] > 1)) || !(flag & BAM_NOSINGLETONS))
-				sum += 2*freq[i][j]*(pop_nsmpl[i]-freq[i][j]);
+				sum += 2 * freq[i][j] * (pop_nsmpl[i] - freq[i][j]);
 		}
 		if (pop_nsmpl[i] > 1)
-			piw[i] = (double)sum/(double)(pop_nsmpl[i]*(pop_nsmpl[i]-1));
+			piw[i] = (double)(sum * ns_within[i]) / SQ(pop_nsmpl[i]-1);
 		else
 			piw[i] = 0.0;
 	}
@@ -247,8 +247,8 @@ void nucdivData::calc_nucdiv(void)
 		{
 			sum = 0;
 			for (k=0; k < segsites; k++)
-				sum += freq[i][k]*(pop_nsmpl[j]-freq[j][k])+freq[j][k]*(pop_nsmpl[i]-freq[i][k]);
-			pib[i*sm->npops+(j-(i+1))] = (double)sum / (double)(pop_nsmpl[i]*pop_nsmpl[j]);
+				sum += freq[i][k] * (pop_nsmpl[j] - freq[j][k]) + freq[j][k] * (pop_nsmpl[i] - freq[i][k]);
+			pib[i*sm->npops+(j-(i+1))] = (double)(sum * ns_between[j-(i+1)]) / (pop_nsmpl[i] * pop_nsmpl[j]);
 		}
 	}
 
@@ -258,35 +258,20 @@ void nucdivData::calc_nucdiv(void)
 }
 
 
-// overloaded calc_diff_matrix functions
-void calc_diff_matrix(nucdivData &h)
-{
-	int i, j, k;
-	int n = h.sm->n;
-	int segs = h.segsites;
-
-	// calculate number of pairwise differences
-	for (i=0; i < n-1; i++)
-		for (j=i+1; j < n; j++)
-		{
-			for (k=0; k <= SEG_IDX(segs); k++)
-				h.diff_matrix[j][i] += hamming_distance(h.hap.seq[i][k], h.hap.seq[j][k]);
-			h.diff_matrix[i][j] = h.diff_matrix[j][i];
-		}
-}
-
 void nucdivData::print_nucdiv(int chr)
 {
 	int i, j;
 
-	std::cout << h->target_name[chr] << "\t" << beg+1 << "\t" << end+1 << "\t" << num_sites;
+	std::cout << h->target_name[chr] << "\t" << beg+1 << "\t" << end+1;
 
 	for (i=0; i < sm->npops; i++)
 	{
-		if (num_sites >= min_sites)
+		std::cout << "\tns[" << sm->popul[i] << "]:";
+		std::cout << "\t" << ns_within[i];
+		if (ns_within[i] >= min_sites)
 		{
 			std::cout << "\tpi[" << sm->popul[i] << "]:";
-			std::cout << "\t" << std::fixed << std::setprecision(5) << piw[i]/num_sites;
+			std::cout << "\t" << std::fixed << std::setprecision(5) << piw[i];
 		}
 		else
 			std::cout << "\tpi[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
@@ -296,22 +281,18 @@ void nucdivData::print_nucdiv(int chr)
 	{
 		for (j=i+1; j < sm->npops; j++)
 		{
-			if (num_sites >= min_sites)
+			std::cout << "\tns[" <<  sm->popul[i] << "-" << sm->popul[j] << "]:";
+			std::cout << "\t" << ns_between[j-(i+1)];
+			if (ns_between[j-(i+1)] >= min_sites)
 			{
 				std::cout << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
-				std::cout << "\t" << std::fixed << std::setprecision(5) << pib[i*sm->npops+(j-(i+1))]/num_sites;
+				std::cout << "\t" << std::fixed << std::setprecision(5) << pib[i*sm->npops+(j-(i+1))];
 			}
 			else
 				std::cout << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:\t" << std::setw(7) << "NA";
 		}
 	}
 	std::cout << std::endl;
-}
-
-void nucdivData::set_min_pop_n(void)
-{
-	for (int j=0; j < sm->npops; j++)
-		min_pop_n[j] = (unsigned short)pop_nsmpl[j];
 }
 
 std::string nucdivData::parseCommandLine(int argc, char *argv[])
@@ -335,6 +316,7 @@ std::string nucdivData::parseCommandLine(int argc, char *argv[])
 	args >> GetOpt::Option('a', min_mapQ);
 	args >> GetOpt::Option('b', min_baseQ);
 	args >> GetOpt::Option('k', min_sites);
+	args >> GetOpt::Option('n', min_pop);
 	args >> GetOpt::Option('w', win_size);
 	if (args >> GetOpt::OptionPresent('w'))
 	{
@@ -440,6 +422,7 @@ nucdivData::nucdivData(void)
 	derived_type = NUCDIV;
 	min_sites = 10;
 	win_size = 0;
+	min_pop = 1.0;
 }
 
 void nucdivData::init_nucdiv(void)
@@ -454,31 +437,15 @@ void nucdivData::init_nucdiv(void)
 	try
 	{
 		types = new unsigned long long [length]();
+		ns_within = new unsigned long [npops] ();
+		ns_between = new unsigned long [npops*(npops-1)/2] ();
 		pop_mask = new unsigned long long [npops]();
+		pop_cov = new unsigned int [length]();
 		pop_nsmpl = new unsigned char [npops]();
 		pop_sample_mask = new unsigned long long* [npops];
 		piw = new double [npops]();
 		pib = new double [npops*(npops-1)]();
-		min_pop_n = new unsigned short [npops]();
-		hap.pos = new unsigned int [length]();
-		hap.idx = new unsigned int [length]();
-		hap.ref = new unsigned char [length]();
-		hap.seq = new unsigned long long* [n];
-		hap.base = new unsigned char* [n];
-		hap.rms = new unsigned short* [n];
-		hap.snpq = new unsigned short* [n];
-		hap.num_reads = new unsigned short* [n];
 		num_snps = new int [npops]();
-		diff_matrix = new unsigned short* [n];
-		for (i=0; i < n; i++)
-		{
-			hap.seq[i] = new unsigned long long [length]();
-			hap.base[i] = new unsigned char [length]();
-			hap.rms[i] = new unsigned short [length]();
-			hap.snpq[i] = new unsigned short [length]();
-			hap.num_reads[i] = new unsigned short [length]();
-			diff_matrix[i] = new unsigned short [n]();
-		}
 		for (i=0; i < npops; i++)
 			pop_sample_mask[i] = new unsigned long long [length]();
 	}
@@ -495,32 +462,16 @@ void nucdivData::destroy_nucdiv(void)
 
 	delete [] pop_mask;
 	delete [] types;
+	delete [] pop_cov;
 	delete [] pop_nsmpl;
-	delete [] min_pop_n;
+	delete [] ns_within;
+	delete [] ns_between;
 	delete [] piw;
 	delete [] pib;
-	delete [] hap.pos;
-	delete [] hap.idx;
-	delete [] hap.ref;
 	delete [] num_snps;
-	for (i=0; i < sm->n; i++)
-	{
-		delete [] hap.seq[i];
-		delete [] hap.base[i];
-		delete [] hap.num_reads[i];
-		delete [] hap.snpq[i];
-		delete [] hap.rms[i];
-		delete [] diff_matrix[i];
-	}
 	for (i=0; i < npops; i++)
 		delete [] pop_sample_mask[i];
 	delete [] pop_sample_mask;
-	delete [] hap.seq;
-	delete [] hap.base;
-	delete [] hap.snpq;
-	delete [] hap.rms;
-	delete [] hap.num_reads;
-	delete [] diff_matrix;
 }
 
 void nucdivData::nucdivUsage(void)
@@ -528,19 +479,19 @@ void nucdivData::nucdivUsage(void)
 	std::cerr << std::endl;
 	std::cerr << "Usage:   popbam nucdiv [options] <in.bam> [region]" << std::endl;
 	std::cerr << std::endl;
-	std::cerr << "Options: -i          base qualities are Illumina 1.3+     [ default: Sanger ]" << std::endl;
-	std::cerr << "         -h  FILE    Input header file                    [ default: none ]" << std::endl;
+	std::cerr << "Options: -i          base qualities are Illumina 1.3+           [ default: Sanger ]" << std::endl;
+	std::cerr << "         -h  FILE    Input header file                          [ default: none ]" << std::endl;
 	std::cerr << "         -w  INT     use sliding window of size (kb)" << std::endl;
-	std::cerr << "         -k  INT     minimum number of sites in window    [ default: 10 ]" << std::endl;
-	std::cerr << "         -n  INT     minimum sample size per population   [ default: all samples present ]" << std::endl;
+	std::cerr << "         -k  INT     minimum number of sites in window          [ default: 10 ]" << std::endl;
+	std::cerr << "         -n  FLT     minimum proportion of population covered   [ default: 1.0 ]" << std::endl;
 	std::cerr << "         -e          exclude singleton polymorphisms" << std::endl;
 	std::cerr << "         -f  FILE    Reference fastA file" << std::endl;
-	std::cerr << "         -m  INT     minimum read coverage                [ default: 3 ]" << std::endl;
-	std::cerr << "         -x  INT     maximum read coverage                [ default: 255 ]" << std::endl;
-	std::cerr << "         -q  INT     minimum rms mapping quality          [ default: 25 ]" << std::endl;
-	std::cerr << "         -s  INT     minimum snp quality                  [ default: 25 ]" << std::endl;
-	std::cerr << "         -a  INT     minimum map quality                  [ default: 13 ]" << std::endl;
-	std::cerr << "         -b  INT     minimum base quality                 [ default: 13 ]" << std::endl;
+	std::cerr << "         -m  INT     minimum read coverage                      [ default: 3 ]" << std::endl;
+	std::cerr << "         -x  INT     maximum read coverage                      [ default: 255 ]" << std::endl;
+	std::cerr << "         -q  INT     minimum rms mapping quality                [ default: 25 ]" << std::endl;
+	std::cerr << "         -s  INT     minimum snp quality                        [ default: 25 ]" << std::endl;
+	std::cerr << "         -a  INT     minimum map quality                        [ default: 13 ]" << std::endl;
+	std::cerr << "         -b  INT     minimum base quality                       [ default: 13 ]" << std::endl;
 	std::cerr << std::endl;
 	exit(EXIT_FAILURE);
 }
