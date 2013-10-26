@@ -438,7 +438,7 @@ void nucdivData::init_nucdiv(void)
 	{
 		types = new unsigned long long [length]();
 		ns_within = new unsigned long [npops] ();
-		ns_between = new unsigned long [npops*(npops-1)/2] ();
+		ns_between = new unsigned long [npops*(npops-1)] ();
 		pop_mask = new unsigned long long [npops]();
 		pop_cov = new unsigned int [length]();
 		pop_nsmpl = new unsigned char [npops]();
