@@ -216,7 +216,7 @@ void nucdivData::calc_nucdiv(void)
 		for (j=0; j < sm->npops-1; ++j)
 			for (k=j+1; k < sm->npops; ++k)
 				if (CHECK_BIT(pop_cov[i],j) && CHECK_BIT(pop_cov[i],k))
-					++ns_within[k-(j+1)];
+					++ns_within[j*sm->npops+(k-(j+1))];
 	}
 
 	// calculate within population heterozygosity
@@ -234,7 +234,7 @@ void nucdivData::calc_nucdiv(void)
 				sum += 2 * freq[i][j] * (pop_nsmpl[i] - freq[i][j]);
 		}
 		if (pop_nsmpl[i] > 1)
-			piw[i] = (double)(sum * ns_within[i]) / SQ(pop_nsmpl[i]-1);
+			piw[i] = (double)(sum) / (ns_within[i] * SQ(pop_nsmpl[i]-1));
 		else
 			piw[i] = 0.0;
 	}
@@ -248,7 +248,7 @@ void nucdivData::calc_nucdiv(void)
 			sum = 0;
 			for (k=0; k < segsites; k++)
 				sum += freq[i][k] * (pop_nsmpl[j] - freq[j][k]) + freq[j][k] * (pop_nsmpl[i] - freq[i][k]);
-			pib[i*sm->npops+(j-(i+1))] = (double)(sum * ns_between[j-(i+1)]) / (pop_nsmpl[i] * pop_nsmpl[j]);
+			pib[i*sm->npops+(j-(i+1))] = (double)(sum) / (ns_between[i*sm->npops+(j-(i+1))] * pop_nsmpl[i] * pop_nsmpl[j]);
 		}
 	}
 
@@ -282,7 +282,7 @@ void nucdivData::print_nucdiv(int chr)
 		for (j=i+1; j < sm->npops; j++)
 		{
 			std::cout << "\tns[" <<  sm->popul[i] << "-" << sm->popul[j] << "]:";
-			std::cout << "\t" << ns_between[j-(i+1)];
+			std::cout << "\t" << ns_between[i*sm->npops+(j-(i+1))];
 			if (ns_between[j-(i+1)] >= min_sites)
 			{
 				std::cout << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
