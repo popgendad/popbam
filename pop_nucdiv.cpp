@@ -216,7 +216,7 @@ void nucdivData::calc_nucdiv(void)
 		for (j=0; j < sm->npops-1; ++j)
 			for (k=j+1; k < sm->npops; ++k)
 				if (CHECK_BIT(pop_cov[i],j) && CHECK_BIT(pop_cov[i],k))
-					++ns_within[j*sm->npops+(k-(j+1))];
+					++ns_between[j*sm->npops+(k-(j+1))];
 	}
 
 	// calculate within population heterozygosity
