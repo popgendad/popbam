@@ -1,7 +1,7 @@
 /** \file popbam.cpp
  *  \brief Main entry point for evolutionary analysis of BAM files
  *  \author Daniel Garrigan
- *  \version 0.3
+ *  \version 0.4
 */
 #include "popbam.h"
 #include "tables.h"
@@ -67,7 +67,9 @@ int main(int argc, char *argv[])
 	else if (!strcmp(argv[1], "ld"))
 		return main_ld(argc-1, argv+1);
 	else if (!strcmp(argv[1], "sfs"))
-		return main_sfs(argc-1, argv+1);
+		return main_sfs(argc - 1, argv + 1);
+	else if (!strcmp(argv[1], "fasta"))
+		return 0;
 	else
 	{
 		std::cerr << "Error: unrecognized command: " << argv[1] << std::endl;
@@ -165,7 +167,7 @@ void popbamData::assign_pops(void)
 			fatal_error (msg, __FILE__, __LINE__, 0);
 		}
 
-		pop_mask[si] |= 0x1ULL<<i;
+		pop_mask[si] |= 0x1ULL << i;
 		pop_nsmpl[si]++;
 	}
 }
@@ -176,8 +178,8 @@ unsigned long long popbamData::cal_site_type(unsigned long long *cb)
 
 	for (int i=0; i < sm->n; i++)
 	{
-		if ((cb[i]&0x3ULL) == 0x3ULL)
-			site_type |= 0x1ULL<<i;
+		if ((cb[i] & 0x3ULL) == 0x3ULL)
+			site_type |= 0x1ULL << i;
 	}
 
 	return site_type;
@@ -289,7 +291,7 @@ void popbamData::call_base(int n, const bam_pileup1_t *pl, unsigned long long *c
 			errmod_cal(em, k, NBASES, bases, q);
 
 			// finalize root mean quality score
-			rms = (unsigned long long)(sqrt((float)(rmsq)/k)+0.499);
+			rms = (unsigned long long)(sqrt((float)(rmsq) / k) + 0.499);
 
 			// get consensus base call
 			cb[j] = gl2cns(q, k);

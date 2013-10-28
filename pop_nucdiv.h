@@ -37,7 +37,6 @@ class nucdivData: public popbamData
 		unsigned int *pop_cov;
 		unsigned long *ns_within;
 		unsigned long *ns_between;
-		unsigned long long **pop_sample_mask;   //!< Bit mask for samples covered from a specific population
 		int *num_snps;                          //!< Number of SNPs in a given window
 		double min_pop;                         //!< Minimum proportion of samples present
 

@@ -128,6 +128,8 @@
  */
 #define SEG_IDX(seg) (((seg) - 1) / 64)
 
+#define UTIDX(n,i,j) ((2*(n)-((i)+1))*(((i)+1)-1)/2-((i)+1)+((j)+1)-1)
+
 /*! \def SQ(x)
  *  \brief A macro to calculate the square of its argument
  */
@@ -366,7 +368,7 @@ extern void bam_smpl_destroy(bam_sample_t *sm);
  * \return unsigned integer
  * Returns the number of bits set
  */
-extern unsigned short bitcount64(unsigned long long x);
+extern inline unsigned short bitcount64(unsigned long long x);
 
 /*!
  * \fn unsigned int hamming_distance(unsigned long long x, unsigned long long y)
@@ -376,7 +378,7 @@ extern unsigned short bitcount64(unsigned long long x);
  * \return unsigned int of hamming distance
  * Returns the number of bits set
  */
-extern unsigned int hamming_distance(unsigned long long x, unsigned long long y);
+extern inline unsigned int hamming_distance(unsigned long long x, unsigned long long y);
 
 /*!
  * \fn char *get_refid(char *htext)

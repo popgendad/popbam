@@ -51,7 +51,7 @@ int main_nucdiv(int argc, char *argv[])
 
 	// calculate the number of windows
 	if (t->flag & BAM_WINDOW)
-		num_windows = ((end-beg)-1) / t->win_size;
+		num_windows = ((end - beg) - 1) / t->win_size;
 	else
 	{
 		t->win_size = end - beg;
@@ -65,7 +65,7 @@ int main_nucdiv(int argc, char *argv[])
 		std::string scaffold_name(t->h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
 		winc.seekp(0, std::ios::end);
-		winc << ":" << beg+(cw*t->win_size)+1 << "-" << ((cw+1)*t->win_size)+(beg-1);
+		winc << ":" << beg + (cw * t->win_size) + 1 << "-" << ((cw + 1) * t->win_size) + (beg - 1);
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
@@ -216,7 +216,7 @@ void nucdivData::calc_nucdiv(void)
 		for (j=0; j < sm->npops-1; ++j)
 			for (k=j+1; k < sm->npops; ++k)
 				if (CHECK_BIT(pop_cov[i],j) && CHECK_BIT(pop_cov[i],k))
-					++ns_between[j*sm->npops+(k-(j+1))];
+					++ns_between[UTIDX(sm->npops,j,k)];
 	}
 
 	// calculate within population heterozygosity
@@ -233,6 +233,7 @@ void nucdivData::calc_nucdiv(void)
 			if (((flag & BAM_NOSINGLETONS) && (freq[i][j] > 1)) || !(flag & BAM_NOSINGLETONS))
 				sum += 2 * freq[i][j] * (pop_nsmpl[i] - freq[i][j]);
 		}
+		//TODO: This uses a constant sample size for the bias correction, instead of per site sample size
 		if (pop_nsmpl[i] > 1)
 			piw[i] = (double)(sum) / (ns_within[i] * SQ(pop_nsmpl[i]-1));
 		else
@@ -248,7 +249,7 @@ void nucdivData::calc_nucdiv(void)
 			sum = 0;
 			for (k=0; k < segsites; k++)
 				sum += freq[i][k] * (pop_nsmpl[j] - freq[j][k]) + freq[j][k] * (pop_nsmpl[i] - freq[i][k]);
-			pib[i*sm->npops+(j-(i+1))] = (double)(sum) / (ns_between[i*sm->npops+(j-(i+1))] * pop_nsmpl[i] * pop_nsmpl[j]);
+			pib[UTIDX(sm->npops,i,j)] = (double)(sum) / (ns_between[UTIDX(sm->npops,i,j)] * pop_nsmpl[i] * pop_nsmpl[j]);
 		}
 	}
 
@@ -282,11 +283,11 @@ void nucdivData::print_nucdiv(int chr)
 		for (j=i+1; j < sm->npops; j++)
 		{
 			std::cout << "\tns[" <<  sm->popul[i] << "-" << sm->popul[j] << "]:";
-			std::cout << "\t" << ns_between[i*sm->npops+(j-(i+1))];
-			if (ns_between[j-(i+1)] >= min_sites)
+			std::cout << "\t" << ns_between[UTIDX(sm->npops,i,j)];
+			if (ns_between[UTIDX(sm->npops, i, j)] >= min_sites)
 			{
 				std::cout << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
-				std::cout << "\t" << std::fixed << std::setprecision(5) << pib[i*sm->npops+(j-(i+1))];
+				std::cout << "\t" << std::fixed << std::setprecision(5) << pib[UTIDX(sm->npops,i,j)];
 			}
 			else
 				std::cout << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:\t" << std::setw(7) << "NA";
@@ -442,12 +443,9 @@ void nucdivData::init_nucdiv(void)
 		pop_mask = new unsigned long long [npops]();
 		pop_cov = new unsigned int [length]();
 		pop_nsmpl = new unsigned char [npops]();
-		pop_sample_mask = new unsigned long long* [npops];
 		piw = new double [npops]();
 		pib = new double [npops*(npops-1)]();
 		num_snps = new int [npops]();
-		for (i=0; i < npops; i++)
-			pop_sample_mask[i] = new unsigned long long [length]();
 	}
 	catch (std::bad_alloc& ba)
 	{
@@ -469,9 +467,6 @@ void nucdivData::destroy_nucdiv(void)
 	delete [] piw;
 	delete [] pib;
 	delete [] num_snps;
-	for (i=0; i < npops; i++)
-		delete [] pop_sample_mask[i];
-	delete [] pop_sample_mask;
 }
 
 void nucdivData::nucdivUsage(void)

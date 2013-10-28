@@ -40,7 +40,7 @@ KSORT_INIT_GENERIC(uint16_t)
 
 void bam_init_header_hash(bam_header_t *header);
 
-unsigned short bitcount64(unsigned long long x)
+inline unsigned short bitcount64(unsigned long long x)
 {
     x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
     x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
@@ -48,7 +48,7 @@ unsigned short bitcount64(unsigned long long x)
     return (x * 0x0101010101010101ULL) >> 56;
 }
 
-unsigned int hamming_distance(unsigned long long x, unsigned long long y)
+inline unsigned int hamming_distance(unsigned long long x, unsigned long long y)
 {
     unsigned int dist = 0;
     unsigned long long val = x^y;

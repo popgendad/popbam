@@ -169,29 +169,24 @@ int make_ld(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, 
         for (i=0; i < t->sm->npops; i++)
             t->pop_sample_mask[i] = sample_cov & t->pop_mask[i];
 
-        if (bitcount64(sample_cov) == t->sm->n)
-        {
-            // calculate the site type
-            t->types[t->num_sites] = t->cal_site_type(cb);
+		// determine population coverage
+		for (i=0; i < t->sm->npops; ++i)
+		{
+			unsigned long long pc = 0;
+			pc = sample_cov & t->pop_mask[i];
+			unsigned int ncov = bitcount64(pc);
+			if (ncov == t->pop_nsmpl[i])
+				t->pop_cov[t->num_sites] |= 0x1U << i;
+		}
 
-            if (fq > 0)
-            {
-                t->hap.pos[t->segsites] = pos;
-                t->hap.ref[t->segsites] = bam_nt16_table[(int)t->ref_base[pos]];
-                for (i=0; i < t->sm->n; i++)
-                {
-                    t->hap.rms[i][t->segsites] = (cb[i]>>(CHAR_BIT*6))&0xffff;
-                    t->hap.snpq[i][t->segsites] = (cb[i]>>(CHAR_BIT*4))&0xffff;
-                    t->hap.num_reads[i][t->segsites] = (cb[i]>>(CHAR_BIT*2))&0xffff;
-                    t->hap.base[i][t->segsites] = bam_nt16_table[(int)iupac[(cb[i]>>CHAR_BIT)&0xff]];
-                    if (cb[i]&0x2ULL)
-                        t->hap.seq[i][t->segsites/64] |= 0x1ULL << t->segsites%64;
-                }
-                t->hap.idx[t->segsites] = t->num_sites;
-                t->segsites++;
-            }
-            t->num_sites++;
-        }
+		// record site type if the site is variable
+		if (t->pop_cov[t->num_sites] > 0)
+		{
+			t->num_sites++;
+			if (fq > 0)
+				t->types[t->segsites++] = t->cal_site_type(cb);
+		}
+
         // take out the garbage
         delete [] cb;
     }
@@ -223,7 +218,7 @@ void ldData::calc_zns(void)
             marg1 = bitcount64(type1);
 
             // if site 1 is variable within the population of interest
-            if (marg1 >= min_freq && marg1 <= pop_nsmpl[i]-min_freq)
+            if ((marg1 >= min_freq) && (marg1 <= (pop_nsmpl[i]-min_freq)))
             {
                 ++num_snps[i];
 
@@ -246,7 +241,7 @@ void ldData::calc_zns(void)
             }
         }
         ++num_snps[i];
-        zns[i] *= 2.0/(num_snps[i]*(num_snps[i]-1));
+        zns[i] *= 2.0/(num_snps[i] * (num_snps[i]-1));
         // end pairwise comparisons
     }
 }
@@ -608,22 +603,6 @@ void ldData::init_ld(void)
         pop_nsmpl = new unsigned char [npops]();
         pop_sample_mask = new unsigned long long [npops]();
         num_snps = new int [npops]();
-        hap.pos = new unsigned int [length]();
-        hap.idx = new unsigned int [length]();
-        hap.ref = new unsigned char [length]();
-        hap.seq = new unsigned long long* [n];
-        hap.base = new unsigned char* [n];
-        hap.rms = new unsigned short* [n];
-        hap.snpq = new unsigned short* [n];
-        hap.num_reads = new unsigned short* [n];
-        for (i=0; i < n; i++)
-        {
-            hap.seq[i] = new unsigned long long [length]();
-            hap.base[i] = new unsigned char [length]();
-            hap.rms[i] = new unsigned short [length]();
-            hap.snpq[i] = new unsigned short [length]();
-            hap.num_reads[i] = new unsigned short [length]();
-        }
         switch (output)
         {
         case 0:
@@ -720,9 +699,6 @@ void ldData::destroy_ld(void)
     delete [] pop_nsmpl;
     delete [] pop_sample_mask;
     delete [] num_snps;
-    delete [] hap.pos;
-    delete [] hap.idx;
-    delete [] hap.ref;
     switch(output)
     {
     case 0:
@@ -739,19 +715,6 @@ void ldData::destroy_ld(void)
         delete [] zns;
         break;
     }
-    for (i=0; i < sm->n; i++)
-    {
-        delete [] hap.seq[i];
-        delete [] hap.base[i];
-        delete [] hap.num_reads[i];
-        delete [] hap.snpq[i];
-        delete [] hap.rms[i];
-    }
-    delete [] hap.seq;
-    delete [] hap.base;
-    delete [] hap.snpq;
-    delete [] hap.rms;
-    delete [] hap.num_reads;
 }
 
 void ldData::ldUsage(void)
