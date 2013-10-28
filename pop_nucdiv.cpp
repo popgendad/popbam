@@ -234,11 +234,10 @@ void nucdivData::calc_nucdiv(void)
 		sum = 0.0;
 		for (j=0; j < segsites; j++)
 		{
+			unsigned long long pop_type = types[j] & pop_mask[i];
+			freq[i][j] = bitcount64(pop_type);
 			if (ncov[i][j] > 1)
 			{
-				unsigned long long pop_type = types[j] & pop_mask[i];
-				freq[i][j] = bitcount64(pop_type);
-
 				// calculate within population heterozygosity
 				if (((flag & BAM_NOSINGLETONS) && (freq[i][j] > 1)) || !(flag & BAM_NOSINGLETONS))
 					sum += (2.0 * freq[i][j] * (ncov[i][j] - freq[i][j])) / SQ(ncov[i][j]-1);
