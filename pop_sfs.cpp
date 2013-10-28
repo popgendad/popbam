@@ -198,7 +198,7 @@ int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 			pc = sample_cov & t->pop_mask[i];
 			unsigned int ncov = bitcount64(pc);
 			unsigned int req = (unsigned int)(t->min_pop * t->pop_nsmpl[i]);
-			if ((ncov >= req) || (ncov < 4))
+			if (ncov >= req)
 				t->pop_cov[t->num_sites] |= 0x1U << i;
 		}
 
@@ -442,7 +442,6 @@ sfsData::sfsData(void)
 void sfsData::init_sfs(void)
 {
 	int length = end-beg;
-	int n = sm->n;
 	int npops = sm->npops;
 
 	segsites = 0;

@@ -451,8 +451,6 @@ void nucdivData::init_nucdiv(void)
 
 void nucdivData::destroy_nucdiv(void)
 {
-	int npops = sm->npops;
-
 	delete [] pop_mask;
 	delete [] types;
 	delete [] pop_cov;
