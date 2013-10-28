@@ -234,17 +234,17 @@ void nucdivData::calc_nucdiv(void)
 		sum = 0.0;
 		for (j=0; j < segsites; j++)
 		{
-			unsigned long long pop_type = types[j] & pop_mask[i];
-			freq[i][j] = bitcount64(pop_type);
+			if (ncov[i][j] > 1)
+			{
+				unsigned long long pop_type = types[j] & pop_mask[i];
+				freq[i][j] = bitcount64(pop_type);
 
-			// calculate within population heterozygosity
-			if (((flag & BAM_NOSINGLETONS) && (freq[i][j] > 1)) || !(flag & BAM_NOSINGLETONS))
-				sum += (2.0 * freq[i][j] * (ncov[i][j] - freq[i][j])) / SQ(ncov[i][j]-1);
+				// calculate within population heterozygosity
+				if (((flag & BAM_NOSINGLETONS) && (freq[i][j] > 1)) || !(flag & BAM_NOSINGLETONS))
+					sum += (2.0 * freq[i][j] * (ncov[i][j] - freq[i][j])) / SQ(ncov[i][j]-1);
+			}
 		}
-		if (pop_cov[i] & (0x1U << i))
-			piw[i] = sum / ns_within[i];
-		else
-			piw[i] = 0.0;
+		piw[i] = sum / ns_within[i];
 	}
 
 	// calculate between population heterozygosity
@@ -292,7 +292,7 @@ void nucdivData::print_nucdiv(int chr)
 		{
 			std::cout << "\tns[" <<  sm->popul[i] << "-" << sm->popul[j] << "]:";
 			std::cout << "\t" << ns_between[UTIDX(sm->npops,i,j)];
-			if (ns_between[UTIDX(sm->npops, i, j)] >= (unsigned long int)(win_size * KB * min_sites))
+			if (ns_between[UTIDX(sm->npops, i, j)] >= (unsigned long int)((end - beg) * min_sites))
 			{
 				std::cout << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
 				std::cout << "\t" << std::fixed << std::setprecision(5) << pib[UTIDX(sm->npops,i,j)];
