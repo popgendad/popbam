@@ -243,7 +243,7 @@ void sfsData::calc_sfs(void)
 
 	for (i=0; i < sm->npops; i++)
 	{
-		if (ns[i] >= (unsigned long int)(win_size * KB * min_sites))
+		if (ns[i] >= (unsigned long int)((end - beg) * min_sites))
 		{
 			// get site frequency spectra and number of segregating sites
 			num_snps[i] = 0;
