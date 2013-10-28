@@ -266,7 +266,7 @@ void sfsData::calc_sfs(void)
 			int s = num_snps[i];
 			for (j=1; j < n; j++)
 			{
-				td[i] += sfs[i][j] * (((2.0 * j * (n - j)) / (n * (n - 1))) - (1.0 / a1[n]));
+				td[i] += sfs[i][j] * (((2.0 * j * (n - j)) / (SQ(n-1))) - (1.0 / a1[n]));
 				fwh[i] += sfs[i][j] * ((1.0 / a1[n]) - ((double)(j) / (n - 1)));
 			}
 			td[i] /= sqrt(e1[n] * s + e2[n] * s * (s - 1));
