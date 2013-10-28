@@ -1,7 +1,7 @@
 /** \file pop_nucdiv.h
  *  \brief Header for the pop_nucdiv.cpp file
  *  \author Daniel Garrigan
- *  \version 0.3
+ *  \version 0.4
 */
 
 #include "popbam.h"
@@ -34,9 +34,9 @@ class nucdivData: public popbamData
 
 		// member public variables
 		unsigned int win_size;                  //!< Size of sliding window in kilobases
-		unsigned int *pop_cov;
-		unsigned long *ns_within;
-		unsigned long *ns_between;
+		unsigned int *pop_cov;                  //!< Boolean for population coverage
+		unsigned long *ns_within;               //!< Number of aligned sites with each population
+		unsigned long *ns_between;              //!< Number of aligned sites between each pair of populations
 		int *num_snps;                          //!< Number of SNPs in a given window
 		double min_pop;                         //!< Minimum proportion of samples present
 
@@ -49,7 +49,7 @@ class nucdivData: public popbamData
 
 	private:
 		// member private variables
-		int min_sites;                          //!< User-specified minimum number of aligned sites to perform analysis
+		double min_sites;                       //!< User-specified minimum proportion of aligned sites to perform analysis
 		double *piw;                            //!< Array of within-population nucleotide diversity
 		double *pib;                            //!< Array of between-population Dxy values
 

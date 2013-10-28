@@ -1,7 +1,7 @@
 /** \file pop_sfs.h
  *  \brief Header for the pop_sfs.cpp file
  *  \author Daniel Garrigan
- *  \version 0.3
+ *  \version 0.4
 */
 
 #include "popbam.h"
@@ -33,10 +33,11 @@ class sfsData: public popbamData
 
 		// member variables
 		unsigned int win_size;                  //!< Size of sliding window in kilobases
-		unsigned long long *pop_sample_mask;    //!< Bit mask for samples covered from a specific population
-		int min_sites;                          //!< User-specified minimum number of aligned sites to perform analysis
+		double min_sites;                       //!< User-specified minimum proportion of aligned sites to perform analysis
+		unsigned long *ns;                      //!< Number of aligned sites within each population
 		int *num_snps;                          //!< Number of SNPs in a given window
-		hData_t hap;                            //!< Structure to hold haplotype data
+		unsigned int *pop_cov;                  //!< Boolean for population coverage
+		double min_pop;                         //!< Minimum proportion of samples present
 		std::string outgroup;                   //!< Sample name of outgroup to use
 		int outidx;                             //!< Index of outgroup sequence
 		double *a1;                             //!< Constants for Tajima's D calculation

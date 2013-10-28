@@ -1,7 +1,7 @@
 /** \file pop_haplo.cpp
  *  \brief Functions for calculating haplotype-based statistics
  *  \author Daniel Garrigan
- *  \version 0.3
+ *  \version 0.4
 */
 
 #include "pop_haplo.h"
@@ -179,12 +179,12 @@ int make_haplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *p
                 t->hap.ref[t->segsites] = bam_nt16_table[(int)t->ref_base[pos]];
                 for (i=0; i < t->sm->n; i++)
                 {
-                    t->hap.rms[i][t->segsites] = (cb[i]>>(CHAR_BIT*6))&0xffff;
-                    t->hap.snpq[i][t->segsites] = (cb[i]>>(CHAR_BIT*4))&0xffff;
-                    t->hap.num_reads[i][t->segsites] = (cb[i]>>(CHAR_BIT*2))&0xffff;
-                    t->hap.base[i][t->segsites] = bam_nt16_table[(int)iupac[(cb[i]>>CHAR_BIT)&0xff]];
-                    if (cb[i]&0x2ULL)
-                        t->hap.seq[i][t->segsites/64] |= 0x1ULL << t->segsites%64;
+                    t->hap.rms[i][t->segsites] = (cb[i] >> (CHAR_BIT*6)) & 0xffff;
+                    t->hap.snpq[i][t->segsites] = (cb[i] >> (CHAR_BIT*4)) & 0xffff;
+                    t->hap.num_reads[i][t->segsites] = (cb[i] >> (CHAR_BIT*2)) & 0xffff;
+                    t->hap.base[i][t->segsites] = bam_nt16_table[(int)iupac[(cb[i] >> CHAR_BIT) & 0xff]];
+                    if (cb[i] & 0x2ULL)
+                        t->hap.seq[i][t->segsites/64] |= 0x1ULL << t->segsites % 64;
                 }
                 t->hap.idx[t->segsites] = t->num_sites;
                 t->segsites++;
@@ -240,10 +240,10 @@ void haploData::calc_nhaps(void)
             {
                 if ((f = count(b.begin(), b.end(), j)) > 0)
                     ++nhaps[i];
-                ff += f*f;
+                ff += SQ(f);
             }
-            sh = (double)(ff)/(double)SQ(nelem);
-            hdiv[i] = 1.0-((1.0-sh)*(double)(nelem/(nelem-1)));
+            sh = (double)(ff) / SQ(nelem);
+            hdiv[i] = 1.0 - ((1.0 - sh) * (double)(nelem / (nelem - 1)));
         }
         else
         {
@@ -274,7 +274,7 @@ void haploData::calc_ehhs(void)
             {
                 pop_type = types[hap.idx[j]] & pop_mask[i];
                 popf = bitcount64(pop_type);
-                if ((popf > 1) && (popf < pop_nsmpl[i]-1))
+                if ((popf > 1) && (popf < (pop_nsmpl[i] - 1)))
                     pop_site.push_back(pop_type);
             }
 
@@ -304,7 +304,7 @@ void haploData::calc_ehhs(void)
                 pop_site.remove(part_type);
                 pop_site.remove(part_type_comp);
                 after = static_cast<int>(pop_site.size());
-                part_count = (before-after)+1;
+                part_count = (before - after) + 1;
                 if (part_count > part_max_count)
                 {
                     part_max_count = part_count;
@@ -317,7 +317,7 @@ void haploData::calc_ehhs(void)
             sh = (1.0-((double)(SQ(popf)+((pop_nsmpl[i]-popf)*(pop_nsmpl[i]-popf)))/SQ(pop_nsmpl[i])))*(double)(pop_nsmpl[i]/(pop_nsmpl[i]-1));
 
             // calculate site-specific extended haplotype homozygosity
-            ehhs[i] = hdiv[i]/(1.0-sh);
+            ehhs[i] = hdiv[i] / (1.0 - sh);
         }
     }
 }
@@ -333,28 +333,28 @@ void haploData::calc_minDxy(void)
         for (j=i; j < npops; j++)
         {
             if (i != j)
-                minDxy[i*npops+(j-(i+1))] = std::numeric_limits<unsigned int>::max();
+                minDxy[UTIDX(npops,i,j)] = std::numeric_limits<unsigned int>::max();
             for (v=0; v < n-1; v++)
             {
                 for (w=v+1; w < n; w++)
                 {
-                    if (CHECK_BIT(pop_mask[i], v) && CHECK_BIT(pop_mask[j], w))
+                    if (CHECK_BIT(pop_mask[i],v) && CHECK_BIT(pop_mask[j],w))
                     {
                         if (i == j)
                             piw[i] += (double)diff_matrix[v][w];
                         else
                         {
-                            pib[i*npops+(j-(i+1))] += (double)diff_matrix[v][w];
-                            minDxy[i*npops+(j-(i+1))] = minDxy[i*npops+(j-(i+1))] < diff_matrix[v][w] ? minDxy[i*npops+(j-(i+1))] : diff_matrix[v][w];
+                            pib[UTIDX(npops,i,j)] += (double)diff_matrix[v][w];
+                            minDxy[UTIDX(npops,i,j)] = minDxy[UTIDX(npops,i,j)] < diff_matrix[v][w] ? minDxy[UTIDX(npops,i,j)] : diff_matrix[v][w];
                         }
                     }
                 }
             }
             if (i != j)
-                pib[i*npops+(j-(i+1))] *= 1.0/(double)(pop_nsmpl[i]*pop_nsmpl[j]);
+                pib[UTIDX(npops,i,j)] *= 1.0 / (double)(pop_nsmpl[i] * pop_nsmpl[j]);
             else
             {
-                piw[i] *= 2.0/(double)(pop_nsmpl[i]*(pop_nsmpl[i]-1));
+                piw[i] *= 2.0 / (double)(pop_nsmpl[i] * (pop_nsmpl[i] - 1));
                 if (isnan(piw[i]))
                     piw[i] = 0.0;
             }
@@ -423,9 +423,9 @@ void haploData::print_haplo(int chr)
                 if (num_sites >= min_sites)
                 {
                     std::cout << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
-                    std::cout << "\t" << std::fixed << std::setprecision(5) << pib[i*sm->npops+(j-(i+1))];
+                    std::cout << "\t" << std::fixed << std::setprecision(5) << pib[UTIDX(sm->npops,i,j)];
                     std::cout << "\tmin[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
-                    std::cout << "\t" << minDxy[i*sm->npops+(j-(i+1))];
+                    std::cout << "\t" << minDxy[UTIDX(sm->npops,i,j)];
                 }
                 else
                 {

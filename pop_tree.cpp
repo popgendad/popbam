@@ -1,7 +1,7 @@
 /** \file pop_tree.cpp
  *  \brief Functions for constructing phylogenetic trees file from BAM files
  *  \author Daniel Garrigan
- *  \version 0.3
+ *  \version 0.4
 */
 
 #include "pop_tree.h"

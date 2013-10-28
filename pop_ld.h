@@ -36,7 +36,7 @@ class ldData: public popbamData
 		// member variables
 		int output;                             //!< Analysis output option
 		unsigned int win_size;                  //!< Size of sliding window in kilobases
-		unsigned long long *pop_sample_mask;    //!< Bit mask for samples covered from a specific population
+		unsigned int *pop_cov;                  //!< Boolean for population coverage
 		int min_snps;                           //!< Minimum number of snps for a window to be considered
 		int min_sites;                          //!< Minimum number of sites for a window to be considered
 		unsigned short min_freq;                //!< Minimum allele count in LD calculation

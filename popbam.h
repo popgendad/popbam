@@ -1,7 +1,7 @@
 /** \file popbam.h
  *  \brief Header for the popbam program
  *  \author Daniel Garrigan
- *  \version 0.3
+ *  \version 0.4
  */
 #ifndef POPBAM_H
 #define POPBAM_H
@@ -71,6 +71,7 @@
 /*! \def BAM_MINPOPSAMPLE
  *  \brief Flag for user designated minimum sample sizes per population
  */
+// TODO: This is deprecated
 #define BAM_MINPOPSAMPLE 0x08
 
 /*! \def BAM_SUBSTITUTE
@@ -101,7 +102,7 @@
 /*! \def POPBAM_RELEASE
  *  \brief Version number of popbam program
  */
-#define POPBAM_RELEASE "0.3"
+#define POPBAM_RELEASE "0.4"
 
 /*! \def NBASES
  *  \brief The number of possible bases
@@ -128,12 +129,20 @@
  */
 #define SEG_IDX(seg) (((seg) - 1) / 64)
 
+/*! \def UTIDX(nrows,row,col)
+ *  \brief A macro to access index of 1D array from 2D data structure
+ */
 #define UTIDX(n,i,j) ((2*(n)-((i)+1))*(((i)+1)-1)/2-((i)+1)+((j)+1)-1)
 
 /*! \def SQ(x)
  *  \brief A macro to calculate the square of its argument
  */
 #define SQ(x) ((x) * (x))
+
+/*! \def BINOM(x)
+ *  \brief A macro to calculate binomial coefficient
+ */
+#define BINOM(x) ((x) * ((x) - 1) / 2)
 
 //
 // Define data structures
@@ -211,7 +220,7 @@ typedef struct __call_aux_t
 /*! \def popbam_func_t
  *  \brief A enum data type that holds the popbam function identifier
  */
-enum popbam_func_t {SNP, DIVERGE, HAPLO, TREE, NUCDIV, LD, SFS};
+enum popbam_func_t {SNP, FASTA, DIVERGE, HAPLO, TREE, NUCDIV, LD, SFS};
 
 ///
 /// Define classes
@@ -276,6 +285,7 @@ class popbamData
 
 // Entry points to the main popbam functions
 extern int main_snp(int, char**);
+extern int main_fasta(int, char**);
 extern int main_haplo(int, char**);
 extern int main_diverge(int, char**);
 extern int main_tree(int, char**);

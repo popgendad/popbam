@@ -322,6 +322,7 @@ int popbam_usage(void)
 	std::cerr << "Version: " << POPBAM_RELEASE << std::endl; //"  (Revision: " << svn_version() << ")" << std::endl << std::endl;
 	std::cerr << "Usage: popbam <command> [options] <in.bam> [region]"  << std::endl << std::endl;
 	std::cerr << "Commands:  snp       output consensus base calls" << std::endl;
+	std::cerr << "           fasta     output alignment as multi-fasta file" << std::endl;
 	std::cerr << "           haplo     output haplotype-based analyses" << std::endl;
 	std::cerr << "           diverge   output divergence from reference" << std::endl;
 	std::cerr << "           tree      output neighbor-joining trees" << std::endl;

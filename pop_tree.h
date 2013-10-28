@@ -1,7 +1,7 @@
 /** \file pop_tree.h
  *  \brief Header for the pop_tree.cpp file
  *  \author Daniel Garrigan
- *  \version 0.3
+ *  \version 0.4
  * Much of the code for the NJ algorithm heavily borrows from the PHYLIP
  * package (v 3.6) written by Mary Kuhner, Jon Yamato, Joseph Felsenstein,
  * Akiko Fuseki, Sean Lamont, and Andrew Keefe at the University of Washington

@@ -1,7 +1,7 @@
 /** \file pop_snp.h
  *  \brief Header for the pop_snp.cpp file
  *  \author Daniel Garrigan
- *  \version 0.3
+ *  \version 0.4
 */
 
 #include "popbam.h"

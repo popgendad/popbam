@@ -1,7 +1,7 @@
 /** \file pop_snp.cpp
  *  \brief Functions for extracting SNP calls from BAM files
  *  \author Daniel Garrigan
- *  \version 0.3
+ *  \version 0.4
 */
 #include "pop_snp.h"
 #include "tables.h"

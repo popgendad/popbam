@@ -1,7 +1,7 @@
 /** \file pop_nucdiv.cpp
  *  \brief Functions for calculating nucleotide diversity statistics
  *  \author Daniel Garrigan
- *  \version 0.3
+ *  \version 0.4
 */
 
 #include "pop_nucdiv.h"
@@ -284,7 +284,7 @@ void nucdivData::print_nucdiv(int chr)
 		{
 			std::cout << "\tns[" <<  sm->popul[i] << "-" << sm->popul[j] << "]:";
 			std::cout << "\t" << ns_between[UTIDX(sm->npops,i,j)];
-			if (ns_between[UTIDX(sm->npops, i, j)] >= min_sites)
+			if (ns_between[UTIDX(sm->npops, i, j)] >= (unsigned long int)(win_size * KB * min_sites))
 			{
 				std::cout << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
 				std::cout << "\t" << std::fixed << std::setprecision(5) << pib[UTIDX(sm->npops,i,j)];
@@ -330,8 +330,6 @@ std::string nucdivData::parseCommandLine(int argc, char *argv[])
 		flag |= BAM_OUTGROUP;
 	if (args >> GetOpt::OptionPresent('i'))
 		flag |= BAM_ILLUMINA;
-	if (args >> GetOpt::OptionPresent('n'))
-		flag |= BAM_MINPOPSAMPLE;
 	if (args >> GetOpt::OptionPresent('e'))
 		flag |= BAM_NOSINGLETONS;
 	args >> GetOpt::GlobalOption(glob_opts);
@@ -421,7 +419,7 @@ std::string nucdivData::parseCommandLine(int argc, char *argv[])
 nucdivData::nucdivData(void)
 {
 	derived_type = NUCDIV;
-	min_sites = 10;
+	min_sites = 0.5;
 	win_size = 0;
 	min_pop = 1.0;
 }
@@ -474,19 +472,19 @@ void nucdivData::nucdivUsage(void)
 	std::cerr << std::endl;
 	std::cerr << "Usage:   popbam nucdiv [options] <in.bam> [region]" << std::endl;
 	std::cerr << std::endl;
-	std::cerr << "Options: -i          base qualities are Illumina 1.3+           [ default: Sanger ]" << std::endl;
-	std::cerr << "         -h  FILE    Input header file                          [ default: none ]" << std::endl;
+	std::cerr << "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]" << std::endl;
+	std::cerr << "         -h  FILE    Input header file                              [ default: none ]" << std::endl;
 	std::cerr << "         -w  INT     use sliding window of size (kb)" << std::endl;
-	std::cerr << "         -k  INT     minimum number of sites in window          [ default: 10 ]" << std::endl;
-	std::cerr << "         -n  FLT     minimum proportion of population covered   [ default: 1.0 ]" << std::endl;
+	std::cerr << "         -k  FLT     minimum proportion of sites covered in window  [ default: 0.5 ]" << std::endl;
+	std::cerr << "         -n  FLT     minimum proportion of population covered       [ default: 1.0 ]" << std::endl;
 	std::cerr << "         -e          exclude singleton polymorphisms" << std::endl;
 	std::cerr << "         -f  FILE    Reference fastA file" << std::endl;
-	std::cerr << "         -m  INT     minimum read coverage                      [ default: 3 ]" << std::endl;
-	std::cerr << "         -x  INT     maximum read coverage                      [ default: 255 ]" << std::endl;
-	std::cerr << "         -q  INT     minimum rms mapping quality                [ default: 25 ]" << std::endl;
-	std::cerr << "         -s  INT     minimum snp quality                        [ default: 25 ]" << std::endl;
-	std::cerr << "         -a  INT     minimum map quality                        [ default: 13 ]" << std::endl;
-	std::cerr << "         -b  INT     minimum base quality                       [ default: 13 ]" << std::endl;
+	std::cerr << "         -m  INT     minimum read coverage                          [ default: 3 ]" << std::endl;
+	std::cerr << "         -x  INT     maximum read coverage                          [ default: 255 ]" << std::endl;
+	std::cerr << "         -q  INT     minimum rms mapping quality                    [ default: 25 ]" << std::endl;
+	std::cerr << "         -s  INT     minimum snp quality                            [ default: 25 ]" << std::endl;
+	std::cerr << "         -a  INT     minimum map quality                            [ default: 13 ]" << std::endl;
+	std::cerr << "         -b  INT     minimum base quality                           [ default: 13 ]" << std::endl;
 	std::cerr << std::endl;
 	exit(EXIT_FAILURE);
 }
