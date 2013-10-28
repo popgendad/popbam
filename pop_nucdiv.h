@@ -35,6 +35,7 @@ class nucdivData: public popbamData
 		// member public variables
 		unsigned int win_size;                  //!< Size of sliding window in kilobases
 		unsigned int *pop_cov;                  //!< Boolean for population coverage
+		unsigned int **ncov;                    //!< Sample size per population per segregating site
 		unsigned long *ns_within;               //!< Number of aligned sites with each population
 		unsigned long *ns_between;              //!< Number of aligned sites between each pair of populations
 		int *num_snps;                          //!< Number of SNPs in a given window

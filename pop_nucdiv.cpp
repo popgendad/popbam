@@ -171,14 +171,17 @@ int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *
 		// determine how many samples pass the quality filters
 		sample_cov = qfilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
 
+		unsigned int *ncov;
+		ncov = new unsigned int [t->sm->npops]();
+
 		// determine population coverage
 		for (i=0; i < t->sm->npops; ++i)
 		{
 			unsigned long long pc = 0;
 			pc = sample_cov & t->pop_mask[i];
-			unsigned int ncov = bitcount64(pc);
+			ncov[i] = bitcount64(pc);
 			unsigned int req = (unsigned int)((t->min_pop * t->pop_nsmpl[i]) + 0.4999);
-			if (ncov >= req)
+			if (ncov[i] >= req)
 				t->pop_cov[t->num_sites] |= 0x1U << i;
 		}
 
@@ -187,11 +190,16 @@ int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *
 		{
 			t->num_sites++;
 			if (fq > 0)
+			{
+				for (int j=0; j < t->sm->npops; ++j)
+					t->ncov[j][t->segsites] = ncov[j];
 				t->types[t->segsites++] = cal_site_type(t->sm->n, cb);
+			}
 		}
 
 		// take out the garbage
 		delete [] cb;
+		delete [] ncov;
 	}
 
 	return 0;
@@ -200,8 +208,8 @@ int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *
 void nucdivData::calc_nucdiv(void)
 {
 	int i, j, k;
-	unsigned int sum;
 	unsigned short **freq;
+	double sum;
 
 	freq = new unsigned short* [sm->npops];
 	for (i=0; i < sm->npops; i++)
@@ -223,7 +231,7 @@ void nucdivData::calc_nucdiv(void)
 	for (i=0; i < sm->npops; i++)
 	{
 		num_snps[i] = 0;
-		sum = 0;
+		sum = 0.0;
 		for (j=0; j < segsites; j++)
 		{
 			unsigned long long pop_type = types[j] & pop_mask[i];
@@ -231,11 +239,10 @@ void nucdivData::calc_nucdiv(void)
 
 			// calculate within population heterozygosity
 			if (((flag & BAM_NOSINGLETONS) && (freq[i][j] > 1)) || !(flag & BAM_NOSINGLETONS))
-				sum += 2 * freq[i][j] * (pop_nsmpl[i] - freq[i][j]);
+				sum += (2.0 * freq[i][j] * (ncov[i][j] - freq[i][j])) / SQ(ncov[i][j]-1);
 		}
-		//TODO: This uses a constant sample size for the bias correction, instead of per site sample size
-		if (pop_nsmpl[i] > 1)
-			piw[i] = (double)(sum) / (ns_within[i] * SQ(pop_nsmpl[i]-1));
+		if (ncov[i][j] > 1)
+			piw[i] = sum / ns_within[i];
 		else
 			piw[i] = 0.0;
 	}
@@ -246,10 +253,10 @@ void nucdivData::calc_nucdiv(void)
 	{
 		for (j=i+1; j < sm->npops; j++)
 		{
-			sum = 0;
+			sum = 0.0;
 			for (k=0; k < segsites; k++)
-				sum += freq[i][k] * (pop_nsmpl[j] - freq[j][k]) + freq[j][k] * (pop_nsmpl[i] - freq[i][k]);
-			pib[UTIDX(sm->npops,i,j)] = (double)(sum) / (ns_between[UTIDX(sm->npops,i,j)] * pop_nsmpl[i] * pop_nsmpl[j]);
+				sum += (freq[i][k] * (ncov[j][k] - freq[j][k]) + freq[j][k] * (ncov[i][k] - freq[i][k])) / (ncov[i][k] * ncov[j][k]);
+			pib[UTIDX(sm->npops,i,j)] = sum / ns_between[UTIDX(sm->npops,i,j)];
 		}
 	}
 
@@ -426,6 +433,7 @@ nucdivData::nucdivData(void)
 
 void nucdivData::init_nucdiv(void)
 {
+	int i;
 	int length = end-beg;
 	int npops = sm->npops;
 
@@ -438,10 +446,13 @@ void nucdivData::init_nucdiv(void)
 		ns_between = new unsigned long [npops*(npops-1)] ();
 		pop_mask = new unsigned long long [npops]();
 		pop_cov = new unsigned int [length]();
+		ncov = new unsigned int* [npops];
 		pop_nsmpl = new unsigned char [npops]();
 		piw = new double [npops]();
 		pib = new double [npops*(npops-1)]();
 		num_snps = new int [npops]();
+		for (i=0; i < npops; ++i)
+			ncov[i] = new unsigned int [length]();
 	}
 	catch (std::bad_alloc& ba)
 	{
@@ -451,6 +462,9 @@ void nucdivData::init_nucdiv(void)
 
 void nucdivData::destroy_nucdiv(void)
 {
+	int i;
+	int npops = sm->npops;
+
 	delete [] pop_mask;
 	delete [] types;
 	delete [] pop_cov;
@@ -460,6 +474,9 @@ void nucdivData::destroy_nucdiv(void)
 	delete [] piw;
 	delete [] pib;
 	delete [] num_snps;
+	for (i=0; i < npops; ++i)
+		delete [] ncov[i];
+	delete [] ncov;
 }
 
 void nucdivData::nucdivUsage(void)
