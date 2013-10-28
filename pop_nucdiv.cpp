@@ -241,7 +241,7 @@ void nucdivData::calc_nucdiv(void)
 			if (((flag & BAM_NOSINGLETONS) && (freq[i][j] > 1)) || !(flag & BAM_NOSINGLETONS))
 				sum += (2.0 * freq[i][j] * (ncov[i][j] - freq[i][j])) / SQ(ncov[i][j]-1);
 		}
-		if (ncov[i][j] > 1)
+		if (pop_cov[i] > 1)
 			piw[i] = sum / ns_within[i];
 		else
 			piw[i] = 0.0;
