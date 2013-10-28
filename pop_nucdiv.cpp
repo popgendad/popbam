@@ -426,9 +426,7 @@ nucdivData::nucdivData(void)
 
 void nucdivData::init_nucdiv(void)
 {
-	int i;
 	int length = end-beg;
-	int n = sm->n;
 	int npops = sm->npops;
 
 	segsites = 0;
@@ -453,7 +451,6 @@ void nucdivData::init_nucdiv(void)
 
 void nucdivData::destroy_nucdiv(void)
 {
-	int i;
 	int npops = sm->npops;
 
 	delete [] pop_mask;

@@ -586,9 +586,7 @@ ldData::ldData(void)
 
 void ldData::init_ld(void)
 {
-	int i;
-	int n = sm->n;
-	int length = end-beg;
+	int length = end - beg;
 	int npops = sm->npops;
 
 	segsites = 0;
@@ -689,8 +687,6 @@ void ldData::print_ld(int chr)
 
 void ldData::destroy_ld(void)
 {
-	int i;
-
 	delete [] pop_mask;
 	delete [] types;
 	delete [] pop_nsmpl;

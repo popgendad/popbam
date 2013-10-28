@@ -290,9 +290,10 @@ void sfsData::print_sfs(int chr)
 {
 	int i;
 
-	std::cout << h->target_name[chr] << "\t" << beg+1 << "\t" << end+1 << "\t" << num_sites;
+	std::cout << h->target_name[chr] << "\t" << beg+1 << "\t" << end+1;
 	for (i=0; i < sm->npops; i++)
 	{
+		std::cout << "\t" << ns[i];
 		if (isnan(td[i]))
 			std::cout << "\tD[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
 		else
