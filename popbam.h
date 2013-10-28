@@ -299,30 +299,68 @@ extern int main_sfs(int, char**);
  * \param val The input value
  */
 #ifdef _MSC_VER
-static inline unsigned int log2int(const unsigned int val)
+static inline unsigned int log2int(const unsigned int va)
 {
 	unsigned int re;
 
   __asm {
-	bsr eax, val
+	bsr eax, va
 	mov re, eax
   }
 
   return re;
 }
 #else
-extern __inline unsigned int log2int(const unsigned int val)
+extern __inline unsigned int log2int(const unsigned int va)
 {
-	unsigned int ret;
+	unsigned int re;
 
 	asm ( "\tbsr  %1, %0\n"
-		 : "=r" (ret)
-		 : "r"  (val)
+		 : "=r" (re)
+		 : "r"  (va)
 		 );
 
-	return ret;
+	return re;
 }
 #endif
+
+/*!
+ * \fn inline unsigned int bitcount64(unsigned long long x)
+ * \brief Function count the number of bits set in a 64-bit integer
+ * \param x the 64-bit integer
+ * \return unsigned integer
+ * Returns the number of bits set
+ */
+inline unsigned short bitcount64(unsigned long long x)
+{
+	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
+	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
+	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
+	return (x * 0x0101010101010101ULL) >> 56;
+}
+
+/*!
+ * \fn inline unsigned int hamming_distance(unsigned long long x, unsigned long long y)
+ * \brief Function to compute the hamming distance between two 64-bit integers
+ * \param x the first 64-bit integer
+ * \param y the second 64-bit integer
+ * \return unsigned int of hamming distance
+ * Returns the number of bits set
+ */
+inline unsigned int hamming_distance(unsigned long long x, unsigned long long y)
+{
+	unsigned int dist = 0;
+	unsigned long long val = x^y;
+
+	// count the number of set bits
+	while (val)
+	{
+		++dist;
+		val &= val-1;
+	}
+
+	return dist;
+}
 
 /*!
  * \fn int popbam_usage(void)
@@ -370,25 +408,6 @@ extern int bam_smpl_sm2popid(const bam_sample_t *sm, const char *fn, const char 
  * \param sm Pointer to sample data structure
  */
 extern void bam_smpl_destroy(bam_sample_t *sm);
-
-/*!
- * \fn unsigned int bitcount64(unsigned long long x)
- * \brief Function count the number of bits set in a 64-bit integer
- * \param x the 64-bit integer
- * \return unsigned integer
- * Returns the number of bits set
- */
-extern inline unsigned short bitcount64(unsigned long long x);
-
-/*!
- * \fn unsigned int hamming_distance(unsigned long long x, unsigned long long y)
- * \brief Function to compute the hamming distance between two 64-bit integers
- * \param x the first 64-bit integer
- * \param y the second 64-bit integer
- * \return unsigned int of hamming distance
- * Returns the number of bits set
- */
-extern inline unsigned int hamming_distance(unsigned long long x, unsigned long long y);
 
 /*!
  * \fn char *get_refid(char *htext)

@@ -40,29 +40,6 @@ KSORT_INIT_GENERIC(uint16_t)
 
 void bam_init_header_hash(bam_header_t *header);
 
-inline unsigned short bitcount64(unsigned long long x)
-{
-	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
-	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
-	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
-	return (x * 0x0101010101010101ULL) >> 56;
-}
-
-inline unsigned int hamming_distance(unsigned long long x, unsigned long long y)
-{
-	unsigned int dist = 0;
-	unsigned long long val = x^y;
-
-	// count the number of set bits
-	while (val)
-	{
-		++dist;
-		val &= val-1;
-	}
-
-	return dist;
-}
-
 unsigned long long gl2cns(float q[16], unsigned short k)
 {
 	unsigned char i, j;
