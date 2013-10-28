@@ -241,7 +241,7 @@ void nucdivData::calc_nucdiv(void)
 			if (((flag & BAM_NOSINGLETONS) && (freq[i][j] > 1)) || !(flag & BAM_NOSINGLETONS))
 				sum += (2.0 * freq[i][j] * (ncov[i][j] - freq[i][j])) / SQ(ncov[i][j]-1);
 		}
-		if (pop_cov[i] > 1)
+		if (pop_cov[i] & (0x1U << i))
 			piw[i] = sum / ns_within[i];
 		else
 			piw[i] = 0.0;
@@ -255,7 +255,8 @@ void nucdivData::calc_nucdiv(void)
 		{
 			sum = 0.0;
 			for (k=0; k < segsites; k++)
-				sum += (double)(freq[i][k] * (ncov[j][k] - freq[j][k]) + freq[j][k] * (ncov[i][k] - freq[i][k])) / (ncov[i][k] * ncov[j][k]);
+				if ((ncov[i][k] > 0) && (ncov[j][k] > 0))
+					sum += (double)(freq[i][k] * (ncov[j][k] - freq[j][k]) + freq[j][k] * (ncov[i][k] - freq[i][k])) / (ncov[i][k] * ncov[j][k]);
 			pib[UTIDX(sm->npops,i,j)] = sum / ns_between[UTIDX(sm->npops,i,j)];
 		}
 	}
