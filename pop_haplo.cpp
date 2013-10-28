@@ -171,7 +171,7 @@ int make_haplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *p
         if (bitcount64(sample_cov) == t->sm->n)
         {
             // calculate the site type
-            t->types[t->num_sites] = t->cal_site_type(cb);
+            t->types[t->num_sites] = cal_site_type(t->sm->n, cb);
 
             if (fq > 0)
             {

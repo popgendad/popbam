@@ -187,7 +187,7 @@ int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *
 		{
 			t->num_sites++;
 			if (fq > 0)
-				t->types[t->segsites++] = t->cal_site_type(cb);
+				t->types[t->segsites++] = cal_site_type(t->sm->n, cb);
 		}
 
 		// take out the garbage

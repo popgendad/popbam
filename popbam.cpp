@@ -172,19 +172,6 @@ void popbamData::assign_pops(void)
 	}
 }
 
-unsigned long long popbamData::cal_site_type(unsigned long long *cb)
-{
-	unsigned long long site_type = 0;
-
-	for (int i=0; i < sm->n; i++)
-	{
-		if ((cb[i] & 0x3ULL) == 0x3ULL)
-			site_type |= 0x1ULL << i;
-	}
-
-	return site_type;
-}
-
 void popbamData::call_base(int n, const bam_pileup1_t *pl, unsigned long long *cb)
 {
 	int i, j;
@@ -297,7 +284,7 @@ void popbamData::call_base(int n, const bam_pileup1_t *pl, unsigned long long *c
 			cb[j] = gl2cns(q, k);
 
 			// add root-mean map quality score to cb array
-			cb[j] |= rms<<(CHAR_BIT*6);
+			cb[j] |= rms << (CHAR_BIT*6);
 
 			// take out some garbage
 			delete [] bases;

@@ -245,7 +245,6 @@ class popbamData
 		void bam_smpl_destroy(void);
 		void assign_pops(void);
 		void checkBAM(void);
-		unsigned long long cal_site_type(unsigned long long*);
 		void call_base(int, const bam_pileup1_t*, unsigned long long*);
 
 		// member variables
@@ -360,6 +359,15 @@ inline unsigned int hamming_distance(unsigned long long x, unsigned long long y)
 	}
 
 	return dist;
+}
+
+inline unsigned long long cal_site_type(int n, unsigned long long *cb)
+{
+	unsigned long long site_type = 0;
+	for (int i=0; i < n; i++)
+		if ((cb[i] & 0x3ULL) == 0x3ULL)
+			site_type |= 0x1ULL << i;
+	return site_type;
 }
 
 /*!
