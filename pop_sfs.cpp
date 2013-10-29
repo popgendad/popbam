@@ -284,9 +284,17 @@ void sfsData::calc_sfs(void)
 			// finalize calculation of sfs statistics
 			n = (int)(((double)(avgn)/num_snps[i])+0.4999);
 			s = num_snps[i];
-			td[i] /= sqrt(e1[n] * s + e2[n] * s * (s - 1));
-			fwh[i] /= sqrt(((n - 2) * (s / a1[n]) / (6.0 * (n - 1))) + ((s * (s - 1) / (SQ(a1[n]) + a2[n])) * 
-				      (18.0 * SQ(n) * (3.0 * n + 2.0) * a2[n+1] - (88.0 * n * n * n + 9.0 * SQ(n) - 13.0 * n + 6.0)) / (9.0 * n * (SQ(n-1)))));
+			if ((n > 0) && (s > 0))
+			{
+				td[i] /= sqrt(e1[n] * s + e2[n] * s * (s - 1));
+				fwh[i] /= sqrt(((n - 2) * (s / a1[n]) / (6.0 * (n - 1))) + ((s * (s - 1) / (SQ(a1[n]) + a2[n])) * 
+						  (18.0 * SQ(n) * (3.0 * n + 2.0) * a2[n+1] - (88.0 * n * n * n + 9.0 * SQ(n) - 13.0 * n + 6.0)) / (9.0 * n * (SQ(n-1)))));
+			}
+			else
+			{
+				td[i] = std::numeric_limits<double>::quiet_NaN();
+				fwh[i] = std::numeric_limits<double>::quiet_NaN();
+			}
 		}
 		else
 		{
