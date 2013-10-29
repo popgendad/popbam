@@ -230,8 +230,8 @@ void ldData::calc_zns(void)
 					// if site 2 is variable within the population of interest calculate r2
 					if ((x1 >= min_freq) && (x1 <= (n - min_freq)))
 					{
-						x11 = type0 & type1;
-						zns[i] += (double)(SQ(x0*x1-n*x11)) / ((n-x0)*x0*(n-x1)*x1);
+						x11 = bitcount64(type0 & type1);
+						zns[i] += SQ(x0 * x1 - n * x11) / (double)((n - x0) * x0 * (n - x1) * x1);
 					}
 				}
 			}
