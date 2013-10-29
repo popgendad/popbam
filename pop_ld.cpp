@@ -475,7 +475,7 @@ std::string ldData::parseCommandLine(int argc, char *argv[])
 	args >> GetOpt::Option('k', min_sites);
 	if (args >> GetOpt::OptionPresent('w'))
 	{
-		win_size *= 1000;
+		win_size *= KB;
 		flag |= BAM_WINDOW;
 	}
 	if (args >> GetOpt::OptionPresent('h'))
@@ -582,6 +582,7 @@ ldData::ldData(void)
 	min_snps = 10;
 	min_freq = 1;
 	win_size = 0;
+	min_sites = 0.5;
 }
 
 void ldData::init_ld(void)
@@ -715,23 +716,23 @@ void ldData::ldUsage(void)
 	std::cerr << std::endl;
 	std::cerr << "Usage:   popbam ld [options] <in.bam> [region]" << std::endl;
 	std::cerr << std::endl;
-	std::cerr << "Options: -i          base qualities are Illumina 1.3+             [ default: Sanger ]" << std::endl;
-	std::cerr << "         -h  FILE    Input header file                            [ default: none ]" << std::endl;
-	std::cerr << "         -e          exclude singletons from LD calculations      [ default: include singletons ]" << std::endl;
-	std::cerr << "         -o  INT     analysis option                              [ default: 0 ]" << std::endl;
+	std::cerr << "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]" << std::endl;
+	std::cerr << "         -h  FILE    Input header file                              [ default: none ]" << std::endl;
+	std::cerr << "         -e          exclude singletons from LD calculations        [ default: include singletons ]" << std::endl;
+	std::cerr << "         -o  INT     analysis option                                [ default: 0 ]" << std::endl;
 	std::cerr << "                     0 : Kelly's ZnS statistic" << std::endl;
 	std::cerr << "                     1 : Omega max" << std::endl;
 	std::cerr << "                     2 : Wall's B and Q congruency statistics" << std::endl;
 	std::cerr << "         -w  INT     use sliding window of size (kb)" << std::endl;
-	std::cerr << "         -k  INT     minimum number of sites in window            [ default: 10 ]" << std::endl;
+	std::cerr << "         -k  FLT     minimum proportion of aligned sites in window  [ default: 0.5 ]" << std::endl;
 	std::cerr << "         -f  FILE    reference fastA file" << std::endl;
-	std::cerr << "         -n  INT     mimimum number of snps to consider window    [ default: 10 ]" << std::endl;
-	std::cerr << "         -m  INT     minimum read coverage                        [ default: 3 ]" << std::endl;
-	std::cerr << "         -x  INT     maximum read coverage                        [ default: 255 ]" << std::endl;
-	std::cerr << "         -q  INT     minimum rms mapping quality                  [ default: 25 ]" << std::endl;
-	std::cerr << "         -s  INT     minimum snp quality                          [ default: 25 ]" << std::endl;
-	std::cerr << "         -a  INT     minimum map quality                          [ default: 13 ]" << std::endl;
-	std::cerr << "         -b  INT     minimum base quality                         [ default: 13 ]" << std::endl;
+	std::cerr << "         -n  INT     mimimum number of snps to consider window      [ default: 10 ]" << std::endl;
+	std::cerr << "         -m  INT     minimum read coverage                          [ default: 3 ]" << std::endl;
+	std::cerr << "         -x  INT     maximum read coverage                          [ default: 255 ]" << std::endl;
+	std::cerr << "         -q  INT     minimum rms mapping quality                    [ default: 25 ]" << std::endl;
+	std::cerr << "         -s  INT     minimum snp quality                            [ default: 25 ]" << std::endl;
+	std::cerr << "         -a  INT     minimum map quality                            [ default: 13 ]" << std::endl;
+	std::cerr << "         -b  INT     minimum base quality                           [ default: 13 ]" << std::endl;
 	std::cerr << std::endl;
 	exit(EXIT_FAILURE);
 }

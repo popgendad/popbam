@@ -1,7 +1,7 @@
 /** \file pop_ld.h
  *  \brief Header for the pop_ld.cpp file
  *  \author Daniel Garrigan
- *  \version 0.3
+ *  \version 0.4
 */
 
 #include "popbam.h"
@@ -38,9 +38,9 @@ class ldData: public popbamData
 		unsigned int win_size;                  //!< Size of sliding window in kilobases
 		unsigned int *pop_cov;                  //!< Boolean for population coverage
 		int min_snps;                           //!< Minimum number of snps for a window to be considered
-		int min_sites;                          //!< Minimum number of sites for a window to be considered
 		unsigned short min_freq;                //!< Minimum allele count in LD calculation
 		int *num_snps;                          //!< Number of SNPs in a given window
+		double min_sites;                       //!< Minimum proportion of aligned sites for a window to be considered
 		double *omegamax;                       //!< Pointer to array of omega_max values
 		double *wallb;                          //!< Pointer to array of Wall's B statistic
 		double *wallq;                          //!< Pointer to array of Wall's Q statistic
