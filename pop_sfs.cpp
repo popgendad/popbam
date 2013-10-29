@@ -45,10 +45,6 @@ int main_sfs(int argc, char *argv[])
 				found = true;
 			}
 		}
-		unsigned long long u = 0x1ULL << t.outidx;
-		for (i=0; i < t.sm->npops; ++i)
-			if (t.pop_mask[i] & u)
-				t.outpop = i;
 		if (!found)
 		{
 			msg = "Specified outgroup " + t.outgroup + " not found";
@@ -124,6 +120,10 @@ int main_sfs(int argc, char *argv[])
 
 		// create population assignments
 		t.assign_pops();
+
+		// assign outgroup population
+		if ((t.flag & BAM_OUTGROUP) & found)
+			t.assign_outpop();
 
 		// initialize pileup
 		buf = bam_plbuf_init(make_sfs, &t);
@@ -506,6 +506,18 @@ void sfsData::calc_dw(void)
 	for (n=2; n <= sm->n; ++n)
 		for(i=n; i <= sm->n; ++i)
 			dw[n][i] = (((2.0 * i * (n - i)) / (SQ(n-1))) - (1.0 / a1[n]));
+}
+
+void sfsData::assign_outpop(void)
+{
+	int i;
+	unsigned long long u;
+
+	u = 0x1ULL << outidx;
+
+	for (i=0; i < sm->npops; ++i)
+		if (pop_mask[i] & u)
+			outpop = i;
 }
 
 void sfsData::calc_hw(void)
