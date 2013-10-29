@@ -284,7 +284,7 @@ void sfsData::calc_sfs(void)
 			// finalize calculation of sfs statistics
 			n = (int)(((double)(avgn)/num_snps[i])+0.4999);
 			s = num_snps[i];
-			if ((n > 0) && (s > 0))
+			if ((n > 1) && (s > 0))
 			{
 				td[i] /= sqrt(e1[n] * s + e2[n] * s * (s - 1));
 				fwh[i] /= sqrt(((n - 2) * (s / a1[n]) / (6.0 * (n - 1))) + ((s * (s - 1) / (SQ(a1[n]) + a2[n])) * 
@@ -512,7 +512,7 @@ void sfsData::calc_dw(void)
 		dw[i] = new double [sm->n+1]();
 
 	for (n=2; n <= sm->n; ++n)
-		for(i=n; i <= sm->n; ++i)
+		for(i=1; i <= sm->n; ++i)
 			dw[n][i] = (((2.0 * i * (n - i)) / (SQ(n-1))) - (1.0 / a1[n]));
 }
 
@@ -537,7 +537,7 @@ void sfsData::calc_hw(void)
 		hw[i] = new double [sm->n+1]();
 
 	for (n=2; n <= sm->n; ++n)
-		for (i=n; i <= sm->n; ++i)
+		for (i=1; i <= sm->n; ++i)
 			hw[n][i] = ((1.0 / a1[n]) - ((double)(i) / (n - 1)));
 }
 
