@@ -132,9 +132,9 @@ int main_ld(int argc, char *argv[])
 
 int make_ld(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
 {
-	int i;
-	int fq;
-	unsigned long long sample_cov;
+	int i = 0;
+	int fq = 0;
+	unsigned long long sample_cov = 0;
 	unsigned long long *cb = NULL;
 	ldData *t = NULL;
 
@@ -194,40 +194,44 @@ int make_ld(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, 
 void ldData::calc_zns(void)
 {
 	int i, j, k;
-	unsigned short n;
-	unsigned short x0;
-	unsigned short x1;
-	unsigned long long x11;
-	unsigned long long type0;
-	unsigned long long type1;
+	unsigned short n = 0;
+	unsigned short x0 = 0;
+	unsigned short x1 = 0;
+	unsigned long long x11 = 0;
+	unsigned long long type0 = 0;
+	unsigned long long type1 = 0;
 
 	if (segsites < 1)
 		return;
 
+	// iterate through populations
 	for (i=0; i < sm->npops; i++)
 	{
 		// Zero the SNP counter
 		num_snps[i] = 0;
 		n = pop_nsmpl[i];
 
+		// iterate through segregating sites
 		for (j=0; j < segsites-1; j++)
 		{
-			// get first site and count of derived allele
+			// get first population-specific site and count of the "derived" allele
 			type0 = types[j] & pop_mask[i];
 			x0 = bitcount64(type0);
 
 			// if site 1 is variable within the population of interest
 			if ((x0 >= min_freq) && (x0 <= (n - min_freq)))
 			{
+				// iterate SNP counter
 				++num_snps[i];
 
 				// iterate over all remaining sites
 				for (k=j+1; k < segsites; k++)
 				{
+					// get second population-specific site and count of the "derived" allele
 					type1 = types[k] & pop_mask[i];
 					x1 = bitcount64(type1);
 
-					// if site 2 is variable within the population of interest calculate r2
+					// if site 2 is variable within the population of interest -> calculate r2
 					if ((x1 >= min_freq) && (x1 <= (n - min_freq)))
 					{
 						x11 = bitcount64(type0 & type1);
@@ -237,6 +241,8 @@ void ldData::calc_zns(void)
 			}
 		}
 		++num_snps[i];
+
+		// get average pairwise r2
 		zns[i] *= 1.0 / BINOM(num_snps[i]);
 		// end pairwise comparisons
 	}
@@ -244,22 +250,21 @@ void ldData::calc_zns(void)
 
 void ldData::calc_omegamax(void)
 {
-	int i, j, k, m;
-	int count1;
-	int count2;
-	int left;
-	int right;
-	unsigned short marg1;
-	unsigned short marg2;
-	unsigned long long type1;
-	unsigned long long type2;
-	unsigned long long c11;
+	int i, j, k, m, n;
+	int count1 = 0;
+	int count2 = 0;
+	int left = 0;
+	int right = 0;
+	unsigned short x0 = 0;
+	unsigned short x1 = 0;
+	unsigned long long type0 = 0;
+	unsigned long long type1 = 0;
+	unsigned long long x11 = 0;
 	double **r2 = NULL;
-	double x0, x1, x11;
-	double sumleft;
-	double sumright;
-	double sumbetween;
-	double omega;
+	double sumleft = 0.0;
+	double sumright = 0.0;
+	double sumbetween = 0.0;
+	double omega = 0.0;
 
 	if (segsites < 1)
 		return;
@@ -281,33 +286,31 @@ void ldData::calc_omegamax(void)
 		num_snps[j] = 0;
 		count1 = 0;
 		count2 = 0;
+		n = pop_nsmpl[j];
 
 		for (i=0; i < segsites-1; i++)
 		{
-			type1 = types[i] & pop_mask[j];
-			marg1 = bitcount64(type1);
+			type0 = types[i] & pop_mask[j];
+			x0 = bitcount64(type0);
 
 			// if site 1 is variable within the population of interest
-			if ((marg1 >= min_freq) && (marg1 <= (pop_nsmpl[j] - min_freq)))
+			if ((x0 >= min_freq) && (x0 <= (n - min_freq)))
 			{
 				++num_snps[j];
 				count2 = count1;
 				for (k=i+1; k < segsites; k++)
 				{
-					type2 = types[k] & pop_mask[j];
-					marg2 = bitcount64(type2);
+					type1 = types[k] & pop_mask[j];
+					x1 = bitcount64(type1);
 
 					// if site 2 is variable within the population of interest
-					if ((marg2 >= min_freq) && (marg2 <= (pop_nsmpl[j] - min_freq)))
+					if ((x1 >= min_freq) && (x1 <= (n - min_freq)))
 					{
 						++count2;
 
 						// calculate r2
-						x0 = (double)(marg1) / pop_nsmpl[j];
-						x1 = (double)(marg2) / pop_nsmpl[j];
-						c11 = type1 & type2;
-						x11 = (double)(bitcount64(c11)) / pop_nsmpl[j];
-						r2[count1][count2] = SQ(x11-x0*x1) / (x0 * (1.0 - x0) * x1 * (1.0 - x1));
+						x11 = bitcount64(type0 & type1);
+						r2[count1][count2] = SQ(x0 * x1 - n * x11) / (double)((n - x0) * x0 * (n - x1) * x1);
 						r2[count2][count1] = r2[count1][count2];
 					}
 				}
@@ -369,8 +372,8 @@ void ldData::calc_wall(void)
 	unsigned long long last_type = 0;
 	int *num_congruent = NULL;
 	int *num_part = NULL;
-	unsigned long long type;
-	unsigned long long complem;
+	unsigned long long type = 0;
+	unsigned long long complem = 0;
 	std::vector<std::vector<unsigned long long> > uniq_part_types(sm->npops);
 
 	if (segsites < 1)
