@@ -122,7 +122,7 @@ int main_sfs(int argc, char *argv[])
 		t.assign_pops();
 
 		// assign outgroup population
-		if ((t.flag & BAM_OUTGROUP) & found)
+		if ((t.flag & BAM_OUTGROUP) && found)
 			t.assign_outpop();
 
 		// initialize pileup
