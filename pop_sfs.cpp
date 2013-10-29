@@ -62,6 +62,7 @@ int main_sfs(int argc, char *argv[])
 	t.calc_e1();
 	t.calc_e2();
 	t.calc_dw();
+	t.calc_hw();
 
 	// parse genomic region
 	int k = bam_parse_region(t.h, region, &chr, &beg, &end);
