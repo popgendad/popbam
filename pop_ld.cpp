@@ -13,6 +13,7 @@ int main_ld(int argc, char *argv[])
 	int end;                  //! end coordinate for analysis
 	int ref;                  //! ref
 	long num_windows;         //! number of windows
+	long cw;                  //! counter for windows
 	std::string msg;          //! string for error message
 	bam_plbuf_t *buf;         //! pileup buffer
 	ldData t;
@@ -45,15 +46,15 @@ int main_ld(int argc, char *argv[])
 
 	// calculate the number of windows
 	if (t.flag & BAM_WINDOW)
-		num_windows = ((end-beg)-1)/t.win_size;
+		num_windows = ((end - beg) - 1) / t.win_size;
 	else
 	{
-		t.win_size = (end-beg);
+		t.win_size = end - beg;
 		num_windows = 1;
 	}
 
 	// iterate through all windows along specified genomic region
-	for (long cw=0; cw < num_windows; cw++)
+	for (cw=0; cw < num_windows; cw++)
 	{
 
 		// construct genome coordinate string
@@ -193,12 +194,12 @@ int make_ld(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, 
 void ldData::calc_zns(void)
 {
 	int i, j, k;
-	unsigned short marg1;
-	unsigned short marg2;
-	unsigned long long c11;
+	unsigned short n;
+	unsigned short x0;
+	unsigned short x1;
+	unsigned long long x11;
+	unsigned long long type0;
 	unsigned long long type1;
-	unsigned long long type2;
-	double x0, x1, x11;
 
 	if (segsites < 1)
 		return;
@@ -207,32 +208,30 @@ void ldData::calc_zns(void)
 	{
 		// Zero the SNP counter
 		num_snps[i] = 0;
+		n = pop_nsmpl[i];
 
 		for (j=0; j < segsites-1; j++)
 		{
 			// get first site and count of derived allele
-			type1 = types[j] & pop_mask[i];
-			marg1 = bitcount64(type1);
+			type0 = types[j] & pop_mask[i];
+			x0 = bitcount64(type0);
 
 			// if site 1 is variable within the population of interest
-			if ((marg1 >= min_freq) && (marg1 <= (pop_nsmpl[i] - min_freq)))
+			if ((x0 >= min_freq) && (x0 <= (n - min_freq)))
 			{
 				++num_snps[i];
 
 				// iterate over all remaining sites
 				for (k=j+1; k < segsites; k++)
 				{
-					type2 = types[k] & pop_mask[i];
-					marg2 = bitcount64(type2);
+					type1 = types[k] & pop_mask[i];
+					x1 = bitcount64(type1);
 
 					// if site 2 is variable within the population of interest calculate r2
-					if ((marg2 >= min_freq) && (marg2 <= (pop_nsmpl[i] - min_freq)))
+					if ((x1 >= min_freq) && (x1 <= (n - min_freq)))
 					{
-						x0 = (double)(marg1) / pop_nsmpl[i];
-						x1 = (double)(marg2) / pop_nsmpl[i];
-						c11 = type1 & type2;
-						x11 = (double)(bitcount64(c11)) / pop_nsmpl[i];
-						zns[i] += SQ(x11-x0*x1) / (x0 * (1.0 - x0) * x1 * (1.0 - x1));
+						x11 = type0 & type1;
+						zns[i] += (double)(SQ(x0*x1-n*x11)) / ((n-x0)*x0*(n-x1)*x1);
 					}
 				}
 			}
