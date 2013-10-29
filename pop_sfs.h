@@ -35,11 +35,15 @@ class sfsData: public popbamData
 		unsigned int win_size;                  //!< Size of sliding window in kilobases
 		double min_sites;                       //!< User-specified minimum proportion of aligned sites to perform analysis
 		unsigned long *ns;                      //!< Number of aligned sites within each population
+		unsigned int **ncov;                    //!< Sample size per population per segregating site
 		int *num_snps;                          //!< Number of SNPs in a given window
 		unsigned int *pop_cov;                  //!< Boolean for population coverage
 		double min_pop;                         //!< Minimum proportion of samples present
 		std::string outgroup;                   //!< Sample name of outgroup to use
 		int outidx;                             //!< Index of outgroup sequence
+		int outpop;                             //!< Population of outgroup sequence
+		double **dw;                            //!< Matrix of weights for Tajima's D calculation
+		double **hw;                            //!< Matrix of weights for Fay and Wu's H calculation
 		double *a1;                             //!< Constants for Tajima's D calculation
 		double *a2;                             //!< Constants for Tajima's D calculation
 		double *e1;                             //!< Constants for Tajima's D calculation
@@ -53,6 +57,8 @@ class sfsData: public popbamData
 		void destroy_sfs(void);
 		void print_sfs(int);
 		static void sfsUsage(void);
+		void calc_dw(void);
+		void calc_hw(void);
 		void calc_sfs(void);
 		void calc_a1(void);
 		void calc_a2(void);

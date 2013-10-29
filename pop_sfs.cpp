@@ -9,6 +9,7 @@
 int main_sfs(int argc, char *argv[])
 {
 	bool found = false;       //! is the outgroup sequence found?
+	int i;
 	int chr;                  //! chromosome identifier
 	int beg;                  //! beginning coordinate for analysis
 	int end;                  //! end coordinate for analysis
@@ -36,12 +37,18 @@ int main_sfs(int argc, char *argv[])
 	// if outgroup option is used check to make sure it exists
 	if (t.flag & BAM_OUTGROUP)
 	{
-		for (int i=0; i < t.sm->n; i++)
+		for (i=0; i < t.sm->n; i++)
+		{
 			if (strcmp(t.sm->smpl[i], t.outgroup.c_str()) == 0)
 			{
 				t.outidx = i;
 				found = true;
 			}
+		}
+		unsigned long long u = 0x1ULL << t.outidx;
+		for (i=0; i < t.sm->npops; ++i)
+			if (t.pop_mask[i] & u)
+				t.outpop = i;
 		if (!found)
 		{
 			msg = "Specified outgroup " + t.outgroup + " not found";
@@ -54,6 +61,7 @@ int main_sfs(int argc, char *argv[])
 	t.calc_a2();
 	t.calc_e1();
 	t.calc_e2();
+	t.calc_dw();
 
 	// parse genomic region
 	int k = bam_parse_region(t.h, region, &chr, &beg, &end);
@@ -145,6 +153,13 @@ int main_sfs(int argc, char *argv[])
 	samclose(t.bam_in);
 	bam_index_destroy(t.idx);
 	t.bam_smpl_destroy();
+	for (i=0; i <= t.sm->n; ++i)
+	{
+		delete [] t.dw[i];
+		delete [] t.hw[i];
+	}
+	delete [] t.dw;
+	delete [] t.hw;
 	delete [] t.a1;
 	delete [] t.a2;
 	delete [] t.e1;
@@ -191,14 +206,17 @@ int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 		// determine how many samples pass the quality filters
 		sample_cov = qfilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
 
+		unsigned int *ncov;
+		ncov = new unsigned int [t->sm->npops]();
+
 		// determine population coverage
 		for (i=0; i < t->sm->npops; ++i)
 		{
 			unsigned long long pc = 0;
 			pc = sample_cov & t->pop_mask[i];
-			unsigned int ncov = bitcount64(pc);
-			unsigned int req = (unsigned int)(t->min_pop * t->pop_nsmpl[i]);
-			if (ncov >= req)
+			ncov[i] = bitcount64(pc);
+			unsigned int req = (unsigned int)((t->min_pop * t->pop_nsmpl[i]) + 0.4999);
+			if (ncov[i] >= req)
 				t->pop_cov[t->num_sites] |= 0x1U << i;
 		}
 
@@ -207,11 +225,16 @@ int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 		{
 			t->num_sites++;
 			if (fq > 0)
+			{
+				for (int j=0; j < t->sm->npops; ++j)
+					t->ncov[j][t->segsites] = ncov[j];
 				t->types[t->segsites++] = cal_site_type(t->sm->n, cb);
+			}
 		}
 
 		// take out the garbage
 		delete [] cb;
+		delete [] ncov;
 	}
 	return 0;
 }
@@ -219,21 +242,10 @@ int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 void sfsData::calc_sfs(void)
 {
 	int i, j;
-	int n;
-	int **sfs = NULL;
+	int n, s;
+	int avgn;
 	unsigned short freq;
 	unsigned long long pop_type;
-
-	try
-	{
-		sfs = new int* [sm->npops];
-		for (i=0; i < sm->npops; i++)
-			sfs[i] = new int [pop_nsmpl[i]+1]();
-	}
-	catch (std::bad_alloc& ba)
-	{
-		std::cerr << "bad_alloc caught: " << ba.what() << std::endl;
-	}
 
 	// count number of aligned sites in each population
 	for (i=0; i < num_sites; ++i)
@@ -247,28 +259,30 @@ void sfsData::calc_sfs(void)
 		{
 			// get site frequency spectra and number of segregating sites
 			num_snps[i] = 0;
+			avgn = 0;
 			for (j=0; j < segsites; j++)
 			{
 				pop_type = types[j] & pop_mask[i];
 
-				// check if outgroup is different from reference
-				if ((flag & BAM_OUTGROUP) && CHECK_BIT(types[j], outidx))
-					freq = pop_nsmpl[i] - bitcount64(pop_type);
+				// check if outgroup is aligned and different from reference
+				// else the reference base is assumed to be ancestral
+				if ((flag & BAM_OUTGROUP) && (ncov[outpop][j] > 0) && CHECK_BIT(types[j], outidx))
+					freq = ncov[i][j] - bitcount64(pop_type);
 				else
 					freq = bitcount64(pop_type);
-				++sfs[i][freq];
-				if ((freq > 0) && (freq < pop_nsmpl[i]))
+
+				if ((freq > 0) && (freq < ncov[i][j]))
+				{
+					td[i] += dw[ncov[i][j]][freq];
+					fwh[i] += hw[ncov[i][j]][freq];
+					avgn += ncov[i][j];
 					++num_snps[i];
+				}
 			}
 
-			// calculate sfs statistics
-			n = pop_nsmpl[i];
-			int s = num_snps[i];
-			for (j=1; j < n; j++)
-			{
-				td[i] += sfs[i][j] * (((2.0 * j * (n - j)) / (SQ(n-1))) - (1.0 / a1[n]));
-				fwh[i] += sfs[i][j] * ((1.0 / a1[n]) - ((double)(j) / (n - 1)));
-			}
+			// finalize calculation of sfs statistics
+			n = (int)(((double)(avgn)/num_snps[i])+0.4999);
+			s = num_snps[i];
 			td[i] /= sqrt(e1[n] * s + e2[n] * s * (s - 1));
 			fwh[i] /= sqrt(((n - 2) * (s / a1[n]) / (6.0 * (n - 1))) + ((s * (s - 1) / (SQ(a1[n]) + a2[n])) * 
 				      (18.0 * SQ(n) * (3.0 * n + 2.0) * a2[n+1] - (88.0 * n * n * n + 9.0 * SQ(n) - 13.0 * n + 6.0)) / (9.0 * n * (SQ(n-1)))));
@@ -279,11 +293,6 @@ void sfsData::calc_sfs(void)
 			fwh[i] = std::numeric_limits<double>::quiet_NaN();
 		}
 	}
-
-	// take out the garbage
-	for (j=0; j < sm->npops; j++)
-		delete [] sfs[j];
-	delete [] sfs;
 }
 
 void sfsData::print_sfs(int chr)
@@ -337,7 +346,7 @@ std::string sfsData::parseCommandLine(int argc, char *argv[])
 	args >> GetOpt::Option('w', win_size);
 	if (args >> GetOpt::OptionPresent('w'))
 	{
-		win_size *= 1000;
+		win_size *= KB;
 		flag |= BAM_WINDOW;
 	}
 	if (args >> GetOpt::OptionPresent('h'))
@@ -441,6 +450,7 @@ sfsData::sfsData(void)
 
 void sfsData::init_sfs(void)
 {
+	int i;
 	int length = end-beg;
 	int npops = sm->npops;
 
@@ -450,12 +460,15 @@ void sfsData::init_sfs(void)
 	{
 		types = new unsigned long long [length]();
 		ns = new unsigned long int [npops]();
+		ncov = new unsigned int* [npops];
 		pop_mask = new unsigned long long [npops]();
 		pop_nsmpl = new unsigned char [npops]();
 		pop_cov = new unsigned int [length]();
 		num_snps = new int [npops]();
 		td = new double [npops]();
 		fwh = new double [npops]();
+		for (i=0; i < npops; ++i)
+			ncov[i] = new unsigned int [length]();
 	}
 	catch (std::bad_alloc& ba)
 	{
@@ -465,6 +478,9 @@ void sfsData::init_sfs(void)
 
 void sfsData::destroy_sfs(void)
 {
+	int i;
+	int npops = sm->npops;
+
 	delete [] pop_mask;
 	delete [] ns;
 	delete [] types;
@@ -473,6 +489,35 @@ void sfsData::destroy_sfs(void)
 	delete [] num_snps;
 	delete [] td;
 	delete [] fwh;
+	for (i=0; i < npops; ++i)
+		delete [] ncov[i];
+	delete [] ncov;
+}
+
+void sfsData::calc_dw(void)
+{
+	int n, i;
+
+	dw = new double* [sm->n+1];
+	for (i=0; i <= sm->n; ++i)
+		dw[i] = new double [sm->n+1]();
+
+	for (n=2; n <= sm->n; ++n)
+		for(i=n; i <= sm->n; ++i)
+			dw[n][i] = (((2.0 * i * (n - i)) / (SQ(n-1))) - (1.0 / a1[n]));
+}
+
+void sfsData::calc_hw(void)
+{
+	int n, i;
+
+	hw = new double* [sm->n+1];
+	for (i=0; i <= sm->n; ++i)
+		hw[i] = new double [sm->n+1]();
+
+	for (n=2; n <= sm->n; ++n)
+		for (i=n; i <= sm->n; ++i)
+			hw[n][i] = ((1.0 / a1[n]) - ((double)(i) / (n - 1)));
 }
 
 void sfsData::calc_a1(void)

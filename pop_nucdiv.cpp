@@ -327,13 +327,11 @@ std::string nucdivData::parseCommandLine(int argc, char *argv[])
 	args >> GetOpt::Option('w', win_size);
 	if (args >> GetOpt::OptionPresent('w'))
 	{
-		win_size *= 1000;
+		win_size *= KB;
 		flag |= BAM_WINDOW;
 	}
 	if (args >> GetOpt::OptionPresent('h'))
 		flag |= BAM_HEADERIN;
-	if (args >> GetOpt::OptionPresent('p'))
-		flag |= BAM_OUTGROUP;
 	if (args >> GetOpt::OptionPresent('i'))
 		flag |= BAM_ILLUMINA;
 	if (args >> GetOpt::OptionPresent('e'))
