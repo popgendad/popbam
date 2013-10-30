@@ -8,9 +8,9 @@ sliding windows across a genome.
 INTRODUCTION
 ------------
 
-This is the third beta release (0.3) of the POPBAM program. The source code has primarily been alpha tested 
+This is the fourth beta release (0.4b) of the POPBAM program. The source code has primarily been alpha tested 
 on Debian and Red Hat based operating systems using the GNU C++ compiler. A Makefile is provided for the 
-GNU C++ compiler with three compilation modes: release (default), debug, and profile.
+GNU C++ or clang compilers with three compilation modes: release (default), debug, and profile.
 
 OBTAINING THE SOURCE CODE
 -------------------------
