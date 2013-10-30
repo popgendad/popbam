@@ -163,17 +163,17 @@ void clean_heterozygotes(int num_samples, unsigned long long *cb, int ref, int m
 		if ((allele1 != allele2) && (snp_quality >= min_snpq))
 		{
 			if (allele1 == iupac_rev[ref])
-				cb[i] += (allele2-allele1)<<(CHAR_BIT+2);
+				cb[i] += (allele2 - allele1)<<(CHAR_BIT+2);
 			if (allele2 == iupac_rev[ref])
-				cb[i] -= (allele2-allele1)<<CHAR_BIT;
+				cb[i] -= (allele2 - allele1)<<CHAR_BIT;
 		}
 		// if heterozygous but poor quality--make homozygous ancestral
 		if ((allele1 != allele2) && (snp_quality < min_snpq))
 		{
 			if (allele1 != iupac_rev[ref])
-				cb[i] += (allele2-allele1) << (CHAR_BIT+2);
+				cb[i] += (allele2 - allele1) << (CHAR_BIT+2);
 			if (allele2 != iupac_rev[ref])
-				cb[i] -= (allele2-allele1) << CHAR_BIT;
+				cb[i] -= (allele2 - allele1) << CHAR_BIT;
 		}
 	}
 }
@@ -194,39 +194,39 @@ static errmod_coef_t *cal_coef(double depcorr, double eta)
 	ec->fk = (double*)calloc(256, sizeof(double));
 	ec->fk[0] = 1.0;
 	for (n=1; n != 256; ++n)
-		ec->fk[n] = pow(1.0-depcorr, n)*(1.0-eta)+eta;
+		ec->fk[n] = pow(1.0 - depcorr, n) * (1.0 - eta) + eta;
 
 	// initialize ->coef
-	ec->beta = (double*)calloc(256*256*64, sizeof(double));
-	lC = (double*)calloc(256*256, sizeof(double));
+	ec->beta = (double*)calloc(SQ(256) * 64, sizeof(double));
+	lC = (double*)calloc(SQ(256), sizeof(double));
 	for (n=1; n != 256; ++n)
 	{
-		double lgn = LogGamma(n+1);
+		double lgn = LogGamma(n + 1);
 		for (k=1; k <= n; ++k)
-			lC[n<<8|k] = lgn-LogGamma(k+1)-LogGamma(n-k+1);
+			lC[n << 8 | k] = lgn - LogGamma(k + 1) - LogGamma(n - k + 1);
 	}
 	for (q=1; q != 64; ++q)
 	{
-		double e = pow(10.0, -q/10.0);
+		double e = pow(10.0, -q / 10.0);
 		double le = log(e);
-		double le1 = log(1.0-e);
+		double le1 = log(1.0 - e);
 		for (n=1; n <= 255; ++n)
 		{
-			double *beta = ec->beta+(q<<16 | n<<8);
+			double *beta = ec->beta + (q << 16 | n << 8);
 			sum1 = sum = 0.0;
 			for (k=n; k >= 0; --k, sum1 = sum)
 			{
-				sum = sum1 + expl(lC[n<<8|k] + k*le + (n-k)*le1);
+				sum = sum1 + expl(lC[n << 8 | k] + k * le + (n - k) * le1);
 				beta[k] = -10.0 / M_LN10 * logl(sum1 / sum);
 			}
 		}
 	}
 
 	// initialize ->lhet
-	ec->lhet = (double*)calloc(256*256, sizeof(double));
+	ec->lhet = (double*)calloc(SQ(256), sizeof(double));
 	for (n=0; n < 256; ++n)
 		for (k=0; k < 256; ++k)
-			ec->lhet[n<<8|k] = lC[n << 8 | k] - M_LN2 * n;
+			ec->lhet[n << 8 | k] = lC[n << 8 | k] - M_LN2 * n;
 	free(lC);
 
 	return ec;
@@ -262,7 +262,7 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 
 	if (m > m)
 		return -1;
-	memset(q, 0, m*m*sizeof(float));
+	memset(q, 0, SQ(m) * sizeof(float));
 	if (n == 0)
 		return 0;
 
@@ -284,10 +284,10 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 		int q = b >> 5 < NBASES ? NBASES : b >> 5;
 		if (q > 63)
 			q = 63;
-		k = b&0x1f;
-		aux.fsum[k&0xf] += em->coef->fk[w[k]];
-		aux.bsum[k&0xf] += em->coef->fk[w[k]] * em->coef->beta[q<<16|n<<8|aux.c[k&0xf]];
-		++aux.c[k&0xf];
+		k = b & 0x1f;
+		aux.fsum[k & 0xf] += em->coef->fk[w[k]];
+		aux.bsum[k & 0xf] += em->coef->fk[w[k]] * em->coef->beta[q << 16 | n << 8 | aux.c[k & 0xf]];
+		++aux.c[k & 0xf];
 		++w[k];
 	}
 	// generate likelihood
@@ -306,10 +306,10 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 		}
 		if (tmp2)
 		{
-			bar_e = (int)(tmp1/tmp3+0.499);
+			bar_e = (int)(tmp1 / tmp3 + 0.499);
 			if (bar_e > 63)
 				bar_e = 63;
-			q[j*m+j] = tmp1;
+			q[j * m + j] = tmp1;
 		}
 		// heterozygous
 		for (k=j+1; k < m; ++k)

@@ -61,7 +61,7 @@ int main_ld(int argc, char *argv[])
 		std::string scaffold_name(t.h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
 		winc.seekp(0, std::ios::end);
-		winc << ":" << beg+(cw*t.win_size)+1 << "-" << ((cw+1)*t.win_size)+(beg-1);
+		winc << ":" << beg + (cw * t.win_size) + 1 << "-" << ((cw + 1) * t.win_size) + (beg - 1);
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero

@@ -3,16 +3,6 @@
 
 #include "bam.h"
 
-/*!
-  @header
-
-  This file provides higher level of I/O routines and unifies the APIs
-  for SAM and BAM formats. These APIs are more convenient and
-  recommended.
-
-  @copyright Genome Research Ltd.
- */
-
 /*! @typedef
   @abstract SAM/BAM file handler
   @field  type    type of the handler; bit 1 for BAM, 2 for reading and bit 3-4 for flag format
@@ -63,33 +53,6 @@ extern "C" {
 	  @param  fp    file handler to be closed
 	 */
 	void samclose(samfile_t *fp);
-
-	/*!
-	  @abstract     Read one alignment
-	  @param  fp    file handler
-	  @param  b     alignment
-	  @return       bytes read
-	 */
-	int samread(samfile_t *fp, bam1_t *b);
-
-	/*!
-	  @abstract     Write one alignment
-	  @param  fp    file handler
-	  @param  b     alignment
-	  @return       bytes written
-	 */
-	int samwrite(samfile_t *fp, const bam1_t *b);
-
-	/*!
-	  @abstract     Get the pileup for a whole alignment file
-	  @param  fp    file handler
-	  @param  mask  mask transferred to bam_plbuf_set_mask()
-	  @param  func  user defined function called in the pileup process
-	  #param  data  user provided data for func()
-	 */
-	int sampileup(samfile_t *fp, int mask, bam_pileup_f func, void *data);
-
-	char *samfaipath(const char *fn_ref);
 
 #ifdef __cplusplus
 }
