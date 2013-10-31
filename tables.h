@@ -1,7 +1,7 @@
 /** \file tables.h
  *  \brief Header within definitions of tables
  *  \author Daniel Garrigan
- *  \version 0.3
+ *  \version 0.4
  */
 #ifdef __cplusplus 
 extern "C" {

@@ -11,7 +11,7 @@ static inline int bam_is_big_endian()
 {
 	long int one;
 	one = 1;
-	return !(*((char *)(&one)));
+	return !(*((char*)(&one)));
 }
 
 static inline uint16_t bam_swap_endian_2(uint16_t v)
@@ -43,6 +43,7 @@ static inline uint64_t bam_swap_endian_8(uint64_t v)
 	v = ((v & 0x0000FFFF0000FFFFULL) << 16) | ((v & 0xFFFF0000FFFF0000ULL) >> 16);
 	return ((v & 0x00FF00FF00FF00FFULL) << 8) | ((v & 0xFF00FF00FF00FF00ULL) >> 8);
 }
+
 static inline void *bam_swap_endian_8p(void *x)
 {
 	*(uint64_t*)x = bam_swap_endian_8(*(uint64_t*)x);

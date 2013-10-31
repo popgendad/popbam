@@ -11,9 +11,11 @@
   @field  tamw  SAM file handler for writing; valid if type == 0
   @field  header  header struct
  */
-typedef struct {
+typedef struct
+{
 	int type;
-	union {
+	union
+	{
 		tamFile tamr;
 		bamFile bam;
 		FILE *tamw;

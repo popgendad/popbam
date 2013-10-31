@@ -28,14 +28,9 @@
 #include <stdio.h>
 #include <zlib.h>
 #include <zconf.h>
-#ifdef _USE_KNETFILE
-#include "knetfile.h"
-#endif
 
 #ifdef _MSC_VER
-#define STIN static __inline
-#else
-#define STIN static inline
+#define inline __inline
 #endif
 
 #if defined(_WIN32) || defined(_MSC_VER)
@@ -49,28 +44,22 @@ extern int fseeko(FILE *stream, off_t offset, int whence);
 //typedef int8_t bool;
 typedef int8_t bgzf_byte_t;
 
-typedef struct {
-    int file_descriptor;
-    char open_mode;  // 'r' or 'w'
-    int16_t owned_file, compress_level;
-#ifdef _USE_KNETFILE
-	union {
-		knetFile *fpr;
-		FILE *fpw;
-	} x;
-#else
-    FILE *file;
-#endif
-    int uncompressed_block_size;
-    int compressed_block_size;
-    void *uncompressed_block;
-    void *compressed_block;
-    int64_t block_address;
-    int block_length;
-    int block_offset;
+typedef struct
+{
+	int file_descriptor;
+	char open_mode;                                  // 'r' or 'w'
+	int16_t owned_file, compress_level;
+	FILE *file;
+	int uncompressed_block_size;
+	int compressed_block_size;
+	void *uncompressed_block;
+	void *compressed_block;
+	int64_t block_address;
+	int block_length;
+	int block_offset;
 	int cache_size;
-    const char *error;
-	void *cache;                   // a pointer to a hash table
+	const char *error;
+	void *cache;                                     // a pointer to a hash table
 } BGZF;
 
 #ifdef __cplusplus
@@ -150,28 +139,30 @@ int bgzf_check_bgzf(const char *fn);
 }
 #endif
 
-STIN int bgzf_getc(BGZF *fp)
+static inline int bgzf_getc(BGZF *fp)
 {
 	int c;
 
 	if (fp->block_offset >= fp->block_length)
 	{
+		// error
 		if (bgzf_read_block(fp) != 0)
-			return -2; /* error */
+			return -2;
+
+		// end-of-file
 		if (fp->block_length == 0)
-			return -1; /* end-of-file */
+			return -1;
 	}
+
 	c = ((unsigned char*)fp->uncompressed_block)[fp->block_offset++];
-    if (fp->block_offset == fp->block_length)
+
+	if (fp->block_offset == fp->block_length)
 	{
-#ifdef _USE_KNETFILE
-        fp->block_address = knet_tell(fp->x.fpr);
-#else
-        fp->block_address = ftello(fp->file);
-#endif
-        fp->block_offset = 0;
-        fp->block_length = 0;
-    }
+		fp->block_address = ftello(fp->file);
+		fp->block_offset = 0;
+		fp->block_length = 0;
+	}
+
 	return c;
 }
 
