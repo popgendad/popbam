@@ -3,7 +3,7 @@ CC=               gcc
 CFLAGS=           -D_FILE_OFFSET_BITS=64
 CXX=              g++
 CXXFLAGS=         -D_FILE_OFFSET_BITS=64 -std=c++0x
-C_RELEASE_FLAGS=  -Wno-unused -Wno-sign-compare -Wno-write-strings -Wunused-result -O2
+C_RELEASE_FLAGS=  -Wno-unused -Wno-sign-compare -Wno-write-strings -Wno-unused-result -O2
 C_DEBUG_FLAGS=    -Wall -ggdb -DDEBUG
 C_PROFILE_FLAGS=  -Wall -O2 -pg
 CSOURCES=          bam_aux.c bam.c bam_index.c faidx.c kstring.c bgzf.c \
