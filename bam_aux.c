@@ -50,12 +50,12 @@ uint8_t *bam_aux_get_core(bam1_t *b, const char tag[2])
 uint8_t *bam_aux_get(const bam1_t *b, const char tag[2])
 {
 	uint8_t *s;
-	int y = tag[0]<<8 | tag[1];
+	int y = tag[0] << 8 | tag[1];
 
 	s = bam1_aux(b);
 	while ((s < b->data) + b->data_len)
 	{
-		int x = (int)s[0]<<8 | s[1];
+		int x = (int)s[0] << 8 | s[1];
 		s += 2;
 		if (x == y)
 			return s;
@@ -126,7 +126,9 @@ int32_t bam_aux2i(const uint8_t *s)
 
 	if (s == 0)
 		return 0;
+
 	type = *s++;
+
 	if (type == 'c')
 		return (int32_t)*(int8_t*)s;
 	else if (type == 'C')
@@ -147,6 +149,7 @@ float bam_aux2f(const uint8_t *s)
 
 	if (s == 0)
 		return 0.0;
+
 	if (type == 'f')
 		return *(float*)s;
 	else
@@ -159,6 +162,7 @@ double bam_aux2d(const uint8_t *s)
 
 	if (s == 0)
 		return 0.0;
+
 	if (type == 'd')
 		return *(double*)s;
 	else
@@ -171,6 +175,7 @@ char bam_aux2A(const uint8_t *s)
 
 	if (s == 0)
 		return 0;
+
 	if (type == 'A')
 		return *(char*)s;
 	else
@@ -183,6 +188,7 @@ char *bam_aux2Z(const uint8_t *s)
 
 	if (s == 0)
 		return 0;
+
 	if ((type == 'Z') || (type == 'H'))
 		return (char*)s;
 	else

@@ -145,7 +145,7 @@ bam_header_t *bam_header_read(bamFile fp)
 	if (bam_is_be)
 		bam_swap_endian_4p(&header->l_text);
 	
-	header->text = (char*)calloc(header->l_text+1, 1);
+	header->text = (char*)calloc(header->l_text + 1, 1);
 	bam_read(fp, header->text, header->l_text);
 	bam_read(fp, &header->n_targets, 4);
 	
@@ -242,7 +242,7 @@ static void swap_endian_data(const bam1_core_t *c, int data_len, uint8_t *data)
 	uint8_t *s;
 	uint32_t i, *cigar = (uint32_t*)(data + c->l_qname);
 
-	s = data + c->n_cigar*4 + c->l_qname + c->l_qseq + (c->l_qseq + 1)/2;
+	s = data + c->n_cigar * 4 + c->l_qname + c->l_qseq + (c->l_qseq + 1) / 2;
 	
 	for (i=0; i < c->n_cigar; ++i)
 		bam_swap_endian_4p(&cigar[i]);
@@ -452,7 +452,7 @@ int bam_remove_B(bam1_t *b)
 				if (bam_cigar_type(op1)&1)
 				{
 					// consume the query
-					if (u + len1 >= len)
+					if ((u + len1) >= len)
 					{
 						// stop
 						new_cigar[t] -= (len - u) << BAM_CIGAR_SHIFT;
@@ -474,7 +474,7 @@ int bam_remove_B(bam1_t *b)
 		{
 			// other CIGAR operations
 			new_cigar[l++] = cigar[k];
-			if (bam_cigar_type(op)&1)
+			if (bam_cigar_type(op) & 1)
 			{
 				// consume the query
 				if (i != j)

@@ -75,7 +75,7 @@ static bam_header_t *hash2header(const kh_ref_t *hash)
 		{
 			i = (int)kh_value(hash, k);
 			header->target_name[i] = (char*)kh_key(hash, k);
-			header->target_len[i] = kh_value(hash, k)>>32;
+			header->target_len[i] = kh_value(hash, k) >> 32;
 		}
 	}
 	bam_init_header_hash2(header);
@@ -122,7 +122,7 @@ bam_header_t *sam_header_read2(const char *fn)
 			fprintf(stderr, "[sam_header_read2] duplicated sequence name: %s\n", s);
 			error = 1;
 		}
-		kh_value(hash, k) = (uint64_t)len<<32 | i;
+		kh_value(hash, k) = (uint64_t)len << 32 | i;
 		if (dret != '\n')
 			while ((c = ks_getc(ks)) != '\n' && c != -1);
 	}
@@ -163,7 +163,8 @@ static inline void parse_error(int64_t n_lines, const char * __restrict msg)
 
 static inline void append_text(bam_header_t *header, kstring_t *str)
 {
-	size_t x = header->l_text, y = header->l_text + str->l + 2; // 2 = 1 byte dret + 1 byte null
+	// 2 = 1 byte dret + 1 byte null
+	size_t x = header->l_text, y = header->l_text + str->l + 2;
 	
 	kroundup32(x);
 	kroundup32(y);
@@ -179,6 +180,7 @@ static inline void append_text(bam_header_t *header, kstring_t *str)
 			abort();
 		}
 	}
+
 	// Sanity check
 	if (header->l_text+str->l+1 >= header->n_text)
 	{
@@ -186,7 +188,8 @@ static inline void append_text(bam_header_t *header, kstring_t *str)
 		abort();
 	}
 
-	strncpy(header->text + header->l_text, str->s, str->l+1); // we cannot use strcpy() here.
+	// we cannot use strcpy() here.
+	strncpy(header->text + header->l_text, str->s, str->l+1);
 	header->l_text += str->l + 1;
 	header->text[header->l_text] = 0;
 }
@@ -260,19 +263,23 @@ bam_header_t *sam_header_read(tamFile fp)
 	while (((ret = ks_getuntil(fp->ks, KS_SEP_TAB, str, &dret)) >= 0) && (str->s[0] == '@'))
 	{
 		// skip header
-		str->s[str->l] = dret; // note that str->s is NOT null terminated!!
+		// note that str->s is NOT null terminated!!
+		str->s[str->l] = dret;
 		append_text(header, str);
 		if (dret != '\n')
 		{
 			ret = ks_getuntil(fp->ks, '\n', str, &dret);
-			str->s[str->l] = '\n'; // NOT null terminated!!
+			// NOT null terminated!!
+			str->s[str->l] = '\n';
 			append_text(header, str);
 		}
 		++fp->n_lines;
 	}
+
 	sam_header_parse(header);
 	bam_init_header_hash2(header);
 	fp->is_first = 1;
+
 	return header;
 }
 
@@ -280,12 +287,15 @@ tamFile sam_open(const char *fn)
 {
 	tamFile fp;
 	gzFile gzfp = (strcmp(fn, "-") == 0) ? gzdopen(fileno(stdin), "rb") : gzopen(fn, "rb");
+
 	if (gzfp == 0)
 		return 0;
+
 	fp = (tamFile)calloc(1, sizeof(struct __tamFile_t));
 	fp->str = (kstring_t*)calloc(1, sizeof(kstring_t));
 	fp->fp = gzfp;
 	fp->ks = ks_init(fp->fp);
+
 	return fp;
 }
 

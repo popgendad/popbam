@@ -35,10 +35,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _MSC_VER
+#include <io.h>
+#endif
 #include "razf.h"
 
 #ifdef _MSC_VER
 #define inline __inline
+#define lseek _lseek
+#define setmode _setmode
+#define write _write
+#define open _open
+#define read _read
 #endif
 
 #if ZLIB_VERNUM < 0x1221
@@ -101,8 +109,9 @@ static void add_zindex(RAZF *rz, int64_t in, int64_t out)
         rz->index->bin_offsets  = (int64_t*)realloc(rz->index->bin_offsets, sizeof(int64_t) * (rz->index->cap/RZ_BIN_SIZE + 1));
     }
 
-    if (rz->index->size % RZ_BIN_SIZE == 0)
+    if ((rz->index->size % RZ_BIN_SIZE) == 0)
         rz->index->bin_offsets[rz->index->size / RZ_BIN_SIZE] = out;
+
     rz->index->cell_offsets[rz->index->size] = out - rz->index->bin_offsets[rz->index->size / RZ_BIN_SIZE];
     rz->index->size ++;
 }
@@ -114,6 +123,7 @@ static void save_zindex(RAZF *rz, int fd)
     int is_be;
 
     is_be = is_big_endian();
+
     if (is_be)
         write(fd, &rz->index->size, sizeof(int));
     else
@@ -121,14 +131,18 @@ static void save_zindex(RAZF *rz, int fd)
         v32 = byte_swap_4((uint32_t)rz->index->size);
         write(fd, &v32, sizeof(uint32_t));
     }
+
     v32 = rz->index->size / RZ_BIN_SIZE + 1;
+
     if (!is_be)
     {
         for (i=0; i < v32; i++)
             rz->index->bin_offsets[i]  = byte_swap_8((uint64_t)rz->index->bin_offsets[i]);
+
         for (i=0; i < rz->index->size; i++)
             rz->index->cell_offsets[i] = byte_swap_4((uint32_t)rz->index->cell_offsets[i]);
     }
+
     write(fd, rz->index->bin_offsets, sizeof(int64_t) * v32);
     write(fd, rz->index->cell_offsets, sizeof(int32_t) * rz->index->size);
 }
@@ -141,12 +155,16 @@ static void load_zindex(RAZF *rz, int fd)
 
     if (!rz->load_index)
         return;
+
     if (rz->index == NULL)
         rz->index = (ZBlockIndex*)malloc(sizeof(ZBlockIndex));
+
     is_be = is_big_endian();
     read(fd, &rz->index->size, sizeof(int));
+
     if (!is_be)
         rz->index->size = byte_swap_4((uint32_t)rz->index->size);
+
     rz->index->cap = rz->index->size;
     v32 = rz->index->size / RZ_BIN_SIZE + 1;
     rz->index->bin_offsets  = (int64_t*)malloc(sizeof(int64_t) * v32);
@@ -158,6 +176,7 @@ static void load_zindex(RAZF *rz, int fd)
     {
         for (i=0; i < v32; i++)
             rz->index->bin_offsets[i] = byte_swap_8((uint64_t)rz->index->bin_offsets[i]);
+
         for (i=0; i < rz->index->size; i++)
             rz->index->cell_offsets[i] = byte_swap_4((uint32_t)rz->index->cell_offsets[i]);
     }
@@ -179,21 +198,22 @@ static RAZF* razf_open_w(int fd)
     rz = (RAZF*)calloc(1, sizeof(RAZF));
     rz->mode = 'w';
     rz->filedes = fd;
+
     rz->stream = (z_stream*)calloc(sizeof(z_stream), 1);
     rz->inbuf  = malloc(RZ_BUFFER_SIZE);
     rz->outbuf = malloc(RZ_BUFFER_SIZE);
     rz->index = (ZBlockIndex*)calloc(sizeof(ZBlockIndex), 1);
+
     deflateInit2(rz->stream, RZ_COMPRESS_LEVEL, Z_DEFLATED, WINDOW_BITS + 16, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
     rz->stream->avail_out = RZ_BUFFER_SIZE;
-    rz->stream->next_out  = (Bytef*)rz->outbuf;
+    rz->stream->next_out = (Bytef*)rz->outbuf;
     rz->header = (gz_header*)calloc(sizeof(gz_header), 1);
-    rz->header->os    = 0x03; //Unix
-    rz->header->text  = 0;
-    rz->header->time  = 0;
+    rz->header->os = 0x03;
+    rz->header->text = 0;
+    rz->header->time = 0;
     rz->header->extra = (Bytef*)malloc(7);
     strncpy((char*)rz->header->extra, "RAZF", 4);
-    rz->header->extra[4] = 1; // obsolete field
-    // block size = RZ_BLOCK_SIZE, Big-Endian
+    rz->header->extra[4] = 1;
     rz->header->extra[5] = RZ_BLOCK_SIZE >> 8;
     rz->header->extra[6] = RZ_BLOCK_SIZE & 0xFF;
     rz->header->extra_len = 7;
@@ -217,14 +237,18 @@ static void _razf_write(RAZF* rz, const void *data, int size)
         tout = rz->stream->avail_out;
         deflate(rz->stream, Z_NO_FLUSH);
         rz->out += tout - rz->stream->avail_out;
+
         if (rz->stream->avail_out)
             break;
+
         write(rz->filedes, rz->outbuf, RZ_BUFFER_SIZE - rz->stream->avail_out);
         rz->stream->avail_out = RZ_BUFFER_SIZE;
         rz->stream->next_out  = (Bytef*)rz->outbuf;
+
         if (rz->stream->avail_in == 0)
             break;
     };
+
     rz->in += size - rz->stream->avail_in;
     rz->block_off += size - rz->stream->avail_in;
 }
@@ -251,6 +275,7 @@ static void razf_flush(RAZF *rz)
         tout = rz->stream->avail_out;
         deflate(rz->stream, Z_FULL_FLUSH);
         rz->out += tout - rz->stream->avail_out;
+
         if (rz->stream->avail_out == 0)
         {
             write(rz->filedes, rz->outbuf, RZ_BUFFER_SIZE - rz->stream->avail_out);
@@ -280,6 +305,7 @@ static void razf_end_flush(RAZF *rz)
         tout = rz->stream->avail_out;
         deflate(rz->stream, Z_FINISH);
         rz->out += tout - rz->stream->avail_out;
+
         if(rz->stream->avail_out < RZ_BUFFER_SIZE)
         {
             write(rz->filedes, rz->outbuf, RZ_BUFFER_SIZE - rz->stream->avail_out);
@@ -331,9 +357,9 @@ int razf_write(RAZF* rz, const void *data, int size)
     char *dd = (char*)data;
 
     ori_size = size;
-    next_block = ((rz->in/RZ_BLOCK_SIZE)+1)*RZ_BLOCK_SIZE;
+    next_block = ((rz->in / RZ_BLOCK_SIZE) + 1) * RZ_BLOCK_SIZE;
 
-    while (rz->in+rz->buf_len+size >= next_block)
+    while ((rz->in + rz->buf_len+size) >= next_block)
     {
         n = next_block - rz->in - rz->buf_len;
         _razf_buffered_write(rz, (void*)dd, n);
@@ -343,6 +369,7 @@ int razf_write(RAZF* rz, const void *data, int size)
         add_zindex(rz, rz->in, rz->out);
         next_block = ((rz->in/RZ_BLOCK_SIZE)+1)*RZ_BLOCK_SIZE;
     }
+
     _razf_buffered_write(rz, (void*)dd, size);
 
     return ori_size;
@@ -358,8 +385,10 @@ static int _read_gz_header(unsigned char *data, int size, int *extra_off, int *e
 
     if (size < 2)
         return 0;
+
     if ((data[0] != 0x1f) || (data[1] != 0x8b))
         return 0;
+
     if (size < 4)
         return 0;
 
@@ -378,9 +407,11 @@ static int _read_gz_header(unsigned char *data, int size, int *extra_off, int *e
     {
         if (size < n+2)
             return 0;
+
         len = ((int)data[n + 1] << 8) | data[n];
         n += 2;
         *extra_off = n;
+
         while (len)
         {
             if (n >= size)
@@ -390,10 +421,13 @@ static int _read_gz_header(unsigned char *data, int size, int *extra_off, int *e
         }
         *extra_len = n - (*extra_off);
     }
+
     if (flags & ORIG_NAME)
         while((n < size) && data[n++]);
+
     if (flags & COMMENT)
         while((n < size) && data[n++]);
+
     if (flags & HEAD_CRC)
     {
         if (n+2 > size)
@@ -417,6 +451,7 @@ static RAZF* razf_open_r(int fd, int _load_index)
 
     rz = (RAZF*)calloc(1, sizeof(RAZF));
     rz->mode = 'r';
+
 #ifdef _WIN32
     setmode(fd, O_BINARY);
 #endif
@@ -427,6 +462,7 @@ static RAZF* razf_open_r(int fd, int _load_index)
     rz->end = rz->src_end = 0x7FFFFFFFFFFFFFFFLL;
     n = read(rz->filedes, rz->inbuf, RZ_BUFFER_SIZE);
     ret = _read_gz_header((unsigned char*)rz->inbuf, n, &ext_off, &ext_len);
+
     if (ret == 0)
     {
 PLAIN_FILE:
@@ -436,15 +472,18 @@ PLAIN_FILE:
         rz->buf_len = n;
         free(rz->stream);
         rz->stream = NULL;
+
         return rz;
     }
     rz->header_size = ret;
     ret = inflateInit2(rz->stream, -WINDOW_BITS);
+
     if (ret != Z_OK)
     {
         inflateEnd(rz->stream);
         goto PLAIN_FILE;
     }
+
     rz->stream->avail_in = n - rz->header_size;
     rz->stream->next_in  = (Bytef*)rz->inbuf + rz->header_size;
     rz->stream->avail_out = RZ_BUFFER_SIZE;
@@ -457,13 +496,16 @@ PLAIN_FILE:
 
     if ((ext_len < 7) || (memcmp((Bytef*)rz->inbuf + ext_off, c, 4) != 0))
         return rz;
+
     if (((((unsigned char*)rz->inbuf)[ext_off + 5] << 8) | ((unsigned char*)rz->inbuf)[ext_off + 6]) != RZ_BLOCK_SIZE)
     {
         fprintf(stderr, " -- WARNING: RZ_BLOCK_SIZE is not %d, treat source as gz file.  in %s -- %s:%d --\n", RZ_BLOCK_SIZE, __FUNCTION__, __FILE__, __LINE__);
         return rz;
     }
+
     rz->load_index = _load_index;
     rz->file_type = FILE_TYPE_RZ;
+
     if(lseek(fd, -16, SEEK_END) == -1)
     {
 UNSEEKABLE:
@@ -476,6 +518,7 @@ UNSEEKABLE:
         is_be = is_big_endian();
         rz->seekable = 1;
         read(fd, &end, sizeof(int64_t));
+
         if (!is_be)
             rz->src_end = (int64_t)byte_swap_8((uint64_t)end);
         else
@@ -558,6 +601,7 @@ static inline RAZF* _razf_open(const char *filename, const char *mode, int _load
 #endif
         if (fd < 0)
             return NULL;
+
         rz = razf_open_w(fd);
     }
     else
@@ -615,15 +659,19 @@ static int _razf_read(RAZF* rz, void *data, int size)
 
     if (rz->z_eof || rz->z_err)
         return 0;
+
     if (rz->file_type == FILE_TYPE_PLAIN)
     {
         ret = read(rz->filedes, data, size);
         if (ret == 0)
             rz->z_eof = 1;
+
         return ret;
     }
+
     rz->stream->avail_out = size;
     rz->stream->next_out  = (Bytef*)data;
+
     while (rz->stream->avail_out)
     {
         if (rz->stream->avail_in == 0)
@@ -664,7 +712,7 @@ static int _razf_read(RAZF* rz, void *data, int size)
             break;
         }
 
-        if ((rz->stream->data_type&128) && !(rz->stream->data_type&64))
+        if ((rz->stream->data_type & 128) && !(rz->stream->data_type & 64))
         {
             rz->buf_flush = 1;
             rz->next_block_pos = rz->in;
@@ -682,6 +730,7 @@ int razf_read(RAZF *rz, void *data, int size)
     char *dd = (char*)data;
 
     ori_size = size;
+
     while (size > 0)
     {
         if (rz->buf_len)
@@ -690,6 +739,7 @@ int razf_read(RAZF *rz, void *data, int size)
             {
                 for (i=0; i < size; i++)
                     dd[i] = ((char*)rz->outbuf + rz->buf_off)[i];
+
                 rz->buf_off += size;
                 rz->buf_len -= size;
                 dd += size;
@@ -701,11 +751,13 @@ int razf_read(RAZF *rz, void *data, int size)
             {
                 for (i=0; i < rz->buf_len; i++)
                     dd[i] = ((char*)rz->outbuf + rz->buf_off)[i];
+
                 dd += rz->buf_len;
                 size -= rz->buf_len;
                 rz->block_off += rz->buf_len;
                 rz->buf_off = 0;
                 rz->buf_len = 0;
+
                 if (rz->buf_flush)
                 {
                     rz->block_pos = rz->next_block_pos;
@@ -720,9 +772,12 @@ int razf_read(RAZF *rz, void *data, int size)
             rz->block_off = 0;
             rz->buf_flush = 0;
         }
+
         if (rz->buf_flush)
             continue;
+
         rz->buf_len = _razf_read(rz, rz->outbuf, RZ_BUFFER_SIZE);
+
         if (rz->z_eof && (rz->buf_len == 0))
             break;
     }
@@ -756,6 +811,7 @@ int razf_skip(RAZF* rz, int size)
                 rz->buf_off = 0;
                 rz->buf_len = 0;
                 rz->block_off += rz->buf_len;
+
                 if (rz->buf_flush)
                 {
                     rz->block_pos = rz->next_block_pos;
@@ -773,7 +829,9 @@ int razf_skip(RAZF* rz, int size)
 
         if (rz->buf_flush)
             continue;
+
         rz->buf_len = _razf_read(rz, rz->outbuf, RZ_BUFFER_SIZE);
+
         if (rz->z_eof || rz->z_err)
             break;
     }
@@ -821,7 +879,7 @@ int64_t razf_jump(RAZF *rz, int64_t block_start, int block_offset)
     }
 
     //automaticly revist wrong block_start
-    if (block_start  == 0)
+    if (block_start == 0)
         block_start = rz->header_size;
 
     _razf_reset_read(rz, block_start, 0);
@@ -844,6 +902,7 @@ int64_t razf_seek(RAZF* rz, int64_t pos, int wher)
         pos += rz->out;
     else if (wher == SEEK_END)
         pos += rz->src_end;
+
     if (rz->file_type == FILE_TYPE_PLAIN)
     {
         seek_pos = lseek(rz->filedes, pos, SEEK_SET);
@@ -857,19 +916,26 @@ int64_t razf_seek(RAZF* rz, int64_t pos, int wher)
             goto SKIP;
         return rz->out;
     }
+
     if (pos == rz->out)
         return pos;
+
     if (pos > rz->src_end)
         return rz->out;
+
     if (!rz->seekable || !rz->load_index)
         if(pos >= rz->out)
             goto SKIP;
+
     idx = pos / RZ_BLOCK_SIZE - 1;
-    seek_pos = (idx < 0) ? rz->header_size:(rz->index->cell_offsets[idx] + rz->index->bin_offsets[idx/RZ_BIN_SIZE]);
-    new_out  = (idx+1) * RZ_BLOCK_SIZE;
+    seek_pos = (idx < 0) ? rz->header_size:(rz->index->cell_offsets[idx] + rz->index->bin_offsets[idx / RZ_BIN_SIZE]);
+    new_out  = (idx + 1) * RZ_BLOCK_SIZE;
+
     if ((pos > rz->out) && (new_out <= rz->out))
         goto SKIP;
+
     _razf_reset_read(rz, seek_pos, new_out);
+
 SKIP:
     razf_skip(rz, (int)(pos - rz->out));
 
@@ -878,14 +944,15 @@ SKIP:
 
 uint64_t razf_tell2(RAZF *rz)
 {
-    return (uint64_t)rz->block_pos<<16 | (rz->block_off & 0xffff);
+    return (uint64_t)rz->block_pos << 16 | (rz->block_off & 0xffff);
 }
 
 int64_t razf_seek2(RAZF *rz, uint64_t voffset, int wher)
 {
     if (wher != SEEK_SET)
         return -1;
-    return razf_jump(rz, voffset>>16, voffset & 0xffff);
+
+    return razf_jump(rz, voffset >> 16, voffset & 0xffff);
 }
 
 void razf_close(RAZF *rz)
@@ -896,6 +963,7 @@ void razf_close(RAZF *rz)
         razf_end_flush(rz);
         deflateEnd(rz->stream);
         save_zindex(rz, rz->filedes);
+
         if (is_big_endian())
         {
             write(rz->filedes, &rz->in, sizeof(int64_t));
@@ -915,10 +983,13 @@ void razf_close(RAZF *rz)
         if(rz->stream)
             inflateEnd(rz->stream);
     }
+
     if (rz->inbuf)
         free(rz->inbuf);
+
     if (rz->outbuf)
         free(rz->outbuf);
+
     if (rz->header)
     {
         free(rz->header->extra);
@@ -926,12 +997,14 @@ void razf_close(RAZF *rz)
         free(rz->header->comment);
         free(rz->header);
     }
+
     if (rz->index)
     {
         free(rz->index->bin_offsets);
         free(rz->index->cell_offsets);
         free(rz->index);
     }
+
     free(rz->stream);
     close(rz->filedes);
     free(rz);

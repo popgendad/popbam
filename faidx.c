@@ -50,10 +50,11 @@ static inline void fai_insert_index(faidx_t *idx, const char *name, int len, int
     khint_t k;
     int ret;
     faidx1_t t;
+
     if (idx->n == idx->m)
     {
-        idx->m = idx->m? idx->m<<1 : 16;
-        idx->name = (char**)realloc(idx->name, sizeof(void*) * idx->m);
+        idx->m = idx->m ? idx->m << 1 : 16;
+        idx->name = (char**)realloc(idx->name, sizeof(void*) *idx->m);
     }
     idx->name[idx->n] = strdup(name);
     k = kh_put(s, idx->hash, idx->name[idx->n], &ret);
@@ -115,6 +116,7 @@ faidx_t *fai_build_core(RAZF *rz)
                 name[l_name++] = c;
             }
             name[l_name] = '\0';
+
             if (ret == 0)
             {
                 fprintf(stderr, "[fai_build_core] the last entry has no sequence\n");
@@ -122,8 +124,10 @@ faidx_t *fai_build_core(RAZF *rz)
                 fai_destroy(idx);
                 return 0;
             }
+
             if (c != '\n')
                 while (razf_read(rz, &c, 1) && (c != '\n'));
+
             state = 1;
             len = 0;
             offset = razf_tell(rz);
@@ -137,9 +141,12 @@ faidx_t *fai_build_core(RAZF *rz)
                 fai_destroy(idx);
                 return 0;
             }
+
             if (state == 2)
                 state = 3;
+
             l1 = l2 = 0;
+
             do
             {
                 ++l1;
@@ -147,6 +154,7 @@ faidx_t *fai_build_core(RAZF *rz)
                     ++l2;
             }
             while ((ret = razf_read(rz, &c, 1)) && (c != '\n'));
+
             if ((state == 3) && l2)
             {
                 fprintf(stderr, "[fai_build_core] different line length in sequence '%s'.\n", name);
@@ -154,8 +162,10 @@ faidx_t *fai_build_core(RAZF *rz)
                 fai_destroy(idx);
                 return 0;
             }
+
             ++l1;
             len += l2;
+
             if (state == 1)
             {
                 line_len = l1;
@@ -169,6 +179,7 @@ faidx_t *fai_build_core(RAZF *rz)
             }
         }
     }
+
     fai_insert_index(idx, name, len, line_len, line_blen, offset);
     free(name);
 
@@ -235,10 +246,13 @@ void fai_destroy(faidx_t *fai)
 
     for (i=0; i < fai->n; ++i)
         free(fai->name[i]);
+
     free(fai->name);
     kh_destroy(s, fai->hash);
+
     if (fai->rz)
         razf_close(fai->rz);
+
     free(fai);
 }
 
@@ -253,15 +267,18 @@ int fai_build(const char *fn)
     sprintf(str, "%s.fai", fn);
 
     rz = razf_open(fn, "r");
+
     if (rz == 0)
     {
         fprintf(stderr, "[fai_build] fail to open the FASTA file %s\n",fn);
         free(str);
         return -1;
     }
+
     fai = fai_build_core(rz);
     razf_close(rz);
     fp = fopen(str, "wb");
+
     if (fp == 0)
     {
         fprintf(stderr, "[fai_build] fail to write FASTA index %s\n",str);
@@ -269,6 +286,7 @@ int fai_build(const char *fn)
         free(str);
         return -1;
     }
+
     fai_save(fai, fp);
     fclose(fp);
     free(str);
@@ -286,11 +304,13 @@ faidx_t *fai_load(const char *fn)
     str = (char*)calloc(strlen(fn) + 5, 1);
     sprintf(str, "%s.fai", fn);
     fp = fopen(str, "rb");
+
     if (fp == 0)
     {
         fprintf(stderr, "[fai_load] build FASTA index.\n");
         fai_build(fn);
         fp = fopen(str, "rb");
+
         if (fp == 0)
         {
             fprintf(stderr, "[fai_load] fail to open FASTA index.\n");
@@ -303,6 +323,7 @@ faidx_t *fai_load(const char *fn)
     fclose(fp);
     fai->rz = razf_open(fn, "rb");
     free(str);
+
     if (fai->rz == 0)
     {
         fprintf(stderr, "[fai_load] fail to open FASTA file.\n");
@@ -341,6 +362,7 @@ char *fai_fetch(const faidx_t *fai, const char *str, int *len)
         if (s[i] == ':')
             break;
     }
+
     if (i >= 0)
         name_end = i;
 
@@ -359,6 +381,7 @@ char *fai_fetch(const faidx_t *fai, const char *str, int *len)
         //malformated region string; then take str as the name
         if ((i < l) || (n_hyphen > 1))
             name_end = l;
+
         s[name_end] = 0;
         iter = kh_get(s, h, s);
 
@@ -390,12 +413,16 @@ char *fai_fetch(const faidx_t *fai, const char *str, int *len)
         for (i=k=name_end+1; i < l; ++i)
             if (s[i] != ',')
                 s[k++] = s[i];
+
         s[k] = 0;
         beg = atoi(s+name_end+1);
+
         for (i=name_end+1; i != k; ++i)
             if (s[i] == '-')
                 break;
+
         end = i < k ? atoi(s+i+1) : val.len;
+
         if (beg > 0)
             --beg;
     }
@@ -404,21 +431,27 @@ char *fai_fetch(const faidx_t *fai, const char *str, int *len)
         beg = 0;
         end = val.len;
     }
+
     if (beg >= val.len)
         beg = val.len;
+
     if (end >= val.len)
         end = val.len;
+
     if (beg > end)
         beg = end;
+
     free(s);
 
     // now retrieve the sequence
     l = 0;
     s = (char*)malloc(end - beg + 2);
     razf_seek(fai->rz, val.offset + beg / val.line_blen * val.line_len + beg % val.line_blen, SEEK_SET);
-    while ((razf_read(fai->rz, &c, 1) == 1) && (l < end - beg && !fai->rz->z_err))
+
+    while ((razf_read(fai->rz, &c, 1) == 1) && ((l < (end - beg)) && !fai->rz->z_err))
         if (isgraph(c))
             s[l++] = c;
+
     s[l] = '\0';
     *len = l;
 
@@ -440,15 +473,20 @@ char *faidx_fetch_seq(const faidx_t *fai, char *c_name, int p_beg_i, int p_end_i
 
     // Adjust position
     iter = kh_get(s, fai->hash, c_name);
+
     if (iter == kh_end(fai->hash))
         return 0;
+
     val = kh_value(fai->hash, iter);
+
     if (p_end_i < p_beg_i)
         p_beg_i = p_end_i;
+
     if (p_beg_i < 0)
         p_beg_i = 0;
     else if (val.len <= p_beg_i)
         p_beg_i = val.len - 1;
+
     if (p_end_i < 0)
         p_end_i = 0;
     else if(val.len <= p_end_i)
@@ -458,9 +496,11 @@ char *faidx_fetch_seq(const faidx_t *fai, char *c_name, int p_beg_i, int p_end_i
     l = 0;
     seq = (char*)malloc(p_end_i - p_beg_i + 2);
     razf_seek(fai->rz, val.offset + p_beg_i / val.line_blen * val.line_len + p_beg_i % val.line_blen, SEEK_SET);
+
     while ((razf_read(fai->rz, &c, 1) == 1) && (l < p_end_i - p_beg_i + 1))
         if (isgraph(c))
             seq[l++] = c;
+
     seq[l] = '\0';
     *len = l;
 
