@@ -79,7 +79,7 @@ inline void packInt32(uint8_t *buffer, uint32_t value)
     buffer[3] = value>>24;
 }
 
-STIN int bgzf_min(int x, int y)
+static inline int bgzf_min(int x, int y)
 {
     return (x < y) ? x : y;
 }
