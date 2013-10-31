@@ -24,30 +24,37 @@ uint32_t bam_calend(const bam1_core_t *c, const uint32_t *cigar)
 	{
 		int op;
 		int len;
+
 		op  = bam_cigar_op(cigar[k]);
 		len = bam_cigar_oplen(cigar[k]);
+
 		if (op == BAM_CBACK)
 		{
 			// move backward
 			int l;
 			int u;
 			int v;
+
+			// skip trailing 'B'
 			if (k == c->n_cigar-1)
-				break; // skip trailing 'B'
+				break;
+
 			for (l=k-1, u=v=0; l >= 0; --l)
 			{
 				int op1;
 				int len1;
+
 				op1  = bam_cigar_op(cigar[l]);
 				len1 = bam_cigar_oplen(cigar[l]);
+
 				if (bam_cigar_type(op1) & 1)
 				{
 					// consume query
-					if (u + len1 >= len)
+					if ((u + len1) >= len)
 					{
 						// stop
-						if (bam_cigar_type(op1)&2)
-							v += len-u;
+						if (bam_cigar_type(op1) & 2)
+							v += len - u;
 						break;
 					}
 					else
@@ -110,6 +117,7 @@ bam_header_t *bam_header_read(bamFile fp)
 
 	// check EOF
 	i = bgzf_check_EOF(fp);
+
 	if (i < 0)
 	{
 		// If the file is a pipe, checking the EOF marker will *always* fail
@@ -123,7 +131,7 @@ bam_header_t *bam_header_read(bamFile fp)
 	// read "BAM1"
 	magic_len = bam_read(fp, buf, 4);
 	
-	if (magic_len != 4 || strncmp(buf, "BAM\001", 4) != 0)
+	if ((magic_len != 4) || (strncmp(buf, "BAM\001", 4) != 0))
 	{
 		fprintf(stderr, "[bam_header_read] invalid BAM binary header (this is not a BAM file).\n");
 		return 0;
@@ -162,6 +170,7 @@ bam_header_t *bam_header_read(bamFile fp)
 		if (bam_is_be)
 			bam_swap_endian_4p(&header->target_len[i]);
 	}
+
 	return header;
 }
 
@@ -384,12 +393,16 @@ int bam_remove_B(bam1_t *b)
 	// test if removal is necessary
 	if (b->core.flag & BAM_FUNMAP)
 		return 0; // unmapped; do nothing
+	
 	cigar = bam1_cigar(b);
+
 	for (k=0; k < b->core.n_cigar; ++k)
 		if (bam_cigar_op(cigar[k]) == BAM_CBACK)
 			break;
+	
 	if (k == b->core.n_cigar)
 		return 0; // no 'B'
+	
 	if (bam_cigar_op(cigar[0]) == BAM_CBACK)
 		goto rmB_err; // cannot be removed
 
@@ -421,6 +434,7 @@ int bam_remove_B(bam1_t *b)
 	{
 		int op  = bam_cigar_op(cigar[k]);
 		int len = bam_cigar_oplen(cigar[k]);
+
 		if (op == BAM_CBACK)
 		{
 			// the backward operation
@@ -434,6 +448,7 @@ int bam_remove_B(bam1_t *b)
 				// look back
 				int op1  = bam_cigar_op(new_cigar[t]);
 				int len1 = bam_cigar_oplen(new_cigar[t]);
+
 				if (bam_cigar_type(op1)&1)
 				{
 					// consume the query
@@ -447,8 +462,10 @@ int bam_remove_B(bam1_t *b)
 						u += len1;
 				}
 			}
+
+			// squeeze out the zero-length operation
 			if (bam_cigar_oplen(new_cigar[t]) == 0)
-				--t; // squeeze out the zero-length operation
+				--t;
 			l = t + 1;
 			end_j = j;
 			j -= len;
@@ -468,7 +485,7 @@ int bam_remove_B(bam1_t *b)
 					{
 						// construct the consensus
 						c = bam1_seqi(seq, i+u);
-						if (j + u < end_j)
+						if ((j + u) < end_j)
 						{
 							// in an overlap
 							c0 = bam1_seqi(seq, j+u);
