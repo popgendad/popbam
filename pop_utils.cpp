@@ -33,10 +33,11 @@
 #define M_LN10 2.30258509299404568402
 
 typedef char *str_p;
+typedef unsigned short uint16_t;
 
 KHASH_MAP_INIT_STR(s, int)
 KHASH_MAP_INIT_STR(r2l, str_p)
-KSORT_INIT_GENERIC(unsigned short)
+KSORT_INIT_GENERIC(uint16_t)
 
 void bam_init_header_hash(bam_header_t *header);
 
@@ -84,8 +85,8 @@ unsigned long long qfilter(int num_samples, unsigned long long *cb, int min_rmsQ
 
 	for (int i=0; i < num_samples; ++i)
 	{
-		rms = (cb[i] >> (CHAR_BIT*6)) & 0xffff;
-		num_reads = (cb[i] >> (CHAR_BIT*2)) & 0xffff;
+		rms = (cb[i] >> (CHAR_BIT * 6)) & 0xffff;
+		num_reads = (cb[i] >> (CHAR_BIT * 2)) & 0xffff;
 		if ((rms >= min_rmsQ) && (num_reads >= min_depth) && (num_reads <= max_depth))
 		{
 			cb[i] |= 0x1ULL;
@@ -270,11 +271,11 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 	// then sample 255 bases
 	if (n > 255)
 	{
-		ks_shuffle(unsigned short, n, bases);
+		ks_shuffle(uint16_t, n, bases);
 		n = 255;
 	}
-	ks_introsort(unsigned short, n, bases);
-	memset(w, 0, 32*sizeof(int));
+	ks_introsort(uint16_t, n, bases);
+	memset(w, 0, 32 * sizeof(int));
 	memset(&aux, 0, sizeof(call_aux_t));
 
 	// calculate esum and fsum

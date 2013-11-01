@@ -60,8 +60,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct {
-	void *left, *right;
+typedef struct
+{
+	void *left;
+	void *right;
 	int depth;
 } ks_isort_stack_t;
 

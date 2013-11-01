@@ -100,7 +100,7 @@ int main() {
 #include <string.h>
 #include <limits.h>
 
-/* compipler specific configuration */
+/* compiler specific configuration */
 
 #if UINT_MAX == 0xffffffffu
 typedef unsigned int khint;
@@ -109,9 +109,9 @@ typedef unsigned long khint;
 #endif
 
 #if ULONG_MAX == ULLONG_MAX
-typedef unsigned long khlong long;
+typedef unsigned long khlong;
 #else
-typedef unsigned long long khlong long;
+typedef unsigned long long khlong;
 #endif
 
 #ifdef _MSC_VER
@@ -323,7 +323,7 @@ static const double __ac_HASH_UPPER = 0.77;
 
 /*! @function
   @abstract     64-bit integer hash function
-  @param  key   The integer [khlong long]
+  @param  key   The integer [khlong]
   @return       The hash value [khint_t]
  */
 #define kh_int64_hash_func(key) (khint)((key)>>33^(key)^(key)<<11)
@@ -507,7 +507,7 @@ static inline khint_t __ac_X31_hash_string(const char *s)
   @param  name  Name of the hash table [symbol]
  */
 #define KHASH_SET_INIT_INT64(name)										\
-	KHASH_INIT(name, khlong long, char, 0, kh_int64_hash_func, kh_int64_hash_equal)
+	KHASH_INIT(name, khlong, char, 0, kh_int64_hash_func, kh_int64_hash_equal)
 
 /*! @function
   @abstract     Instantiate a hash map containing 64-bit integer keys
@@ -515,7 +515,7 @@ static inline khint_t __ac_X31_hash_string(const char *s)
   @param  khval_t  Type of values [type]
  */
 #define KHASH_MAP_INIT_INT64(name, khval_t)								\
-	KHASH_INIT(name, khlong long, khval_t, 1, kh_int64_hash_func, kh_int64_hash_equal)
+	KHASH_INIT(name, khlong, khval_t, 1, kh_int64_hash_func, kh_int64_hash_equal)
 
 typedef const char *kh_cstr_t;
 /*! @function
