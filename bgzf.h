@@ -24,7 +24,6 @@
 #ifndef __BGZF_H
 #define __BGZF_H
 
-#include <stdint.h>
 #include <stdio.h>
 #include <zlib.h>
 #include <zconf.h>
@@ -41,20 +40,20 @@ extern off_t ftello(FILE *stream);
 extern int fseeko(FILE *stream, off_t offset, int whence);
 #endif
 
-//typedef int8_t bool;
-typedef int8_t bgzf_byte_t;
+typedef char bgzf_byte_t;
 
 typedef struct
 {
 	int file_descriptor;
 	char open_mode;                                  // 'r' or 'w'
-	int16_t owned_file, compress_level;
+	short owned_file;
+	short compress_level;
 	FILE *file;
 	int uncompressed_block_size;
 	int compressed_block_size;
 	void *uncompressed_block;
 	void *compressed_block;
-	int64_t block_address;
+	long long block_address;
 	int block_length;
 	int block_offset;
 	int cache_size;
@@ -120,7 +119,7 @@ int bgzf_write(BGZF *fp, const void *data, int length);
  * Seeking on a file opened for write is not supported.
  * Returns zero on success, -1 on error.
  */
-int64_t bgzf_seek(BGZF *fp, int64_t pos, int wher);
+long long bgzf_seek(BGZF *fp, long long pos, int wher);
 
 /*
  * Set the cache size. Zero to disable. By default, caching is

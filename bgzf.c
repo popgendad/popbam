@@ -38,8 +38,8 @@
 typedef struct
 {
     int size;
-    uint8_t *block;
-    int64_t end_offset;
+    unsigned char *block;
+    long long end_offset;
 } cache_t;
 
 KHASH_MAP_INIT_INT64(cache, cache_t)
@@ -60,18 +60,18 @@ static const int BGZF_XLEN = 6; // BGZF_LEN+4
 static const int GZIP_WINDOW_BITS = -15; // no zlib header
 static const int Z_DEFAULT_MEM_LEVEL = 8;
 
-inline void packInt16(uint8_t *buffer, uint16_t value)
+inline void packInt16(unsigned char *buffer, unsigned short value)
 {
     buffer[0] = value;
     buffer[1] = value>>8;
 }
 
-inline int unpackInt16(const uint8_t *buffer)
+inline int unpackInt16(const unsigned char *buffer)
 {
     return (buffer[0] | (buffer[1]<<8));
 }
 
-inline void packInt32(uint8_t *buffer, uint32_t value)
+inline void packInt32(unsigned char *buffer, unsigned int value)
 {
     buffer[0] = value;
     buffer[1] = value>>8;
@@ -92,8 +92,8 @@ static void report_error(BGZF *fp, const char *message)
 int bgzf_check_bgzf(const char *fn)
 {
     BGZF *fp;
-    uint8_t buf[10];
-    uint8_t magic[]="\037\213\010\4\0\0\0\0\0\377";
+    unsigned char buf[10];
+    unsigned char magic[]="\037\213\010\4\0\0\0\0\0\377";
     int n;
 
     if ((fp = bgzf_open(fn, "r")) == 0)
@@ -259,7 +259,7 @@ static int deflate_block(BGZF *fp, int block_length)
     int compressed_length;
     int status;
     int remaining;
-    uint32_t crc;
+    unsigned int crc;
 
     buffer = (bgzf_byte_t*)fp->compressed_block;
     buffer_size = fp->compressed_block_size;
@@ -341,11 +341,11 @@ static int deflate_block(BGZF *fp, int block_length)
         break;
     }
 
-    packInt16((uint8_t*)&buffer[16], compressed_length-1);
+    packInt16((unsigned char*)&buffer[16], compressed_length-1);
     crc = crc32(0L, NULL, 0L);
     crc = crc32(crc, (Bytef*)fp->uncompressed_block, input_length);
-    packInt32((uint8_t*)&buffer[compressed_length-8], crc);
-    packInt32((uint8_t*)&buffer[compressed_length-4], input_length);
+    packInt32((unsigned char*)&buffer[compressed_length-8], crc);
+    packInt32((unsigned char*)&buffer[compressed_length-4], input_length);
     remaining = block_length - input_length;
     if (remaining > 0)
     {
@@ -404,10 +404,10 @@ static int check_header(const bgzf_byte_t *header)
             header[1] == (bgzf_byte_t) GZIP_ID2 &&
             header[2] == Z_DEFLATED &&
             (header[3] & FLG_FEXTRA) != 0 &&
-            unpackInt16((uint8_t*)&header[10]) == BGZF_XLEN &&
+            unpackInt16((unsigned char*)&header[10]) == BGZF_XLEN &&
             header[12] == BGZF_ID1 &&
             header[13] == BGZF_ID2 &&
-            unpackInt16((uint8_t*)&header[14]) == BGZF_LEN);
+            unpackInt16((unsigned char*)&header[14]) == BGZF_LEN);
 }
 
 static void free_cache(BGZF *fp)
@@ -423,7 +423,7 @@ static void free_cache(BGZF *fp)
     kh_destroy(cache, h);
 }
 
-static int load_block_from_cache(BGZF *fp, int64_t block_address)
+static int load_block_from_cache(BGZF *fp, long long block_address)
 {
     khint_t k;
     cache_t *p;
@@ -472,7 +472,7 @@ static void cache_block(BGZF *fp, int size)
     p = &kh_val(h, k);
     p->size = fp->block_length;
     p->end_offset = fp->block_address + size;
-    p->block = (uint8_t*)malloc(MAX_BLOCK_SIZE);
+    p->block = (unsigned char*)malloc(MAX_BLOCK_SIZE);
     memcpy(kh_val(h, k).block, fp->uncompressed_block, MAX_BLOCK_SIZE);
 }
 
@@ -484,7 +484,7 @@ int bgzf_read_block(BGZF *fp)
     int remaining;
     bgzf_byte_t *compressed_block;
     bgzf_byte_t header[18];
-    int64_t block_address;
+    long long block_address;
 
     size = 0;
 
@@ -509,7 +509,7 @@ int bgzf_read_block(BGZF *fp)
         report_error(fp, "invalid block header");
         return -1;
     }
-    block_length = unpackInt16((uint8_t*)&header[16]) + 1;
+    block_length = unpackInt16((unsigned char*)&header[16]) + 1;
     compressed_block = (bgzf_byte_t*) fp->compressed_block;
     memcpy(compressed_block, header, BLOCK_HEADER_LENGTH);
     remaining = block_length - BLOCK_HEADER_LENGTH;
@@ -699,8 +699,8 @@ void bgzf_set_cache_size(BGZF *fp, int cache_size)
 
 int bgzf_check_EOF(BGZF *fp)
 {
-    static uint8_t magic[] = "\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0\033\0\3\0\0\0\0\0\0\0\0\0";
-    uint8_t buf[28];
+    static unsigned char magic[] = "\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0\033\0\3\0\0\0\0\0\0\0\0\0";
+    unsigned char buf[28];
     off_t offset;
 
     offset = ftello(fp->file);
@@ -712,10 +712,10 @@ int bgzf_check_EOF(BGZF *fp)
     return (memcmp(magic, buf, 28) == 0) ? 1 : 0;
 }
 
-int64_t bgzf_seek(BGZF *fp, int64_t pos, int wher)
+long long bgzf_seek(BGZF *fp, long long pos, int wher)
 {
     int block_offset;
-    int64_t block_address;
+    long long block_address;
 
     if (fp->open_mode != 'r')
     {

@@ -22,7 +22,7 @@ bam_header_t *bam_header_dup(const bam_header_t *h0)
     h->hash = h->dict = h->rg2lib = 0;
     h->text = (char*)calloc(h->l_text + 1, 1);
     memcpy(h->text, h0->text, h->l_text);
-    h->target_len = (uint32_t*)calloc(h->n_targets, 4);
+    h->target_len = (unsigned int*)calloc(h->n_targets, 4);
     h->target_name = (char**)calloc(h->n_targets, sizeof(void*));
 
     for (i=0; i < h->n_targets; ++i)

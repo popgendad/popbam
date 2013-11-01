@@ -7,7 +7,7 @@ typedef char *str_p;
 KHASH_MAP_INIT_STR(s, int)
 KHASH_MAP_INIT_STR(r2l, str_p)
 
-void bam_aux_append(bam1_t *b, const char tag[2], char type, int len, uint8_t *data)
+void bam_aux_append(bam1_t *b, const char tag[2], char type, int len, unsigned char *data)
 {
 	int ori_len = b->data_len;
 
@@ -18,7 +18,7 @@ void bam_aux_append(bam1_t *b, const char tag[2], char type, int len, uint8_t *d
 	{
 		b->m_data = b->data_len;
 		kroundup32(b->m_data);
-		b->data = (uint8_t*)realloc(b->data, b->m_data);
+		b->data = (unsigned char*)realloc(b->data, b->m_data);
 	}
 
 	b->data[ori_len] = tag[0];
@@ -27,7 +27,7 @@ void bam_aux_append(bam1_t *b, const char tag[2], char type, int len, uint8_t *d
 	memcpy(b->data+ori_len+3, data, len);
 }
 
-uint8_t *bam_aux_get_core(bam1_t *b, const char tag[2])
+unsigned char *bam_aux_get_core(bam1_t *b, const char tag[2])
 {
 	return bam_aux_get(b, tag);
 }
@@ -42,14 +42,14 @@ uint8_t *bam_aux_get_core(bam1_t *b, const char tag[2])
 			++(s); \
 		} \
 		else if (type == 'B') \
-			(s) += 5 + bam_aux_type2size(*(s)) * (*(int32_t*)((s)+1)); \
+			(s) += 5 + bam_aux_type2size(*(s)) * (*(int*)((s)+1)); \
 		else \
 			(s) += bam_aux_type2size(type); \
 	} while(0)
 
-uint8_t *bam_aux_get(const bam1_t *b, const char tag[2])
+unsigned char *bam_aux_get(const bam1_t *b, const char tag[2])
 {
-	uint8_t *s;
+	unsigned char *s;
 	int y = tag[0] << 8 | tag[1];
 
 	s = bam1_aux(b);
@@ -66,10 +66,10 @@ uint8_t *bam_aux_get(const bam1_t *b, const char tag[2])
 }
 
 // s MUST BE returned by bam_aux_get()
-int bam_aux_del(bam1_t *b, uint8_t *s)
+int bam_aux_del(bam1_t *b, unsigned char *s)
 {
-	uint8_t *p;
-	uint8_t *aux;
+	unsigned char *p;
+	unsigned char *aux;
 
 	aux = bam1_aux(b);
 	p = s-2;
@@ -81,18 +81,18 @@ int bam_aux_del(bam1_t *b, uint8_t *s)
 	return 0;
 }
 
-int bam_aux_drop_other(bam1_t *b, uint8_t *s)
+int bam_aux_drop_other(bam1_t *b, unsigned char *s)
 {
 	if (s)
 	{
-		uint8_t *p;
-		uint8_t *aux;
+		unsigned char *p;
+		unsigned char *aux;
 
 		aux = bam1_aux(b);
 		p = s - 2;
 		__skip_tag(s);
 		memmove(aux, p, s-p);
-		b->data_len -= b->l_aux - (s-p);
+		b->data_len -= b->l_aux - (s - p);
 		b->l_aux = s-p;
 	}
 	else
@@ -110,7 +110,7 @@ void bam_destroy_header_hash(bam_header_t *header)
 		kh_destroy(s, (khash_t(s)*)header->hash);
 }
 
-int32_t bam_get_tid(const bam_header_t *header, const char *seq_name)
+int bam_get_tid(const bam_header_t *header, const char *seq_name)
 {
 	khint_t k;
 	khash_t(s) *h = (khash_t(s)*)header->hash;
@@ -120,7 +120,7 @@ int32_t bam_get_tid(const bam_header_t *header, const char *seq_name)
 	return k == kh_end(h) ? -1 : kh_value(h, k);
 }
 
-int32_t bam_aux2i(const uint8_t *s)
+int bam_aux2i(const unsigned char *s)
 {
 	int type;
 
@@ -130,20 +130,20 @@ int32_t bam_aux2i(const uint8_t *s)
 	type = *s++;
 
 	if (type == 'c')
-		return (int32_t)*(int8_t*)s;
+		return (int)*(char*)s;
 	else if (type == 'C')
-		return (int32_t)*(uint8_t*)s;
+		return (int)*(unsigned char*)s;
 	else if (type == 's')
-		return (int32_t)*(int16_t*)s;
+		return (int)*(short*)s;
 	else if (type == 'S')
-		return (int32_t)*(uint16_t*)s;
+		return (int)*(unsigned short*)s;
 	else if ((type == 'i') || (type == 'I'))
-		return *(int32_t*)s;
+		return *(int*)s;
 	else
 		return 0;
 }
 
-float bam_aux2f(const uint8_t *s)
+float bam_aux2f(const unsigned char *s)
 {
 	int type = *s++;
 
@@ -156,7 +156,7 @@ float bam_aux2f(const uint8_t *s)
 		return 0.0;
 }
 
-double bam_aux2d(const uint8_t *s)
+double bam_aux2d(const unsigned char *s)
 {
 	int type = *s++;
 
@@ -169,7 +169,7 @@ double bam_aux2d(const uint8_t *s)
 		return 0.0;
 }
 
-char bam_aux2A(const uint8_t *s)
+char bam_aux2A(const unsigned char *s)
 {
 	int type = *s++;
 
@@ -182,7 +182,7 @@ char bam_aux2A(const uint8_t *s)
 		return 0;
 }
 
-char *bam_aux2Z(const uint8_t *s)
+char *bam_aux2Z(const unsigned char *s)
 {
 	int type = *s++;
 

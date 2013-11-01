@@ -79,13 +79,13 @@ struct _gz_header_s
 #define COMMENT      0x10 /* bit 4 set: file comment present */
 #define RESERVED     0xE0 /* bits 5..7: reserved */
 
-static inline uint32_t byte_swap_4(uint32_t v)
+static inline unsigned int byte_swap_4(unsigned int v)
 {
     v = ((v & 0x0000FFFFU) << 16) | (v >> 16);
     return ((v & 0x00FF00FFU) << 8) | ((v & 0xFF00FF00U) >> 8);
 }
 
-static inline uint64_t byte_swap_8(uint64_t v)
+static inline unsigned long long byte_swap_8(unsigned long long v)
 {
     v = ((v & 0x00000000FFFFFFFFULL) << 32) | (v >> 32);
     v = ((v & 0x0000FFFF0000FFFFULL) << 16) | ((v & 0xFFFF0000FFFF0000ULL) >> 16);
@@ -100,13 +100,13 @@ static inline int is_big_endian(void)
 }
 
 #ifndef _RZ_READONLY
-static void add_zindex(RAZF *rz, int64_t in, int64_t out)
+static void add_zindex(RAZF *rz, long long in, long long out)
 {
     if (rz->index->size == rz->index->cap)
     {
         rz->index->cap = rz->index->cap * 1.5 + 2;
-        rz->index->cell_offsets = (uint32_t*)realloc(rz->index->cell_offsets, sizeof(uint32_t) * rz->index->cap);
-        rz->index->bin_offsets  = (int64_t*)realloc(rz->index->bin_offsets, sizeof(int64_t) * (rz->index->cap/RZ_BIN_SIZE + 1));
+        rz->index->cell_offsets = (unsigned int*)realloc(rz->index->cell_offsets, sizeof(unsigned int) * rz->index->cap);
+        rz->index->bin_offsets  = (long long*)realloc(rz->index->bin_offsets, sizeof(long long) * (rz->index->cap/RZ_BIN_SIZE + 1));
     }
 
     if ((rz->index->size % RZ_BIN_SIZE) == 0)
@@ -118,8 +118,8 @@ static void add_zindex(RAZF *rz, int64_t in, int64_t out)
 
 static void save_zindex(RAZF *rz, int fd)
 {
-    int32_t i;
-    int32_t v32;
+    int i;
+    int v32;
     int is_be;
 
     is_be = is_big_endian();
@@ -128,8 +128,8 @@ static void save_zindex(RAZF *rz, int fd)
         write(fd, &rz->index->size, sizeof(int));
     else
     {
-        v32 = byte_swap_4((uint32_t)rz->index->size);
-        write(fd, &v32, sizeof(uint32_t));
+        v32 = byte_swap_4((unsigned int)rz->index->size);
+        write(fd, &v32, sizeof(unsigned int));
     }
 
     v32 = rz->index->size / RZ_BIN_SIZE + 1;
@@ -137,20 +137,20 @@ static void save_zindex(RAZF *rz, int fd)
     if (!is_be)
     {
         for (i=0; i < v32; i++)
-            rz->index->bin_offsets[i]  = byte_swap_8((uint64_t)rz->index->bin_offsets[i]);
+            rz->index->bin_offsets[i]  = byte_swap_8((unsigned long long)rz->index->bin_offsets[i]);
 
         for (i=0; i < rz->index->size; i++)
-            rz->index->cell_offsets[i] = byte_swap_4((uint32_t)rz->index->cell_offsets[i]);
+            rz->index->cell_offsets[i] = byte_swap_4((unsigned int)rz->index->cell_offsets[i]);
     }
 
-    write(fd, rz->index->bin_offsets, sizeof(int64_t) * v32);
-    write(fd, rz->index->cell_offsets, sizeof(int32_t) * rz->index->size);
+    write(fd, rz->index->bin_offsets, sizeof(long long) * v32);
+    write(fd, rz->index->cell_offsets, sizeof(int) * rz->index->size);
 }
 #endif
 
 static void load_zindex(RAZF *rz, int fd)
 {
-    int32_t i, v32;
+    int i, v32;
     int is_be;
 
     if (!rz->load_index)
@@ -163,22 +163,22 @@ static void load_zindex(RAZF *rz, int fd)
     read(fd, &rz->index->size, sizeof(int));
 
     if (!is_be)
-        rz->index->size = byte_swap_4((uint32_t)rz->index->size);
+        rz->index->size = byte_swap_4((unsigned int)rz->index->size);
 
     rz->index->cap = rz->index->size;
     v32 = rz->index->size / RZ_BIN_SIZE + 1;
-    rz->index->bin_offsets  = (int64_t*)malloc(sizeof(int64_t) * v32);
-    read(fd, rz->index->bin_offsets, sizeof(int64_t) * v32);
-    rz->index->cell_offsets = (uint32_t*)malloc(sizeof(uint32_t) * rz->index->size);
+    rz->index->bin_offsets  = (long long*)malloc(sizeof(long long) * v32);
+    read(fd, rz->index->bin_offsets, sizeof(long long) * v32);
+    rz->index->cell_offsets = (unsigned int*)malloc(sizeof(unsigned int) * rz->index->size);
     read(fd, rz->index->cell_offsets, sizeof(int) * rz->index->size);
 
     if (!is_be)
     {
         for (i=0; i < v32; i++)
-            rz->index->bin_offsets[i] = byte_swap_8((uint64_t)rz->index->bin_offsets[i]);
+            rz->index->bin_offsets[i] = byte_swap_8((unsigned long long)rz->index->bin_offsets[i]);
 
         for (i=0; i < rz->index->size; i++)
-            rz->index->cell_offsets[i] = byte_swap_4((uint32_t)rz->index->cell_offsets[i]);
+            rz->index->cell_offsets[i] = byte_swap_4((unsigned int)rz->index->cell_offsets[i]);
     }
 }
 
@@ -255,7 +255,7 @@ static void _razf_write(RAZF* rz, const void *data, int size)
 
 static void razf_flush(RAZF *rz)
 {
-    uint32_t tout;
+    unsigned int tout;
 
     if (rz->buf_len)
     {
@@ -292,7 +292,7 @@ static void razf_flush(RAZF *rz)
 
 static void razf_end_flush(RAZF *rz)
 {
-    uint32_t tout;
+    unsigned int tout;
 
     if (rz->buf_len)
     {
@@ -353,7 +353,7 @@ int razf_write(RAZF* rz, const void *data, int size)
 {
     int ori_size;
     int n;
-    int64_t next_block;
+    long long next_block;
     char *dd = (char*)data;
 
     ori_size = size;
@@ -446,7 +446,7 @@ static RAZF* razf_open_r(int fd, int _load_index)
     int n;
     int is_be;
     int ret;
-    int64_t end;
+    long long end;
     unsigned char c[] = "RAZF";
 
     rz = (RAZF*)calloc(1, sizeof(RAZF));
@@ -517,17 +517,17 @@ UNSEEKABLE:
     {
         is_be = is_big_endian();
         rz->seekable = 1;
-        read(fd, &end, sizeof(int64_t));
+        read(fd, &end, sizeof(long long));
 
         if (!is_be)
-            rz->src_end = (int64_t)byte_swap_8((uint64_t)end);
+            rz->src_end = (long long)byte_swap_8((unsigned long long)end);
         else
             rz->src_end = end;
 
-        read(fd, &end, sizeof(int64_t));
+        read(fd, &end, sizeof(long long));
 
         if (!is_be)
-            rz->end = (int64_t)byte_swap_8((uint64_t)end);
+            rz->end = (long long)byte_swap_8((unsigned long long)end);
         else
             rz->end = end;
 
@@ -620,9 +620,9 @@ RAZF* razf_open2(const char *filename, const char *mode)
     return _razf_open(filename, mode, 0);
 }
 
-int razf_get_data_size(RAZF *rz, int64_t *u_size, int64_t *c_size)
+int razf_get_data_size(RAZF *rz, long long *u_size, long long *c_size)
 {
-    int64_t n;
+    long long n;
 
     if ((rz->mode != 'r') && (rz->mode != 'R'))
         return 0;
@@ -841,7 +841,7 @@ int razf_skip(RAZF* rz, int size)
     return ori_size - size;
 }
 
-static void _razf_reset_read(RAZF *rz, int64_t in, int64_t out)
+static void _razf_reset_read(RAZF *rz, long long in, long long out)
 {
     lseek(rz->filedes, in, SEEK_SET);
     rz->in  = in;
@@ -856,9 +856,9 @@ static void _razf_reset_read(RAZF *rz, int64_t in, int64_t out)
     rz->buf_off = rz->buf_len = 0;
 }
 
-int64_t razf_jump(RAZF *rz, int64_t block_start, int block_offset)
+long long razf_jump(RAZF *rz, long long block_start, int block_offset)
 {
-    int64_t pos;
+    long long pos;
 
     rz->z_eof = 0;
 
@@ -890,11 +890,11 @@ SKIP:
     return rz->block_off;
 }
 
-int64_t razf_seek(RAZF* rz, int64_t pos, int wher)
+long long razf_seek(RAZF* rz, long long pos, int wher)
 {
-    int64_t idx;
-    int64_t seek_pos;
-    int64_t new_out;
+    long long idx;
+    long long seek_pos;
+    long long new_out;
 
     rz->z_eof = 0;
 
@@ -942,12 +942,12 @@ SKIP:
     return rz->out;
 }
 
-uint64_t razf_tell2(RAZF *rz)
+unsigned long long razf_tell2(RAZF *rz)
 {
-    return (uint64_t)rz->block_pos << 16 | (rz->block_off & 0xffff);
+    return (unsigned long long)rz->block_pos << 16 | (rz->block_off & 0xffff);
 }
 
-int64_t razf_seek2(RAZF *rz, uint64_t voffset, int wher)
+long long razf_seek2(RAZF *rz, unsigned long long voffset, int wher)
 {
     if (wher != SEEK_SET)
         return -1;
@@ -966,15 +966,15 @@ void razf_close(RAZF *rz)
 
         if (is_big_endian())
         {
-            write(rz->filedes, &rz->in, sizeof(int64_t));
-            write(rz->filedes, &rz->out, sizeof(int64_t));
+            write(rz->filedes, &rz->in, sizeof(long long));
+            write(rz->filedes, &rz->out, sizeof(long long));
         }
         else
         {
-            uint64_t v64 = byte_swap_8((uint64_t)rz->in);
-            write(rz->filedes, &v64, sizeof(int64_t));
-            v64 = byte_swap_8((uint64_t)rz->out);
-            write(rz->filedes, &v64, sizeof(int64_t));
+            unsigned long long v64 = byte_swap_8((unsigned long long)rz->in);
+            write(rz->filedes, &v64, sizeof(long long));
+            v64 = byte_swap_8((unsigned long long)rz->out);
+            write(rz->filedes, &v64, sizeof(long long));
         }
 #endif
     }

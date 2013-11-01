@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
-#include <stdint.h>
 #include "kstring.h"
 
 int ksprintf(kstring_t *s, const char *fmt, ...)
@@ -11,7 +10,9 @@ int ksprintf(kstring_t *s, const char *fmt, ...)
 	int l;
 
 	va_start(ap, fmt);
-	l = vsnprintf(s->s + s->l, s->m - s->l, fmt, ap); // This line does not work with glibc 2.0. See `man snprintf'.
+
+	// This line does not work with glibc 2.0. See `man snprintf'.
+	l = vsnprintf(s->s + s->l, s->m - s->l, fmt, ap);
 	va_end(ap);
 
 	if (l + 1 > s->m - s->l)
@@ -31,7 +32,8 @@ int ksprintf(kstring_t *s, const char *fmt, ...)
 
 char *kstrtok(const char *str, const char *sep, ks_tokaux_t *aux)
 {
-	const char *p, *start;
+	const char *p;
+	const char *start;
 
 	// set up the table
 	if (sep)
@@ -73,11 +75,13 @@ char *kstrtok(const char *str, const char *sep, ks_tokaux_t *aux)
 			if (*p == aux->sep)
 				break;
 	}
+	
+	// end of token
+	aux->p = p;
 
-	aux->p = p; // end of token
-
+	// no more tokens
 	if (*p == 0)
-		aux->finished = 1; // no more tokens
+		aux->finished = 1;
 
 	return (char*)start;
 }
@@ -85,7 +89,14 @@ char *kstrtok(const char *str, const char *sep, ks_tokaux_t *aux)
 // s MUST BE a null terminated string; l = strlen(s)
 int ksplit_core(char *s, int delimiter, int *_max, int **_offsets)
 {
-	int i, n, max, last_char, last_start, *offsets, l;
+	int i;
+	int n;
+	int max;
+	int last_char;
+	int last_start;
+	int *offsets;
+	int l;
+
 	n = 0;
 	max = *_max;
 	offsets = *_offsets;
@@ -108,8 +119,9 @@ int ksplit_core(char *s, int delimiter, int *_max, int **_offsets)
 		{
 			if (isspace(s[i]) || (s[i] == 0))
 			{
+				// the end of a field
 				if (isgraph(last_char))
-					__ksplit_aux; // the end of a field
+					__ksplit_aux;
 			}
 			else
 			{
@@ -121,8 +133,9 @@ int ksplit_core(char *s, int delimiter, int *_max, int **_offsets)
 		{
 			if ((s[i] == delimiter) || (s[i] == 0))
 			{
+				// the end of a field
 				if ((last_char != 0) && (last_char != delimiter))
-					__ksplit_aux; // the end of a field
+					__ksplit_aux;
 			}
 			else
 			{
@@ -143,12 +156,14 @@ int ksplit_core(char *s, int delimiter, int *_max, int **_offsets)
  * Boyer-Moore search *
  **********************/
 
-typedef unsigned char ubyte_t;
-
 // reference: http://www-igm.univ-mlv.fr/~lecroq/string/node14.html
-static int *ksBM_prep(const ubyte_t *pat, int m)
+static int *ksBM_prep(const unsigned char *pat, int m)
 {
-	int i, *suff, *prep, *bmGs, *bmBc;
+	int i;
+	int *suff;
+	int *prep;
+	int *bmGs;
+	int *bmBc;
 
 	prep = (int*)calloc((size_t)(m + 256), sizeof(int));
 	bmGs = prep;
@@ -165,7 +180,8 @@ static int *ksBM_prep(const ubyte_t *pat, int m)
 	suff = (int*)calloc((size_t)m, sizeof(int));
 	{
 		// suffixes()
-		int f = 0, g;
+		int f = 0;
+		int g;
 		suff[m - 1] = m;
 		g = m - 1;
 
@@ -212,11 +228,11 @@ void *kmemmem(const void *_str, int n, const void *_pat, int m, int **_prep)
 	int *prep = 0;
 	int *bmGs;
 	int *bmBc;
-	const ubyte_t *str;
-	const ubyte_t *pat;
+	const unsigned char *str;
+	const unsigned char *pat;
 
-	str = (const ubyte_t*)_str;
-	pat = (const ubyte_t*)_pat;
+	str = (const unsigned char*)_str;
+	pat = (const unsigned char*)_pat;
 	prep = ((_prep == 0) || (*_prep == 0)) ? ksBM_prep(pat, m) : *_prep;
 
 	if (_prep && (*_prep == 0))
