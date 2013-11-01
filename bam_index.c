@@ -11,13 +11,13 @@
 
 #define BAM_MIN_CHUNK_GAP 32768
 // 1<<14 is the size of minimum bin.
-#define BAM_LIDX_SHIFT    14
+#define BAM_LIDX_SHIFT 14
 #define BAM_MAX_BIN 37450 // =(8^6-1)/7+1
 
 typedef struct
 {
-	uint64_t u;
-	uint64_t v;
+	unsigned long long u;
+	unsigned long long v;
 } pair64_t;
 
 #define pair64_lt(a,b) ((a).u < (b).u)
@@ -25,24 +25,24 @@ KSORT_INIT(off, pair64_t, pair64_lt)
 
 typedef struct
 {
-	uint32_t m;
-	uint32_t n;
+	unsigned int m;
+	unsigned int n;
 	pair64_t *list;
 } bam_binlist_t;
 
 typedef struct
 {
-	int32_t n;
-	int32_t m;
-	uint64_t *offset;
+	int n;
+	int m;
+	unsigned long long *offset;
 } bam_lidx_t;
 
 KHASH_MAP_INIT_INT(i, bam_binlist_t)
 
 struct __bam_index_t
 {
-	int32_t n;
-	uint64_t n_no_coor;           // unmapped reads without coordinate
+	int n;
+	unsigned long long n_no_coor;           // unmapped reads without coordinate
 	khash_t(i) **index;
 	bam_lidx_t *index2;
 };
@@ -57,7 +57,7 @@ struct __bam_iter_t
 	int n_off;
 	int i;
 	int finished;
-	uint64_t curr_off;
+	unsigned long long curr_off;
 	pair64_t *off;
 };
 
@@ -73,11 +73,13 @@ void bam_index_destroy(bam_index_t *idx)
 	{
 		khash_t(i) *index = idx->index[i];
 		bam_lidx_t *index2 = idx->index2 + i;
+
 		for (k=kh_begin(index); k != kh_end(index); ++k)
 		{
 			if (kh_exist(index, k))
 				free(kh_value(index, k).list);
 		}
+
 		kh_destroy(i, index);
 		free(index2->offset);
 	}
@@ -121,8 +123,8 @@ static bam_index_t *bam_index_load_core(FILE *fp)
 	{
 		khash_t(i) *index;
 		bam_lidx_t *index2 = idx->index2 + i;
-		uint32_t key;
-		uint32_t size;
+		unsigned int key;
+		unsigned int size;
 		khint_t k;
 		int j;
 		int ret;
@@ -172,7 +174,7 @@ static bam_index_t *bam_index_load_core(FILE *fp)
 			bam_swap_endian_4p(&index2->n);
 
 		index2->m = index2->n;
-		index2->offset = (uint64_t*)calloc(index2->m, 8);
+		index2->offset = (unsigned long long*)calloc(index2->m, 8);
 		fread(index2->offset, index2->n, 8, fp);
 
 		if (bam_is_be)
@@ -205,6 +207,7 @@ bam_index_t *bam_index_load_local(const char *_fn)
 	if (fp == 0)
 	{
 		char *s = strstr(fn, "bam");
+
 		if (s == fn + strlen(fn) - 3)
 		{
 			strcpy(fnidx, fn);
@@ -231,13 +234,14 @@ bam_index_t *bam_index_load(const char *fn)
 	bam_index_t *idx;
 
 	idx = bam_index_load_local(fn);
+
 	if (idx == 0)
 		fprintf(stderr, "[bam_index_load] fail to load BAM index.\n");
 
 	return idx;
 }
 
-static inline int reg2bins(uint32_t beg, uint32_t end, uint16_t list[BAM_MAX_BIN])
+static inline int reg2bins(unsigned int beg, unsigned int end, unsigned short list[BAM_MAX_BIN])
 {
 	int i = 0;
 	int k;
@@ -269,10 +273,10 @@ static inline int reg2bins(uint32_t beg, uint32_t end, uint16_t list[BAM_MAX_BIN
 	return i;
 }
 
-static inline int is_overlap(uint32_t beg, uint32_t end, const bam1_t *b)
+static inline int is_overlap(unsigned int beg, unsigned int end, const bam1_t *b)
 {
-	uint32_t rbeg = b->core.pos;
-	uint32_t rend = b->core.n_cigar ? bam_calend(&b->core, bam1_cigar(b)) : b->core.pos + 1;
+	unsigned int rbeg = b->core.pos;
+	unsigned int rend = b->core.n_cigar ? bam_calend(&b->core, bam1_cigar(b)) : b->core.pos + 1;
 
 	return ((rend > beg) && (rbeg < end));
 }
@@ -280,14 +284,14 @@ static inline int is_overlap(uint32_t beg, uint32_t end, const bam1_t *b)
 // bam_fetch helper function retrieves
 bam_iter_t bam_iter_query(const bam_index_t *idx, int tid, int beg, int end)
 {
-	uint16_t *bins;
+	unsigned short *bins;
 	int i;
 	int n_bins;
 	int n_off;
 	pair64_t *off;
 	khint_t k;
 	khash_t(i) *index;
-	uint64_t min_off;
+	unsigned long long min_off;
 	bam_iter_t iter = 0;
 
 	if (beg < 0)
@@ -300,8 +304,9 @@ bam_iter_t bam_iter_query(const bam_index_t *idx, int tid, int beg, int end)
 	iter = (bam_iter_t)calloc(1, sizeof(struct __bam_iter_t));
 	iter->tid = tid, iter->beg = beg, iter->end = end;
 	iter->i = -1;
+	
 	//
-	bins = (uint16_t*)calloc(BAM_MAX_BIN, 2);
+	bins = (unsigned short*)calloc(BAM_MAX_BIN, 2);
 	n_bins = reg2bins(beg, end, bins);
 	index = idx->index[tid];
 

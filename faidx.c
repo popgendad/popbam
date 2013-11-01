@@ -2,15 +2,15 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
 #include "faidx.h"
 #include "khash.h"
 
 typedef struct
 {
-    int32_t line_len, line_blen;
-    int64_t len;
-    uint64_t offset;
+	int line_len;
+	int line_blen;
+    long long len;
+    unsigned long long offset;
 } faidx1_t;
 
 KHASH_MAP_INIT_STR(s, faidx1_t)
@@ -42,10 +42,10 @@ struct __faidx_t
 };
 
 #ifndef kroundup32
-#define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
+#define kroundup32(x) (--(x), (x) |= (x) >> 1, (x) |= (x) >> 2, (x) |= (x) >> 4, (x) |= (x) >> 8, (x) |= (x) >> 16, ++(x))
 #endif
 
-static inline void fai_insert_index(faidx_t *idx, const char *name, int len, int line_len, int line_blen, uint64_t offset)
+static inline void fai_insert_index(faidx_t *idx, const char *name, int len, int line_len, int line_blen, unsigned long long offset)
 {
     khint_t k;
     int ret;
@@ -54,7 +54,7 @@ static inline void fai_insert_index(faidx_t *idx, const char *name, int len, int
     if (idx->n == idx->m)
     {
         idx->m = idx->m ? idx->m << 1 : 16;
-        idx->name = (char**)realloc(idx->name, sizeof(void*) *idx->m);
+        idx->name = (char**)realloc(idx->name, sizeof(void*) * idx->m);
     }
     idx->name[idx->n] = strdup(name);
     k = kh_put(s, idx->hash, idx->name[idx->n], &ret);
@@ -68,13 +68,19 @@ static inline void fai_insert_index(faidx_t *idx, const char *name, int len, int
 
 faidx_t *fai_build_core(RAZF *rz)
 {
-    char c, *name;
-    int l_name, m_name, ret;
-    int line_len, line_blen, state;
-    int l1, l2;
+	char c;
+	char *name;
+	int l_name;
+	int m_name;
+	int ret;
+	int line_len;
+	int line_blen;
+	int state;
+	int l1;
+	int l2;
     faidx_t *idx;
-    uint64_t offset;
-    int64_t len;
+    unsigned long long offset;
+    long long len;
 
     idx = (faidx_t*)calloc(1, sizeof(faidx_t));
     idx->hash = kh_init(s);
@@ -160,6 +166,7 @@ faidx_t *fai_build_core(RAZF *rz)
                 fprintf(stderr, "[fai_build_core] different line length in sequence '%s'.\n", name);
                 free(name);
                 fai_destroy(idx);
+
                 return 0;
             }
 
@@ -336,7 +343,8 @@ faidx_t *fai_load(const char *fn)
 char *fai_fetch(const faidx_t *fai, const char *str, int *len)
 {
     char *s, c;
-    int i, l, k, name_end;
+	int i, l, k;
+	int name_end;
     khiter_t iter;
     faidx1_t val;
     khash_t(s) *h;
@@ -421,7 +429,7 @@ char *fai_fetch(const faidx_t *fai, const char *str, int *len)
             if (s[i] == '-')
                 break;
 
-        end = i < k ? atoi(s+i+1) : val.len;
+        end = i < k ? atoi(s + i + 1) : val.len;
 
         if (beg > 0)
             --beg;
@@ -497,7 +505,7 @@ char *faidx_fetch_seq(const faidx_t *fai, char *c_name, int p_beg_i, int p_end_i
     seq = (char*)malloc(p_end_i - p_beg_i + 2);
     razf_seek(fai->rz, val.offset + p_beg_i / val.line_blen * val.line_len + p_beg_i % val.line_blen, SEEK_SET);
 
-    while ((razf_read(fai->rz, &c, 1) == 1) && (l < p_end_i - p_beg_i + 1))
+    while ((razf_read(fai->rz, &c, 1) == 1) && (l < (p_end_i - p_beg_i + 1)))
         if (isgraph(c))
             seq[l++] = c;
 

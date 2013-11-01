@@ -23,11 +23,11 @@ typedef char *str_p;
 KHASH_MAP_INIT_STR(s, int)
 KHASH_MAP_INIT_STR(r2l, str_p)
 KSTREAM_INIT(gzFile, gzread, 16384)
-KHASH_MAP_INIT_STR(ref, uint64_t)
+KHASH_MAP_INIT_STR(ref, unsigned long long)
 
 void bam_init_header_hash2(bam_header_t *header);
 extern void bam_destroy_header_hash(bam_header_t *header);
-int32_t bam_get_tid(const bam_header_t *header, const char *seq_name);
+int bam_get_tid(const bam_header_t *header, const char *seq_name);
 
 unsigned short bam_char2flag_table[256] =
 {
@@ -54,7 +54,7 @@ struct __tamFile_t
 	gzFile fp;
 	kstream_t *ks;
 	kstring_t *str;
-	uint64_t n_lines;
+	unsigned long long n_lines;
 	int is_first;
 };
 
@@ -67,7 +67,7 @@ static bam_header_t *hash2header(const kh_ref_t *hash)
 	header = bam_header_init();
 	header->n_targets = kh_size(hash);
 	header->target_name = (char**)calloc(kh_size(hash), sizeof(char*));
-	header->target_len = (uint32_t*)calloc(kh_size(hash), 4);
+	header->target_len = (unsigned int*)calloc(kh_size(hash), 4);
 
 	for (k=kh_begin(hash); k != kh_end(hash); ++k)
 	{
@@ -122,7 +122,7 @@ bam_header_t *sam_header_read2(const char *fn)
 			fprintf(stderr, "[sam_header_read2] duplicated sequence name: %s\n", s);
 			error = 1;
 		}
-		kh_value(hash, k) = (uint64_t)len << 32 | i;
+		kh_value(hash, k) = (unsigned long long)len << 32 | i;
 		if (dret != '\n')
 			while ((c = ks_getc(ks)) != '\n' && c != -1);
 	}
@@ -143,19 +143,19 @@ bam_header_t *sam_header_read2(const char *fn)
 	return header;
 }
 
-static inline uint8_t *alloc_data(bam1_t *b, int size)
+static inline unsigned char *alloc_data(bam1_t *b, int size)
 {
 	if (b->m_data < size)
 	{
 		b->m_data = size;
 		kroundup32(b->m_data);
-		b->data = (uint8_t*)realloc(b->data, b->m_data);
+		b->data = (unsigned char*)realloc(b->data, b->m_data);
 	}
 
 	return b->data;
 }
 
-static inline void parse_error(int64_t n_lines, const char * __restrict msg)
+static inline void parse_error(long long n_lines, const char * __restrict msg)
 {
 	fprintf(stderr, "Parse error at line %lld: %s\n", (long long)n_lines, msg);
 	abort();
@@ -224,7 +224,7 @@ int sam_header_parse(bam_header_t *h)
 
 	free(tmp);
 	tmp = sam_header2list(h->dict, "SQ", "LN", &h->n_targets);
-	h->target_len = (uint32_t*)calloc(h->n_targets, 4);
+	h->target_len = (unsigned int*)calloc(h->n_targets, 4);
 
 	for (i=0; i < h->n_targets; ++i)
 		h->target_len[i] = atoi(tmp[i]);

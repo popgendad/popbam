@@ -40,7 +40,6 @@
   @copyright Genome Research Ltd.
  */
  
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -84,11 +83,11 @@ typedef gzFile bamFile;
   member.
  */
 typedef struct {
-	int32_t n_targets;
+	int n_targets;
 	char **target_name;
-	uint32_t *target_len;
+	unsigned int *target_len;
 	void *dict, *hash, *rg2lib;
-	uint32_t l_text, n_text;
+	unsigned int l_text, n_text;
 	char *text;
 } bam_header_t;
 
@@ -176,14 +175,14 @@ typedef struct {
   @field  l_qseq  length of the query sequence (read)
  */
 typedef struct {
-	int32_t tid;
-	int32_t pos;
-	uint32_t bin:16, qual:8, l_qname:8;
-	uint32_t flag:16, n_cigar:16;
-	int32_t l_qseq;
-	int32_t mtid;
-	int32_t mpos;
-	int32_t isize;
+	int tid;
+	int pos;
+	unsigned int bin:16, qual:8, l_qname:8;
+	unsigned int flag:16, n_cigar:16;
+	int l_qseq;
+	int mtid;
+	int mpos;
+	int isize;
 } bam1_core_t;
 
 /*! @typedef
@@ -203,7 +202,7 @@ typedef struct {
 typedef struct {
 	bam1_core_t core;
 	int l_aux, data_len, m_data;
-	uint8_t *data;
+	unsigned char *data;
 } bam1_t;
 
 typedef struct __bam_iter_t *bam_iter_t;
@@ -220,7 +219,7 @@ typedef struct __bam_iter_t *bam_iter_t;
   lower 4 bits gives a CIGAR operation and the higher 28 bits keep the
   length of a CIGAR.
  */
-#define bam1_cigar(b) ((uint32_t*)((b)->data + (b)->core.l_qname))
+#define bam1_cigar(b) ((unsigned int*)((b)->data + (b)->core.l_qname))
 
 /*! @function
   @abstract  Get the name of the query
@@ -447,9 +446,9 @@ int bam_validate1(const bam_header_t *header, const bam1_t *b);
 typedef struct
 {
 	bam1_t *b;
-	int32_t qpos;
+	int qpos;
 	int indel, level;
-	uint32_t is_del:1, is_head:1, is_tail:1, is_refskip:1, aux:28;
+	unsigned int is_del:1, is_head:1, is_tail:1, is_refskip:1, aux:28;
 } bam_pileup1_t;
 
 typedef int (*bam_plp_auto_f)(void *data, bam1_t *b);
@@ -470,7 +469,7 @@ void bam_plp_destroy(bam_plp_t iter);
   @param  data user provided data
   @discussion  See also bam_plbuf_push(), bam_plbuf_init() and bam_pileup1_t.
  */
-typedef int (*bam_pileup_f)(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data);
+typedef int (*bam_pileup_f)(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
 
 typedef struct
 {
@@ -563,16 +562,16 @@ void bam_iter_destroy(bam_iter_t iter);
   @discussion  Use bam_aux2?() series to convert the returned data to
 			   the corresponding type.
 */
-uint8_t *bam_aux_get(const bam1_t *b, const char tag[2]);
+unsigned char *bam_aux_get(const bam1_t *b, const char tag[2]);
 
-int32_t bam_aux2i(const uint8_t *s);
-float bam_aux2f(const uint8_t *s);
-double bam_aux2d(const uint8_t *s);
-char bam_aux2A(const uint8_t *s);
-char *bam_aux2Z(const uint8_t *s);
-int bam_aux_del(bam1_t *b, uint8_t *s);
-void bam_aux_append(bam1_t *b, const char tag[2], char type, int len, uint8_t *data);
-uint8_t *bam_aux_get_core(bam1_t *b, const char tag[2]); // an alias of bam_aux_get()
+int bam_aux2i(const unsigned char *s);
+float bam_aux2f(const unsigned char *s);
+double bam_aux2d(const unsigned char *s);
+char bam_aux2A(const unsigned char *s);
+char *bam_aux2Z(const unsigned char *s);
+int bam_aux_del(bam1_t *b, unsigned char *s);
+void bam_aux_append(bam1_t *b, const char tag[2], char type, int len, unsigned char *data);
+unsigned char *bam_aux_get_core(bam1_t *b, const char tag[2]); // an alias of bam_aux_get()
 
 
 // misc functions
@@ -585,7 +584,7 @@ uint8_t *bam_aux_get_core(bam1_t *b, const char tag[2]); // an alias of bam_aux_
   @param  cigar  the corresponding CIGAR array (from bam1_t::cigar)
   @return        the rightmost coordinate, 0-based
 */
-uint32_t bam_calend(const bam1_core_t *c, const uint32_t *cigar);
+unsigned int bam_calend(const bam1_core_t *c, const unsigned int *cigar);
 
 #ifdef __cplusplus
 }
@@ -601,7 +600,7 @@ uint32_t bam_calend(const bam1_core_t *c, const uint32_t *cigar);
   @param  end  end of the region, 0-based
   @return      bin
  */
-static inline int bam_reg2bin(uint32_t beg, uint32_t end)
+static inline int bam_reg2bin(unsigned int beg, unsigned int end)
 {
 	--end;
 	if (beg>>14 == end>>14)
@@ -625,14 +624,14 @@ static inline int bam_reg2bin(uint32_t beg, uint32_t end)
  */
 static inline bam1_t *bam_copy1(bam1_t *bdst, const bam1_t *bsrc)
 {
-	uint8_t *data = bdst->data;
+	unsigned char *data = bdst->data;
 	int m_data = bdst->m_data;
 
 	if (m_data < bsrc->data_len)
 	{
 		// double the capacity
 		m_data = bsrc->data_len; kroundup32(m_data);
-		data = (uint8_t*)realloc(data, m_data);
+		data = (unsigned char*)realloc(data, m_data);
 	}
 	
 	// copy var-len data
@@ -660,7 +659,7 @@ static inline bam1_t *bam_dup1(const bam1_t *src)
 	b = bam_init1();
 	*b = *src;
 	b->m_data = b->data_len;
-	b->data = (uint8_t*)calloc(b->data_len, 1);
+	b->data = (unsigned char*)calloc(b->data_len, 1);
 	memcpy(b->data, src->data, b->data_len);
 
 	return b;

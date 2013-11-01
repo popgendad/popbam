@@ -1,8 +1,6 @@
 #ifndef BAM_ENDIAN_H
 #define BAM_ENDIAN_H
 
-#include <stdint.h>
-
 #ifdef _MSC_VER
 #define inline __inline
 #endif
@@ -14,18 +12,18 @@ static inline int bam_is_big_endian()
 	return !(*((char*)(&one)));
 }
 
-static inline uint16_t bam_swap_endian_2(uint16_t v)
+static inline unsigned short bam_swap_endian_2(unsigned short v)
 {
-	return (uint16_t)(((v & 0x00FF00FFU) << 8) | ((v & 0xFF00FF00U) >> 8));
+	return (unsigned short)(((v & 0x00FF00FFU) << 8) | ((v & 0xFF00FF00U) >> 8));
 }
 
 static inline void *bam_swap_endian_2p(void *x)
 {
-	*(uint16_t*)x = bam_swap_endian_2(*(uint16_t*)x);
+	*(unsigned short*)x = bam_swap_endian_2(*(unsigned short*)x);
 	return x;
 }
 
-static inline uint32_t bam_swap_endian_4(uint32_t v)
+static inline unsigned int bam_swap_endian_4(unsigned int v)
 {
 	v = ((v & 0x0000FFFFU) << 16) | (v >> 16);
 	return ((v & 0x00FF00FFU) << 8) | ((v & 0xFF00FF00U) >> 8);
@@ -33,11 +31,11 @@ static inline uint32_t bam_swap_endian_4(uint32_t v)
 
 static inline void *bam_swap_endian_4p(void *x)
 {
-	*(uint32_t*)x = bam_swap_endian_4(*(uint32_t*)x);
+	*(unsigned int*)x = bam_swap_endian_4(*(unsigned int*)x);
 	return x;
 }
 
-static inline uint64_t bam_swap_endian_8(uint64_t v)
+static inline unsigned long long bam_swap_endian_8(unsigned long long v)
 {
 	v = ((v & 0x00000000FFFFFFFFULL) << 32) | (v >> 32);
 	v = ((v & 0x0000FFFF0000FFFFULL) << 16) | ((v & 0xFFFF0000FFFF0000ULL) >> 16);
@@ -46,7 +44,7 @@ static inline uint64_t bam_swap_endian_8(uint64_t v)
 
 static inline void *bam_swap_endian_8p(void *x)
 {
-	*(uint64_t*)x = bam_swap_endian_8(*(uint64_t*)x);
+	*(unsigned long long*)x = bam_swap_endian_8(*(unsigned long long*)x);
 	return x;
 }
 

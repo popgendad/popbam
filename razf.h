@@ -29,11 +29,9 @@
  * SUCH DAMAGE.
  */
 
-
 #ifndef __RAZF_RJ_H
 #define __RAZF_RJ_H
 
-#include <stdint.h>
 #include <stdio.h>
 #include <zlib.h>
 #include <zconf.h>
@@ -45,10 +43,10 @@ typedef struct _gz_header_s _gz_header;
 #define gz_header _gz_header
 #endif
 
-#define WINDOW_BITS   15
+#define WINDOW_BITS 15
 
 #ifndef RZ_BLOCK_SIZE
-#define RZ_BLOCK_SIZE (1<<WINDOW_BITS)
+#define RZ_BLOCK_SIZE (1 << WINDOW_BITS)
 #endif
 
 #ifndef RZ_BUFFER_SIZE
@@ -63,8 +61,8 @@ typedef struct _gz_header_s _gz_header;
 
 typedef struct
 {
-	uint32_t *cell_offsets;                              // i
-	int64_t  *bin_offsets;                               // i / BIN_SIZE
+	unsigned int *cell_offsets;              // i
+	long long *bin_offsets;                  // i / BIN_SIZE
 	int size;
 	int cap;
 } ZBlockIndex;
@@ -82,14 +80,14 @@ typedef struct RandomAccessZFile
 	int filedes;                  // the file descriptor
 	z_stream *stream;
 	ZBlockIndex *index;
-	int64_t in;                   // in: n bytes total in
-	int64_t out;                  // out: n bytes total out
-	int64_t end;                  // end: the end of all data blocks, while the start of index
-	int64_t src_end;              // src_end: the true end position in uncompressed file
+	long long in;                   // in: n bytes total in
+	long long out;                  // out: n bytes total out
+	long long end;                  // end: the end of all data blocks, while the start of index
+	long long src_end;              // src_end: the true end position in uncompressed file
 	int buf_flush;                // buffer should be flush, suspend inflate util buffer is empty
-	int64_t block_pos;            // block_pos: the start postiion of current block in compressed file
-	int64_t block_off;            // block_off: tell how many bytes have been read from current block
-	int64_t next_block_pos;
+	long long block_pos;            // block_pos: the start postiion of current block in compressed file
+	long long block_off;            // block_off: tell how many bytes have been read from current block
+	long long next_block_pos;
 	void *inbuf;
 	void *outbuf;
 	int header_size;
@@ -110,15 +108,15 @@ RAZF* razf_dopen(int data_fd, const char *mode);
 RAZF *razf_open(const char *fn, const char *mode);
 int razf_write(RAZF* rz, const void *data, int size);
 int razf_read(RAZF* rz, void *data, int size);
-int64_t razf_seek(RAZF* rz, int64_t pos, int where);
+long long razf_seek(RAZF* rz, long long pos, int where);
 void razf_close(RAZF* rz);
 
 #define razf_tell(rz) ((rz)->out)
 
 RAZF* razf_open2(const char *filename, const char *mode);
 RAZF* razf_dopen2(int fd, const char *mode);
-uint64_t razf_tell2(RAZF *rz);
-int64_t razf_seek2(RAZF *rz, uint64_t voffset, int where);
+unsigned long long razf_tell2(RAZF *rz);
+long long razf_seek2(RAZF *rz, unsigned long long voffset, int where);
 
 #ifdef __cplusplus
 }

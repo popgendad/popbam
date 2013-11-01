@@ -11,14 +11,12 @@ int bam_is_be = 0;
 int bam_verbose = 2;
 int bam_no_B = 0;
 char *bam_flag2char_table = "pPuUrR12sfd\0\0\0\0\0";
-char bam_nt16_rev_table2[16] = {'=','A','C','M','G','R','S','V','T','W','Y','H','K','D','B','N'};
+char bam_nt16_rev_table2[16] = {'=', 'A', 'C', 'M', 'G', 'R', 'S', 'V', 'T', 'W', 'Y', 'H', 'K', 'D', 'B', 'N'};
 
-uint32_t bam_calend(const bam1_core_t *c, const uint32_t *cigar)
+unsigned int bam_calend(const bam1_core_t *c, const unsigned int *cigar)
 {
-	int k;
-	int end;
-
-	end = c->pos;
+	int k = 0;
+	int end = c->pos;
 
 	for (k=0; k < c->n_cigar; ++k)
 	{
@@ -112,8 +110,8 @@ bam_header_t *bam_header_read(bamFile fp)
 	bam_header_t *header;
 	char buf[4];
 	int magic_len;
-	int32_t i = 1;
-	int32_t name_len;
+	int i = 1;
+	int name_len;
 
 	// check EOF
 	i = bgzf_check_EOF(fp);
@@ -154,7 +152,7 @@ bam_header_t *bam_header_read(bamFile fp)
 	
 	// read reference sequence names and lengths
 	header->target_name = (char**)calloc(header->n_targets, sizeof(char*));
-	header->target_len = (uint32_t*)calloc(header->n_targets, 4);
+	header->target_len = (unsigned int*)calloc(header->n_targets, 4);
 	
 	for (i=0; i != header->n_targets; ++i)
 	{
@@ -177,9 +175,9 @@ bam_header_t *bam_header_read(bamFile fp)
 int bam_header_write(bamFile fp, const bam_header_t *header)
 {
 	char buf[4];
-	int32_t i;
-	int32_t name_len;
-	int32_t x;
+	int i;
+	int name_len;
+	int x;
 
 	// write "BAM1"
 	strncpy(buf, "BAM\001", 4);
@@ -237,10 +235,11 @@ int bam_header_write(bamFile fp, const bam_header_t *header)
 	return 0;
 }
 
-static void swap_endian_data(const bam1_core_t *c, int data_len, uint8_t *data)
+static void swap_endian_data(const bam1_core_t *c, int data_len, unsigned char *data)
 {
-	uint8_t *s;
-	uint32_t i, *cigar = (uint32_t*)(data + c->l_qname);
+	unsigned char *s;
+	unsigned int i;
+	unsigned int *cigar = (unsigned int*)(data + c->l_qname);
 
 	s = data + c->n_cigar * 4 + c->l_qname + c->l_qseq + (c->l_qseq + 1) / 2;
 	
@@ -264,7 +263,7 @@ static void swap_endian_data(const bam1_core_t *c, int data_len, uint8_t *data)
 			bam_swap_endian_2p(s);
 			s += 2;
 		}
-		else if (type == 'I' || type == 'F')
+		else if ((type == 'I') || (type == 'F'))
 		{
 			bam_swap_endian_4p(s);
 			s += 4;
@@ -274,7 +273,7 @@ static void swap_endian_data(const bam1_core_t *c, int data_len, uint8_t *data)
 			bam_swap_endian_8p(s);
 			s += 8;
 		}
-		else if (type == 'Z' || type == 'H')
+		else if ((type == 'Z') || (type == 'H'))
 		{
 			while (*s)
 				++s;
@@ -282,8 +281,11 @@ static void swap_endian_data(const bam1_core_t *c, int data_len, uint8_t *data)
 		}
 		else if (type == 'B')
 		{
-			int n, Bsize = bam_aux_type2size(*s);
+			int n;
+			int Bsize = bam_aux_type2size(*s);
+
 			memcpy(&n, s + 1, 4);
+
 			if (1 == Bsize)
 			{
 			}
@@ -305,8 +307,10 @@ static void swap_endian_data(const bam1_core_t *c, int data_len, uint8_t *data)
 int bam_read1(bamFile fp, bam1_t *b)
 {
 	bam1_core_t *c = &b->core;
-	int32_t block_len, ret, i;
-	uint32_t x[8];
+	int block_len;
+	int ret;
+	int i;
+	unsigned int x[8];
 
 	assert(BAM_CORE_SIZE == 32);
 
@@ -345,7 +349,7 @@ int bam_read1(bamFile fp, bam1_t *b)
 	{
 		b->m_data = b->data_len;
 		kroundup32(b->m_data);
-		b->data = (uint8_t*)realloc(b->data, b->m_data);
+		b->data = (unsigned char*)realloc(b->data, b->m_data);
 	}
 
 	if (bam_read(fp, b->data, b->data_len) != b->data_len)
@@ -386,9 +390,14 @@ int bam_validate1(const bam_header_t *header, const bam1_t *b)
 
 int bam_remove_B(bam1_t *b)
 {
-	int i, j, end_j, k, l, no_qual;
-	uint32_t *cigar, *new_cigar;
-	uint8_t *seq, *qual, *p;
+	int i, j, k, l;
+	int end_j;
+	int no_qual;
+	unsigned int *cigar;
+	unsigned int *new_cigar;
+	unsigned char *seq;
+	unsigned char *qual;
+	unsigned char *p;
 
 	// test if removal is necessary
 	if (b->core.flag & BAM_FUNMAP)
@@ -400,8 +409,9 @@ int bam_remove_B(bam1_t *b)
 		if (bam_cigar_op(cigar[k]) == BAM_CBACK)
 			break;
 	
+	// no 'B'
 	if (k == b->core.n_cigar)
-		return 0; // no 'B'
+		return 0;
 	
 	if (bam_cigar_op(cigar[0]) == BAM_CBACK)
 		goto rmB_err; // cannot be removed
@@ -412,14 +422,14 @@ int bam_remove_B(bam1_t *b)
 		// not enough memory
 		b->m_data = b->data_len + b->core.n_cigar * 4;
 		kroundup32(b->m_data);
-		b->data = (uint8_t*)realloc(b->data, b->m_data);
+		b->data = (unsigned char*)realloc(b->data, b->m_data);
 		
 		// after realloc, cigar may be changed
 		cigar = bam1_cigar(b);
 	}
 
 	// from the end of b->data
-	new_cigar = (uint32_t*)(b->data + (b->m_data - b->core.n_cigar * 4));
+	new_cigar = (unsigned int*)(b->data + (b->m_data - b->core.n_cigar * 4));
 
 	// the core loop
 	seq = bam1_seq(b);
@@ -438,11 +448,17 @@ int bam_remove_B(bam1_t *b)
 		if (op == BAM_CBACK)
 		{
 			// the backward operation
-			int t, u;
+			int t;
+			int u;
+
+			// ignore 'B' at the end of CIGAR
 			if (k == b->core.n_cigar - 1)
-				break; // ignore 'B' at the end of CIGAR
+				break;
+
+			// an excessively long backward
 			if (len > j)
-				goto rmB_err; // an excessively long backward
+				goto rmB_err;
+
 			for (t=l-1, u=0; t >= 0; --t)
 			{
 				// look back
@@ -474,13 +490,17 @@ int bam_remove_B(bam1_t *b)
 		{
 			// other CIGAR operations
 			new_cigar[l++] = cigar[k];
+
 			if (bam_cigar_type(op) & 1)
 			{
 				// consume the query
 				if (i != j)
 				{
 					// no need to copy if i == j
-					int u, c, c0;
+					int u;
+					int c;
+					int c0;
+
 					for (u=0; u < len; ++u)
 					{
 						// construct the consensus
@@ -488,7 +508,7 @@ int bam_remove_B(bam1_t *b)
 						if ((j + u) < end_j)
 						{
 							// in an overlap
-							c0 = bam1_seqi(seq, j+u);
+							c0 = bam1_seqi(seq, j + u);
 							if (c != c0)
 							{
 								// a mismatch; choose the better base
@@ -502,7 +522,7 @@ int bam_remove_B(bam1_t *b)
 									qual[j+u] -= qual[i+u]; // the 1st is better; reduce base quality
 							}
 							else
-								qual[j+u] = qual[j+u] > qual[i+u]? qual[j+u] : qual[i+u];
+								qual[j+u] = qual[j+u] > qual[i+u] ? qual[j+u] : qual[i+u];
 						}
 						else
 						{

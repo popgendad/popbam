@@ -36,7 +36,7 @@ typedef char *str_p;
 
 KHASH_MAP_INIT_STR(s, int)
 KHASH_MAP_INIT_STR(r2l, str_p)
-KSORT_INIT_GENERIC(uint16_t)
+KSORT_INIT_GENERIC(unsigned short)
 
 void bam_init_header_hash(bam_header_t *header);
 
@@ -270,10 +270,10 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 	// then sample 255 bases
 	if (n > 255)
 	{
-		ks_shuffle(uint16_t, n, bases);
+		ks_shuffle(unsigned short, n, bases);
 		n = 255;
 	}
-	ks_introsort(uint16_t, n, bases);
+	ks_introsort(unsigned short, n, bases);
 	memset(w, 0, 32*sizeof(int));
 	memset(&aux, 0, sizeof(call_aux_t));
 
