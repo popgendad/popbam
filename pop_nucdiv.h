@@ -47,15 +47,13 @@ class nucdivData: public popbamData
 		void init_nucdiv(void);
 		void destroy_nucdiv(void);
 		void print_nucdiv(int);
+		void printUsage(std::string);
 
 	private:
 		// member private variables
 		double min_sites;                       //!< User-specified minimum proportion of aligned sites to perform analysis
 		double *piw;                            //!< Array of within-population nucleotide diversity
 		double *pib;                            //!< Array of between-population Dxy values
-
-		// member private functions
-		static void nucdivUsage(void);
 };
 
 ///

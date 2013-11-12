@@ -24,10 +24,13 @@ class snpData: public popbamData
 		// member public variables
 		hData_t hap;                            //!< Structure to hold haplotype data
 		unsigned int win_size;                  //!< User-specified window size in kilobases
+		unsigned int *pop_cov;                  //!< Boolean for population coverage
+		unsigned int **ncov;                    //!< Sample size per population per segregating site
 		unsigned long long **pop_sample_mask;   //!< Bit mask for samples covered from a specific population
 		int output;                             //!< User-specified output mode
 		std::string outgroup;                   //!< Sample name of outgroup to use
 		int outidx;                             //!< Index of outgroup sequence
+		double min_pop;                         //!< Minimum proportion of samples present
 
 		// member public functions
 		std::string parseCommandLine(int, char**);
@@ -41,7 +44,7 @@ class snpData: public popbamData
 		void print_popbam_snp(int);
 		void print_sweep(int);
 		void print_ms(int);
-		static void snpUsage(void);
+		void printUsage(std::string);
 };
 
 ///

@@ -82,12 +82,16 @@ typedef gzFile bamFile;
   @discussion Field hash points to null by default. It is a private
   member.
  */
-typedef struct {
+typedef struct
+{
 	int n_targets;
 	char **target_name;
 	unsigned int *target_len;
-	void *dict, *hash, *rg2lib;
-	unsigned int l_text, n_text;
+	void *dict;
+	void *hash;
+	void *rg2lib;
+	unsigned int l_text;
+	unsigned int n_text;
 	char *text;
 } bam_header_t;
 

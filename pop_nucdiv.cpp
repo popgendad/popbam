@@ -9,22 +9,23 @@
 
 int main_nucdiv(int argc, char *argv[])
 {
-	int k;
-	int chr;                  //! chromosome identifier
-	int beg;                  //! beginning coordinate for analysis
-	int end;                  //! end coordinate for analysis
-	int ref;                  //! ref
-	long num_windows;         //! number of windows
-	long cw;                  //! counter for windows
-	std::string msg;          //! string for error message
-	bam_plbuf_t *buf;         //! pileup buffer
-	nucdivData *t;            //! nucdiv data structure
+	int k = 0;
+	int chr = 0;                  //! chromosome identifier
+	int beg = 0;                  //! beginning coordinate for analysis
+	int end = 0;                  //! end coordinate for analysis
+	int ref = 0;                  //! ref
+	long num_windows = 0;         //! number of windows
+	long cw = 0;                  //! counter for windows
+	std::string msg;              //! string for error message
+	std::string region;           //! the scaffold/chromosome region string
+	bam_plbuf_t *buf;             //! pileup buffer
+	nucdivData *t;                //! pointer to the function data structure
 
 	// allocate memory for nucdiv data structre
 	t = new nucdivData;
 
 	// parse the command line options
-	std::string region = t->parseCommandLine(argc, argv);
+	region = t->parseCommandLine(argc, argv);
 
 	// check input BAM file for errors
 	t->checkBAM();
@@ -36,14 +37,14 @@ int main_nucdiv(int argc, char *argv[])
 	t->bam_smpl_add();
 
 	// initialize error model
-	t->em = errmod_init(1.-0.83);
+	t->em = errmod_init(0.17);
 
 	// parse genomic region
 	k = bam_parse_region(t->h, region, &chr, &beg, &end);
 	if (k < 0)
 	{
 		msg = "Bad genome coordinates: " + region;
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 
 	// fetch reference sequence
@@ -78,7 +79,7 @@ int main_nucdiv(int argc, char *argv[])
 			if (k < 0)
 			{
 				msg = "Bad window coordinates " + winCoord;
-				fatal_error(msg, __FILE__, __LINE__, 0);
+				fatalError(msg);
 			}
 		}
 		else
@@ -89,7 +90,7 @@ int main_nucdiv(int argc, char *argv[])
 			if (ref < 0)
 			{
 				msg = "Bad scaffold name: " + region;
-				fatal_error(msg, __FILE__, __LINE__, 0);
+				fatalError(msg);
 			}
 		}
 
@@ -106,7 +107,7 @@ int main_nucdiv(int argc, char *argv[])
 		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
 		{
 			msg = "Failed to retrieve region " + region + " due to corrupted BAM index file";
-			fatal_error(msg, __FILE__, __LINE__, 0);
+			fatalError(msg);
 		}
 
 		// finalize pileup
@@ -136,11 +137,11 @@ int main_nucdiv(int argc, char *argv[])
 
 int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
 {
-	int i;
-	int fq;
-	unsigned long long sample_cov;
-	unsigned long long *cb = NULL;
-	nucdivData *t = NULL;
+	int i = 0;
+	int fq = 0;
+	unsigned long long sample_cov = 0;
+	unsigned long long *cb = nullptr;
+	nucdivData *t = nullptr;
 
 	// get control data structure
 	t = (nucdivData*)data;
@@ -171,7 +172,7 @@ int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *
 		// determine how many samples pass the quality filters
 		sample_cov = qfilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
 
-		unsigned int *ncov;
+		unsigned int *ncov = nullptr;
 		ncov = new unsigned int [t->sm->npops]();
 
 		// determine population coverage
@@ -207,10 +208,12 @@ int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *
 
 void nucdivData::calc_nucdiv(void)
 {
-	int i, j, k;
-	unsigned short **freq;
+	int i = 0;
+	int j = 0;
+	int k = 0;
+	unsigned short **freq = nullptr;
 	unsigned long long pop_type = 0;
-	double sum;
+	double sum = 0.0;
 
 	freq = new unsigned short* [sm->npops];
 	for (i=0; i < sm->npops; i++)
@@ -237,6 +240,7 @@ void nucdivData::calc_nucdiv(void)
 		{
 			pop_type = types[j] & pop_mask[i];
 			freq[i][j] = bitcount64(pop_type);
+
 			if (ncov[i][j] > 1)
 				if (((flag & BAM_NOSINGLETONS) && (freq[i][j] > 1)) || !(flag & BAM_NOSINGLETONS))
 					sum += (2.0 * freq[i][j] * (ncov[i][j] - freq[i][j])) / SQ(ncov[i][j]-1);
@@ -267,9 +271,10 @@ void nucdivData::calc_nucdiv(void)
 
 void nucdivData::print_nucdiv(int chr)
 {
-	int i, j;
+	int i = 0;
+	int j = 0;
 
-	std::cout << h->target_name[chr] << "\t" << beg+1 << "\t" << end+1;
+	std::cout << h->target_name[chr] << "\t" << beg + 1 << "\t" << end + 1;
 
 	for (i=0; i < sm->npops; i++)
 	{
@@ -304,13 +309,13 @@ void nucdivData::print_nucdiv(int chr)
 
 std::string nucdivData::parseCommandLine(int argc, char *argv[])
 {
-	std::vector<std::string> glob_opts;
-	std::string msg;
 #ifdef _MSC_VER
 	struct _stat finfo;
 #else
 	struct stat finfo;
 #endif
+	std::vector<std::string> glob_opts;
+	std::string msg;
 
 	//read command line options
 	GetOpt::GetOpt_pp args(argc, argv);
@@ -342,10 +347,7 @@ std::string nucdivData::parseCommandLine(int argc, char *argv[])
 
 	// if no input BAM file is specified -- print usage and exit
 	if (glob_opts.size() < 2)
-	{
-		msg = "Need to specify BAM file name";
-		fatal_error(msg, __FILE__, __LINE__, &nucdivUsage);
-	}
+		printUsage("Need to specify BAM file name");
 	else
 		bamfile = glob_opts[0];
 
@@ -365,15 +367,12 @@ std::string nucdivData::parseCommandLine(int argc, char *argv[])
 				std::cerr << "Unexpected error in stat" << std::endl;
 				break;
 		}
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 
 	// check if fastA reference file is specified
 	if (reffile.empty())
-	{
-		msg = "Need to specify fasta reference file";
-		fatal_error(msg, __FILE__, __LINE__, &nucdivUsage);
-	}
+		printUsage("Need to specify fasta reference file");
 
 	// check is fastA reference file exists on disk
 	if ((stat(reffile.c_str(), &finfo)) != 0)
@@ -391,7 +390,7 @@ std::string nucdivData::parseCommandLine(int argc, char *argv[])
 				break;
 		}
 		msg = "Specified reference file: " + reffile + " does not exist";
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 
 	//check if BAM header input file exists on disk
@@ -412,7 +411,7 @@ std::string nucdivData::parseCommandLine(int argc, char *argv[])
 					break;
 			}
 			msg = "Specified header file: " + headfile + " does not exist";
-			fatal_error(msg, __FILE__, __LINE__, 0);
+			fatalError(msg);
 		}
 	}
 
@@ -431,7 +430,7 @@ nucdivData::nucdivData(void)
 void nucdivData::init_nucdiv(void)
 {
 	int i;
-	int length = end-beg;
+	int length = end - beg;
 	int npops = sm->npops;
 
 	segsites = 0;
@@ -476,9 +475,9 @@ void nucdivData::destroy_nucdiv(void)
 	delete [] ncov;
 }
 
-void nucdivData::nucdivUsage(void)
+void nucdivData::printUsage(std::string msg)
 {
-	std::cerr << std::endl;
+	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam nucdiv [options] <in.bam> [region]" << std::endl;
 	std::cerr << std::endl;
 	std::cerr << "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]" << std::endl;

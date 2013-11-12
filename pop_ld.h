@@ -54,7 +54,7 @@ class ldData: public popbamData
 		void init_ld(void);
 		void destroy_ld(void);
 		void print_ld(int);
-		static void ldUsage(void);
+		void printUsage(std::string);
 };
 
 ///

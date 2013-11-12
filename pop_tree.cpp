@@ -41,7 +41,7 @@ int main_tree(int argc, char *argv[])
     if (k < 0)
     {
         msg = "Bad genome coordinates: " + region;
-        fatal_error(msg, __FILE__, __LINE__, 0);
+        fatalError(msg);
     }
 
     // fetch reference sequence
@@ -76,7 +76,7 @@ int main_tree(int argc, char *argv[])
             if (k < 0)
             {
                 msg = "Bad window coordinates " + winCoord;
-                fatal_error(msg, __FILE__, __LINE__, 0);
+                fatalError(msg);
             }
         }
         else
@@ -87,7 +87,7 @@ int main_tree(int argc, char *argv[])
             if (ref < 0)
             {
                 msg = "Bad scaffold name: " + region;
-                fatal_error(msg, __FILE__, __LINE__, 0);
+                fatalError(msg);
             }
         }
 
@@ -104,7 +104,7 @@ int main_tree(int argc, char *argv[])
         if ((bam_fetch(t.bam_in->x.bam, t.idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
         {
             msg = "Failed to retrieve region " + region + " due to corrupted BAM index file";
-            fatal_error(msg, __FILE__, __LINE__, 0);
+            fatalError(msg);
         }
 
         // finalize pileup
@@ -611,7 +611,7 @@ std::string treeData::parseCommandLine(int argc, char *argv[])
     args >> GetOpt::Option('d', dist);
     if (args >> GetOpt::OptionPresent('w'))
     {
-        win_size *= 1000;
+        win_size *= KB;
         flag |= BAM_WINDOW;
     }
     if (args >> GetOpt::OptionPresent('h'))
@@ -621,7 +621,7 @@ std::string treeData::parseCommandLine(int argc, char *argv[])
     if ((dist != "pdist") && (dist != "jc"))
     {
         msg = dist + " is not a valid distance option";
-        fatal_error(msg, __FILE__, __LINE__, &treeUsage);
+        printUsage(msg);
     }
     args >> GetOpt::GlobalOption(glob_opts);
 
@@ -633,10 +633,7 @@ std::string treeData::parseCommandLine(int argc, char *argv[])
 
     // if no input BAM file is specified -- print usage and exit
     if (glob_opts.size() < 2)
-    {
-        msg = "Need to specify BAM file name";
-        fatal_error(msg, __FILE__, __LINE__, &treeUsage);
-    }
+        printUsage("Need to specify BAM file name");
     else
         bamfile = glob_opts[0];
 
@@ -656,15 +653,12 @@ std::string treeData::parseCommandLine(int argc, char *argv[])
             std::cerr << "Unexpected error in stat" << std::endl;
             break;
         }
-        fatal_error(msg, __FILE__, __LINE__, 0);
+        fatalError(msg);
     }
 
     // check if fastA reference file is specified
     if (reffile.empty())
-    {
-        msg = "Need to specify fastA reference file";
-        fatal_error(msg, __FILE__, __LINE__, &treeUsage);
-    }
+        printUsage("Need to specify fastA reference file");
 
     // check is fastA reference file exists on disk
     if ((stat(reffile.c_str(), &finfo)) != 0)
@@ -682,7 +676,7 @@ std::string treeData::parseCommandLine(int argc, char *argv[])
             break;
         }
         msg = "Specified reference file: " + reffile + " does not exist";
-        fatal_error(msg, __FILE__, __LINE__, 0);
+        fatalError(msg);
     }
 
     //check if BAM header input file exists on disk
@@ -703,7 +697,7 @@ std::string treeData::parseCommandLine(int argc, char *argv[])
                 break;
             }
             msg = "Specified header file: " + headfile + " does not exist";
-            fatal_error(msg, __FILE__, __LINE__, 0);
+            fatalError(msg);
         }
     }
 
@@ -799,9 +793,9 @@ void treeData::destroy_tree(void)
     delete [] dist_matrix;
 }
 
-void treeData::treeUsage(void)
+void treeData::printUsage(std::string msg)
 {
-    std::cerr << std::endl;
+    std::cerr << msg << std::endl << std::endl;
     std::cerr << "Usage:   popbam tree [options] <in.bam> [region]" << std::endl;
     std::cerr << std::endl;
     std::cerr << "Options: -i          base qualities are Illumina 1.3+     [ default: Sanger ]" << std::endl;

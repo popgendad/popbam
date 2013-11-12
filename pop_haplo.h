@@ -48,6 +48,7 @@ class haploData: public popbamData
 		void calc_haplo(void);
 		void print_haplo(int);
 		void destroy_haplo(void);
+		void printUsage(std::string);
 
 	private:
 		// member private variables
@@ -65,7 +66,6 @@ class haploData: public popbamData
 		void calc_nhaps(void);
 		void calc_ehhs(void);
 		void calc_minDxy(void);
-		static void haploUsage(void);
 };
 
 ///

@@ -9,151 +9,158 @@
 
 int main_diverge(int argc, char *argv[])
 {
-	bool found = false;       //! is the outgroup sequence found?
-	int chr;                  //! chromosome identifier
-	int beg;                  //! beginning coordinate for analysis
-	int end;                  //! end coordinate for analysis
-	int ref;                  //! ref
-	long num_windows;         //! number of windows
-	std::string msg;          //! string for error message
-	bam_plbuf_t *buf;         //! pileup buffer
-	divergeData t;
+	bool found = false;           //! is the outgroup sequence found?
+	int k = 0;
+	int chr = 0;                  //! chromosome identifier
+	int beg = 0;                  //! beginning coordinate for analysis
+	int end = 0;                  //! end coordinate for analysis
+	int ref = 0;                  //! ref
+	long num_windows = 0;         //! number of windows
+	long cw = 0;                  //! window counter
+	std::string msg;              //! string for error message
+	std::string region;           //! the scaffold/chromosome region string
+	bam_plbuf_t *buf = nullptr;   //! pileup buffer
+	divergeData *t = nullptr;     //! pointer to the function data structure
+
+	// allocate memory for nucdiv data structre
+	t = new divergeData;
 
 	// parse the command line options
-	std::string region = t.parseCommandLine(argc, argv);
+	region = t->parseCommandLine(argc, argv);
 
 	// check input BAM file for errors
-	t.checkBAM();
+	t->checkBAM();
 
 	// initialize the sample data structure
-	t.bam_smpl_init();
+	t->bam_smpl_init();
 
 	// add samples
-	t.bam_smpl_add();
+	t->bam_smpl_add();
 
 	// initialize error model
-	t.em = errmod_init(1.0-0.83);
+	t->em = errmod_init(0.17);
 
 	// if outgroup option is used check to make sure it exists
-	if (t.flag & BAM_OUTGROUP)
+	if (t->flag & BAM_OUTGROUP)
 	{
-		for (int i=0; i < t.sm->n; i++)
-			if (strcmp(t.sm->smpl[i], t.outgroup.c_str()) == 0)
+		for (int i=0; i < t->sm->n; i++)
+			if (strcmp(t->sm->smpl[i], t->outgroup.c_str()) == 0)
 			{
-				t.outidx = i;
+				t->outidx = i;
 				found = true;
 			}
 		if (!found)
 		{
-			msg = "Specified outgroup " + t.outgroup + " not found";
-			fatal_error(msg, __FILE__, __LINE__, 0);
+			msg = "Specified outgroup " + t->outgroup + " not found";
+			fatalError(msg);
 		}
 	}
 
 	// parse genomic region
-	int k = bam_parse_region(t.h, region, &chr, &beg, &end);
+	k = bam_parse_region(t->h, region, &chr, &beg, &end);
 	if (k < 0)
 	{
 		msg = "Bad genome coordinates: " + region;
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 
 	// fetch reference sequence
-	t.ref_base = faidx_fetch_seq(t.fai_file, t.h->target_name[chr], 0, 0x7fffffff, &(t.len));
+	t->ref_base = faidx_fetch_seq(t->fai_file, t->h->target_name[chr], 0, 0x7fffffff, &(t->len));
 
 	// calculate the number of windows
-	if (t.flag & BAM_WINDOW)
-		num_windows = ((end-beg)-1)/t.win_size;
+	if (t->flag & BAM_WINDOW)
+		num_windows = ((end - beg) - 1) / t->win_size;
 	else
 	{
-		t.win_size = (end-beg);
+		t->win_size = end - beg;
 		num_windows = 1;
 	}
 
 	// iterate through all windows along specified genomic region
-	for (long cw=0; cw < num_windows; cw++)
+	for (cw=0; cw < num_windows; cw++)
 	{
 		// construct genome coordinate string
-		std::string scaffold_name(t.h->target_name[chr]);
+		std::string scaffold_name(t->h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
 		winc.seekp(0, std::ios::end);
-		winc << ":" << beg+(cw*t.win_size)+1 << "-" << ((cw+1)*t.win_size)+(beg-1);
+		winc << ":" << beg + (cw * t->win_size) + 1 << "-" << ((cw + 1) * t->win_size) + (beg - 1);
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
-		t.num_sites = 0;
+		t->num_sites = 0;
 
 		// parse the BAM file and check if region is retrieved from the reference
-		if (t.flag & BAM_WINDOW)
+		if (t->flag & BAM_WINDOW)
 		{
-			k = bam_parse_region(t.h, winCoord, &ref, &(t.beg), &(t.end));
+			k = bam_parse_region(t->h, winCoord, &ref, &(t->beg), &(t->end));
 			if (k < 0)
 			{
 				msg = "Bad window coordinates " + winCoord;
-				fatal_error(msg, __FILE__, __LINE__, 0);
+				fatalError(msg);
 			}
 		}
 		else
 		{
 			ref = chr;
-			t.beg = beg;
-			t.end = end;
+			t->beg = beg;
+			t->end = end;
 			if (ref < 0)
 			{
 				msg = "Bad scaffold name: " + region;
-				fatal_error(msg, __FILE__, __LINE__, 0);
+				fatalError(msg);
 			}
 		}
 
 		// initialize diverge specific variables
-		t.init_diverge();
+		t->init_diverge();
 
 		// create population assignments
-		t.assign_pops();
+		t->assign_pops();
 
 		// set default minimum sample size as
 		// the number of samples in the population
-		t.set_min_pop_n();
+		t->set_min_pop_n();
 
 		// initialize pileup
-		buf = bam_plbuf_init(make_diverge, &t);
+		buf = bam_plbuf_init(make_diverge, t);
 
 		// fetch region from bam file
-		if ((bam_fetch(t.bam_in->x.bam, t.idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
+		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
 		{
 			msg = "Failed to retrieve region " + region + " due to corrupted BAM index file";
-			fatal_error(msg, __FILE__, __LINE__, 0);
+			fatalError(msg);
 		}
 
 		// finalize pileup
 		bam_plbuf_push(0, buf);
 
 		// print results to stdout
-		t.calc_diverge();
-		t.print_diverge(chr);
+		t->calc_diverge();
+		t->print_diverge(chr);
 
 		// take out the garbage
-		t.destroy_diverge();
+		t->destroy_diverge();
 		bam_plbuf_destroy(buf);
 	}
 	// end of window interation
 
-	errmod_destroy(t.em);
-	samclose(t.bam_in);
-	bam_index_destroy(t.idx);
-	t.bam_smpl_destroy();
-	free(t.ref_base);
+	errmod_destroy(t->em);
+	samclose(t->bam_in);
+	bam_index_destroy(t->idx);
+	t->bam_smpl_destroy();
+	free(t->ref_base);
+	delete t;
 
 	return 0;
 }
 
 int make_diverge(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
 {
-	int i;
-	int fq;
-	unsigned long long sample_cov;
-	unsigned long long *cb = NULL;
-	divergeData *t = NULL;
+	int i = 0;
+	int fq = 0;
+	unsigned long long sample_cov = 0;
+	unsigned long long *cb = nullptr;
+	divergeData *t = nullptr;
 
 	// get control data structure
 	t = (divergeData*)data;
@@ -198,12 +205,12 @@ int make_diverge(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t 
 				t->hap.ref[t->segsites] = (unsigned char)bam_nt16_table[(int)t->ref_base[pos]];
 				for (i=0; i < t->sm->n; i++)
 				{
-					t->hap.rms[i][t->segsites] = (cb[i]>>(CHAR_BIT*6))&0xffff;
-					t->hap.snpq[i][t->segsites] = (cb[i]>>(CHAR_BIT*4))&0xffff;
-					t->hap.num_reads[i][t->segsites] = (cb[i]>>(CHAR_BIT*2))&0xffff;
-					t->hap.base[i][t->segsites] = bam_nt16_table[(int)iupac[(cb[i]>>CHAR_BIT)&0xff]];
-					if (cb[i]&0x2ULL)
-						t->hap.seq[i][t->segsites/64] |= 0x1ULL << t->segsites%64;
+					t->hap.rms[i][t->segsites] = (cb[i] >> (CHAR_BIT * 6)) & 0xffff;
+					t->hap.snpq[i][t->segsites] = (cb[i] >> (CHAR_BIT * 4)) & 0xffff;
+					t->hap.num_reads[i][t->segsites] = (cb[i] >> (CHAR_BIT * 2)) & 0xffff;
+					t->hap.base[i][t->segsites] = bam_nt16_table[(int)iupac[(cb[i] >> CHAR_BIT) & 0xff]];
+					if (cb[i] & 0x2ULL)
+						t->hap.seq[i][t->segsites/64] |= 0x1ULL << t->segsites % 64;
 				}
 				t->hap.idx[t->segsites] = t->num_sites;
 				t->segsites++;
@@ -241,7 +248,7 @@ void divergeData::calc_diverge(void)
 
 					// check if outgroup is different from reference
 					if ((flag & BAM_OUTGROUP) && CHECK_BIT(types[hap.idx[j]], outidx))
-						freq = pop_nsmpl[i]-bitcount64(pop_type);
+						freq = pop_nsmpl[i] - bitcount64(pop_type);
 					else
 						freq = bitcount64(pop_type);
 					if ((freq > 0) && (freq < pop_nsmpl[i]) && !(flag & BAM_NOSINGLETONS))
@@ -285,7 +292,7 @@ std::string divergeData::parseCommandLine(int argc, char *argv[])
 	if (args >> GetOpt::OptionPresent('w'))
 	{
 		flag |= BAM_WINDOW;
-		win_size *= 1000;
+		win_size *= KB;
 	}
 	if (args >> GetOpt::OptionPresent('h'))
 		flag |= BAM_HEADERIN;
@@ -302,7 +309,7 @@ std::string divergeData::parseCommandLine(int argc, char *argv[])
 	if ((dist != "pdist") && (dist != "jc"))
 	{
 		msg = dist + " is not a valid distance option";
-		fatal_error(msg, __FILE__, __LINE__, &divergeUsage);
+		printUsage(msg);
 	}
 	args >> GetOpt::GlobalOption(glob_opts);
 
@@ -310,17 +317,11 @@ std::string divergeData::parseCommandLine(int argc, char *argv[])
 
 	// check if output option is valid
 	if ((output < 0) || (output > 1))
-	{
-		msg = "Not a valid output option";
-		fatal_error(msg, __FILE__, __LINE__, &divergeUsage);
-	}
+		printUsage("Not a valid output option");
 
 	// if no input BAM file is specified -- print usage and exit
 	if (glob_opts.size() < 2)
-	{
-		msg = "Need to specify BAM file name";
-		fatal_error(msg, __FILE__, __LINE__, &divergeUsage);
-	}
+		printUsage("Need to specify BAM file name");
 	else
 		bamfile = glob_opts[0];
 
@@ -340,15 +341,12 @@ std::string divergeData::parseCommandLine(int argc, char *argv[])
 				std::cerr << "Unexpected error in stat" << std::endl;
 				break;
 		}
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 
 	// check if fastA reference file is specified
 	if (reffile.empty())
-	{
-		msg = "Need to specify fastA reference file";
-		fatal_error(msg, __FILE__, __LINE__, &divergeUsage);
-	}
+		printUsage("Need to specify fastA reference file");
 
 	// check is fastA reference file exists on disk
 	if ((stat(reffile.c_str(), &finfo)) != 0)
@@ -366,7 +364,7 @@ std::string divergeData::parseCommandLine(int argc, char *argv[])
 				break;
 		}
 		msg = "Specified reference file: " + reffile + " does not exist";
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 
 	//check if BAM header input file exists on disk
@@ -387,7 +385,7 @@ std::string divergeData::parseCommandLine(int argc, char *argv[])
 					break;
 			}
 			msg = "Specified header file: " + headfile + " does not exist";
-			fatal_error(msg, __FILE__, __LINE__, 0);
+			fatalError(msg);
 		}
 	}
 
@@ -410,8 +408,8 @@ divergeData::divergeData(void)
 
 void divergeData::init_diverge(void)
 {
-	int i;
-	int length = end-beg;
+	int i = 0;
+	int length = end - beg;
 	int n = sm->n;
 	int npops = sm->npops;
 
@@ -460,7 +458,7 @@ void divergeData::init_diverge(void)
 
 void divergeData::destroy_diverge(void)
 {
-	int i;
+	int i = 0;
 
 	delete [] pop_mask;
 	delete [] types;
@@ -499,9 +497,9 @@ void divergeData::destroy_diverge(void)
 
 void divergeData::print_diverge(int chr)
 {
-	int i;
+	int i = 0;
 
-	std::cout << h->target_name[chr] << "\t" << beg+1 << "\t" << end+1 << "\t" << num_sites;
+	std::cout << h->target_name[chr] << "\t" << beg + 1 << "\t" << end + 1 << "\t" << num_sites;
 
 	switch (output)
 	{
@@ -513,12 +511,12 @@ void divergeData::print_diverge(int chr)
 					if (dist == "pdist")
 					{
 						std::cout << "\td[" << sm->smpl[i] << "]:";
-						std::cout << "\t" << std::fixed << std::setprecision(5) << (double)ind_div[i]/num_sites;
+						std::cout << "\t" << std::fixed << std::setprecision(5) << (double)ind_div[i] / num_sites;
 					}
 					else if (dist == "jc")
 					{
-						double pdist = (double)ind_div[i]/num_sites;
-						double jc = -0.75*log(1.0-pdist*(4.0/3.0));
+						double pdist = (double)ind_div[i] / num_sites;
+						double jc = -0.75 * log(1.0 - pdist * (4.0 / 3.0));
 						std::cout << "\td[" << sm->smpl[i] << "]:";
 						std::cout << "\t" << std::fixed << std::setprecision(5) << jc;
 					}
@@ -541,19 +539,19 @@ void divergeData::print_diverge(int chr)
 					if (dist == "pdist")
 					{
 						if (flag & BAM_SUBSTITUTE)
-							std::cout << "\t" << std::fixed << std::setprecision(5) << (double)pop_div[i]/num_sites;
+							std::cout << "\t" << std::fixed << std::setprecision(5) << (double)pop_div[i] / num_sites;
 						else
-							std::cout << "\t" << std::fixed << std::setprecision(5) << (double)(pop_div[i]+num_snps[i])/num_sites;
+							std::cout << "\t" << std::fixed << std::setprecision(5) << (double)(pop_div[i] + num_snps[i]) / num_sites;
 					}
 					else if (dist == "jc")
 					{
 						double pdist;
 						double jc;
 						if (flag & BAM_SUBSTITUTE)
-							pdist = (double)pop_div[i]/num_sites;
+							pdist = (double)pop_div[i] / num_sites;
 						else
-							pdist = (double)(pop_div[i]+num_snps[i])/num_sites;
-						jc = -0.75*log(1.0-pdist*(4.0/3.0));
+							pdist = (double)(pop_div[i] + num_snps[i]) / num_sites;
+						jc = -0.75 * log(1.0 - pdist * (4.0 / 3.0));
 						std::cout << "\t" << std::fixed << std::setprecision(5) << jc;
 					}
 					else
@@ -579,13 +577,15 @@ void divergeData::print_diverge(int chr)
 
 void divergeData::set_min_pop_n(void)
 {
-	for (int j=0; j < sm->npops; j++)
+	int j = 0;
+
+	for (j=0; j < sm->npops; j++)
 		min_pop_n[j] = (unsigned short)pop_nsmpl[j];
 }
 
-void divergeData::divergeUsage(void)
+void divergeData::printUsage(std::string msg)
 {
-	std::cerr << std::endl;
+	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam diverge [options] <in.bam> [region]" << std::endl;
 	std::cerr << std::endl;
 	std::cerr << "Options: -i          base qualities are Illumina 1.3+     [ default: Sanger ]" << std::endl;

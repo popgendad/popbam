@@ -8,48 +8,53 @@
 
 int main_ld(int argc, char *argv[])
 {
-	int chr;                  //! chromosome identifier
-	int beg;                  //! beginning coordinate for analysis
-	int end;                  //! end coordinate for analysis
-	int ref;                  //! ref
-	long num_windows;         //! number of windows
-	long cw;                  //! counter for windows
-	std::string msg;          //! string for error message
-	bam_plbuf_t *buf;         //! pileup buffer
-	ldData t;
+	int k = 0;
+	int chr = 0;                  //! chromosome identifier
+	int beg = 0;                  //! beginning coordinate for analysis
+	int end = 0;                  //! end coordinate for analysis
+	int ref = 0;                  //! ref
+	long num_windows = 0;         //! number of windows
+	long cw = 0;                  //! counter for windows
+	std::string msg;              //! string for error message
+	std::string region;           //! the scaffold/chromosome region string
+	bam_plbuf_t *buf = nullptr;   //! pileup buffer
+	ldData *t = nullptr;          //! pointer to the function data structure
+
+	// allocate memory for nucdiv data structre
+	t = new ldData;
 
 	// parse the command line options
-	std::string region = t.parseCommandLine(argc, argv);
+	region = t->parseCommandLine(argc, argv);
 
 	// check input BAM file for errors
-	t.checkBAM();
+	t->checkBAM();
 
 	// initialize the sample data structure
-	t.bam_smpl_init();
+	t->bam_smpl_init();
 
 	// add samples
-	t.bam_smpl_add();
+	t->bam_smpl_add();
 
 	// initialize error model
-	t.em = errmod_init(1.0-0.83);
+	t->em = errmod_init(0.17);
 
 	// parse genomic region
-	int k = bam_parse_region(t.h, region, &chr, &beg, &end);
+	k = bam_parse_region(t->h, region, &chr, &beg, &end);
 	if (k < 0)
 	{
 		msg = "Bad genome coordinates: " + region;
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 
 	// fetch reference sequence
-	t.ref_base = faidx_fetch_seq(t.fai_file, t.h->target_name[chr], 0, 0x7fffffff, &(t.len));
+	t->ref_base = faidx_fetch_seq(t->fai_file, t->h->target_name[chr], 0, 0x7fffffff, &(t->len));
 
 	// calculate the number of windows
-	if (t.flag & BAM_WINDOW)
-		num_windows = ((end - beg) - 1) / t.win_size;
+	if (t->flag & BAM_WINDOW)
+		num_windows = ((end - beg) - 1) / t->win_size;
 	else
 	{
-		t.win_size = end - beg;
+		t->win_size = end - beg;
 		num_windows = 1;
 	}
 
@@ -58,51 +63,51 @@ int main_ld(int argc, char *argv[])
 	{
 
 		// construct genome coordinate string
-		std::string scaffold_name(t.h->target_name[chr]);
+		std::string scaffold_name(t->h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
 		winc.seekp(0, std::ios::end);
-		winc << ":" << beg + (cw * t.win_size) + 1 << "-" << ((cw + 1) * t.win_size) + (beg - 1);
+		winc << ":" << beg + (cw * t->win_size) + 1 << "-" << ((cw + 1) * t->win_size) + (beg - 1);
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
-		t.num_sites = 0;
+		t->num_sites = 0;
 
 		// parse the BAM file and check if region is retrieved from the reference
-		if (t.flag & BAM_WINDOW)
+		if (t->flag & BAM_WINDOW)
 		{
-			k = bam_parse_region(t.h, winCoord, &ref, &(t.beg), &(t.end));
+			k = bam_parse_region(t->h, winCoord, &ref, &(t->beg), &(t->end));
 			if (k < 0)
 			{
 				msg = "Bad window coordinates " + winCoord;
-				fatal_error(msg, __FILE__, __LINE__, 0);
+				fatalError(msg);
 			}
 		}
 		else
 		{
 			ref = chr;
-			t.beg = beg;
-			t.end = end;
+			t->beg = beg;
+			t->end = end;
 			if (ref < 0)
 			{
 				msg = "Bad scaffold name: " + region;
-				fatal_error(msg, __FILE__, __LINE__, 0);
+				fatalError(msg);
 			}
 		}
 
 		// initialize nucdiv variables
-		t.init_ld();
+		t->init_ld();
 
 		// create population assignments
-		t.assign_pops();
+		t->assign_pops();
 
 		// initialize pileup
-		buf = bam_plbuf_init(make_ld, &t);
+		buf = bam_plbuf_init(make_ld, t);
 
 		// fetch region from bam file
-		if ((bam_fetch(t.bam_in->x.bam, t.idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
+		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
 		{
 			msg = "Failed to retrieve region " + region + " due to corrupted BAM index file";
-			fatal_error(msg, __FILE__, __LINE__, 0);
+			fatalError(msg);
 		}
 
 		// finalize pileup
@@ -110,22 +115,23 @@ int main_ld(int argc, char *argv[])
 
 		// calculate linkage disequilibrium statistics
 		ld_func fp[3] = {&ldData::calc_zns, &ldData::calc_omegamax, &ldData::calc_wall};
-		(t.*fp[t.output])();
+		(t->*fp[t->output])();
 
 		// print results to stdout
-		t.print_ld(chr);
+		t->print_ld(chr);
 
 		// take out the garbage
-		t.destroy_ld();
+		t->destroy_ld();
 		bam_plbuf_destroy(buf);
 	}
 	// end of window interation
 
-	errmod_destroy(t.em);
-	samclose(t.bam_in);
-	bam_index_destroy(t.idx);
-	t.bam_smpl_destroy();
-	free(t.ref_base);
+	errmod_destroy(t->em);
+	samclose(t->bam_in);
+	bam_index_destroy(t->idx);
+	t->bam_smpl_destroy();
+	free(t->ref_base);
+	delete t;
 
 	return 0;
 }
@@ -135,8 +141,8 @@ int make_ld(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, 
 	int i = 0;
 	int fq = 0;
 	unsigned long long sample_cov = 0;
-	unsigned long long *cb = NULL;
-	ldData *t = NULL;
+	unsigned long long *cb = nullptr;
+	ldData *t = nullptr;
 
 	// get control data structure
 	t = (ldData*)data;
@@ -193,7 +199,9 @@ int make_ld(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, 
 
 void ldData::calc_zns(void)
 {
-	int i, j, k;
+	int i = 0;
+	int j = 0;
+	int k = 0;
 	unsigned short n = 0;
 	unsigned short x0 = 0;
 	unsigned short x1 = 0;
@@ -260,7 +268,7 @@ void ldData::calc_omegamax(void)
 	unsigned long long type0 = 0;
 	unsigned long long type1 = 0;
 	unsigned long long x11 = 0;
-	double **r2 = NULL;
+	double **r2 = nullptr;
 	double sumleft = 0.0;
 	double sumright = 0.0;
 	double sumbetween = 0.0;
@@ -370,8 +378,8 @@ void ldData::calc_wall(void)
 {
 	int i, j, k;
 	unsigned long long last_type = 0;
-	int *num_congruent = NULL;
-	int *num_part = NULL;
+	int *num_congruent = nullptr;
+	int *num_part = nullptr;
 	unsigned long long type = 0;
 	unsigned long long complem = 0;
 	std::vector<std::vector<unsigned long long> > uniq_part_types(sm->npops);
@@ -492,17 +500,11 @@ std::string ldData::parseCommandLine(int argc, char *argv[])
 
 	// check if output option is valid
 	if ((output < 0) || (output > 2))
-	{
-		msg = "Not a valid output option";
-		fatal_error(msg, __FILE__, __LINE__, &ldUsage);
-	}
+		printUsage("Not a valid output option");
 
 	// if no input BAM file is specified -- print usage and exit
 	if (glob_opts.size() < 2)
-	{
-		msg = "Need to specify input BAM file name";
-		fatal_error(msg, __FILE__, __LINE__, &ldUsage);
-	}
+		printUsage("Need to specify input BAM file name");
 	else
 		bamfile = glob_opts[0];
 
@@ -522,15 +524,12 @@ std::string ldData::parseCommandLine(int argc, char *argv[])
 			std::cerr << "Unexpected error in stat" << std::endl;
 			break;
 		}
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 
 	// check if fastA reference file is specified
 	if (reffile.empty())
-	{
-		msg = "Need to specify fastA reference file";
-		fatal_error(msg, __FILE__, __LINE__, &ldUsage);
-	}
+		printUsage("Need to specify fastA reference file");
 
 	// check is fastA reference file exists on disk
 	if ((stat(reffile.c_str(), &finfo)) != 0)
@@ -548,7 +547,7 @@ std::string ldData::parseCommandLine(int argc, char *argv[])
 			break;
 		}
 		msg = "Specified reference file: " + reffile + " does not exist";
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 
 	//check if BAM header input file exists on disk
@@ -569,7 +568,7 @@ std::string ldData::parseCommandLine(int argc, char *argv[])
 				break;
 			}
 			msg = "Specified header file: " + headfile + " does not exist";
-			fatal_error(msg, __FILE__, __LINE__, 0);
+			fatalError(msg);
 		}
 	}
 
@@ -626,10 +625,10 @@ void ldData::init_ld(void)
 
 void ldData::print_ld(int chr)
 {
-	int i;
+	int i = 0;
 
 	//print coordinate information and number of aligned sites
-	std::cout << h->target_name[chr] << "\t" << beg+1 << "\t" << end+1 << "\t" << num_sites;
+	std::cout << h->target_name[chr] << "\t" << beg + 1 << "\t" << end + 1 << "\t" << num_sites;
 
 	//print results for each population
 	for (i=0; i < sm->npops; i++)
@@ -713,9 +712,9 @@ void ldData::destroy_ld(void)
 	}
 }
 
-void ldData::ldUsage(void)
+void ldData::printUsage(std::string msg)
 {
-	std::cerr << std::endl;
+	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam ld [options] <in.bam> [region]" << std::endl;
 	std::cerr << std::endl;
 	std::cerr << "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]" << std::endl;

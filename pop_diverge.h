@@ -41,15 +41,13 @@ class divergeData: public popbamData
 		void set_min_pop_n(void);
 		void destroy_diverge(void);
 		void print_diverge(int);
+		void printUsage(std::string);
 
 	private:
 		// member private variables
 		int min_sites;                          //!< User-specified minimum number of aligned sites to perform analysis
 		unsigned short *pop_div;                //!< Array of mean population divergence calculations
 		unsigned short *ind_div;                //!< Array of individual divergence calculations
-
-		// member private functions
-		static void divergeUsage(void);
 };
 
 ///

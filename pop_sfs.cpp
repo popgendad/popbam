@@ -8,175 +8,181 @@
 
 int main_sfs(int argc, char *argv[])
 {
-	bool found = false;       //! is the outgroup sequence found?
-	int i;
-	int chr;                  //! chromosome identifier
-	int beg;                  //! beginning coordinate for analysis
-	int end;                  //! end coordinate for analysis
-	int ref;                  //! ref
-	long num_windows;         //! number of windows
-	std::string msg;          //! string for error message
-	bam_plbuf_t *buf;         //! pileup buffer
-	sfsData t;
+	bool found = false;           //! is the outgroup sequence found?
+	int i = 0;
+	int k = 0;
+	int chr = 0;                  //! chromosome identifier
+	int beg = 0;                  //! beginning coordinate for analysis
+	int end = 0;                  //! end coordinate for analysis
+	int ref = 0;                  //! ref
+	long num_windows = 0;         //! number of windows
+	long cw = 0;                  //! window counter
+	std::string msg;              //! string for error message
+	std::string region;           //! the scaffold/chromosome region string
+	bam_plbuf_t *buf = nullptr;   //! pileup buffer
+	sfsData *t = nullptr;         //! pointer to the function data structure
+
+	// allocate memory for nucdiv data structre
+	t = new sfsData;
 
 	// parse the command line options
-	std::string region = t.parseCommandLine(argc, argv);
+	region = t->parseCommandLine(argc, argv);
 
 	// check input BAM file for errors
-	t.checkBAM();
+	t->checkBAM();
 
 	// initialize the sample data structure
-	t.bam_smpl_init();
+	t->bam_smpl_init();
 
 	// add samples
-	t.bam_smpl_add();
+	t->bam_smpl_add();
 
 	// initialize error model
-	t.em = errmod_init(1.-0.83);
+	t->em = errmod_init(0.17);
 
 	// if outgroup option is used check to make sure it exists
-	if (t.flag & BAM_OUTGROUP)
+	if (t->flag & BAM_OUTGROUP)
 	{
-		for (i=0; i < t.sm->n; i++)
+		for (i=0; i < t->sm->n; i++)
 		{
-			if (strcmp(t.sm->smpl[i], t.outgroup.c_str()) == 0)
+			if (strcmp(t->sm->smpl[i], t->outgroup.c_str()) == 0)
 			{
-				t.outidx = i;
+				t->outidx = i;
 				found = true;
 			}
 		}
 		if (!found)
 		{
-			msg = "Specified outgroup " + t.outgroup + " not found";
-			fatal_error(msg, __FILE__, __LINE__, 0);
+			msg = "Specified outgroup " + t->outgroup + " not found";
+			fatalError(msg);
 		}
 	}
 
 	// calculate the constants for computation of Tajima's D
-	t.calc_a1();
-	t.calc_a2();
-	t.calc_e1();
-	t.calc_e2();
-	t.calc_dw();
-	t.calc_hw();
+	t->calc_a1();
+	t->calc_a2();
+	t->calc_e1();
+	t->calc_e2();
+	t->calc_dw();
+	t->calc_hw();
 
 	// parse genomic region
-	int k = bam_parse_region(t.h, region, &chr, &beg, &end);
+	k = bam_parse_region(t->h, region, &chr, &beg, &end);
 	if (k < 0)
 	{
 		msg = "Bad genome coordinates: " + region;
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 
 	// fetch reference sequence
-	t.ref_base = faidx_fetch_seq(t.fai_file, t.h->target_name[chr], 0, 0x7fffffff, &(t.len));
+	t->ref_base = faidx_fetch_seq(t->fai_file, t->h->target_name[chr], 0, 0x7fffffff, &(t->len));
 
 	// calculate the number of windows
-	if (t.flag & BAM_WINDOW)
-		num_windows = ((end-beg)-1)/t.win_size;
+	if (t->flag & BAM_WINDOW)
+		num_windows = ((end - beg) - 1) / t->win_size;
 	else
 	{
-		t.win_size = end - beg;
+		t->win_size = end - beg;
 		num_windows = 1;
 	}
 
 	// iterate through all windows along specified genomic region
-	for (long cw=0; cw < num_windows; cw++)
+	for (cw=0; cw < num_windows; cw++)
 	{
 		// construct genome coordinate string
-		std::string scaffold_name(t.h->target_name[chr]);
+		std::string scaffold_name(t->h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
 		winc.seekp(0, std::ios::end);
-		winc << ":" << beg+(cw*t.win_size)+1 << "-" << ((cw+1)*t.win_size)+(beg-1);
+		winc << ":" << beg + (cw * t->win_size) + 1 << "-" << ((cw + 1) * t->win_size) + (beg - 1);
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
-		t.num_sites = 0;
+		t->num_sites = 0;
 
 		// parse the BAM file and check if region is retrieved from the reference
-		if (t.flag & BAM_WINDOW)
+		if (t->flag & BAM_WINDOW)
 		{
-			k = bam_parse_region(t.h, winCoord, &ref, &(t.beg), &(t.end));
+			k = bam_parse_region(t->h, winCoord, &ref, &(t->beg), &(t->end));
 			if (k < 0)
 			{
 				msg = "Bad window coordinates " + winCoord;
-				fatal_error(msg, __FILE__, __LINE__, 0);
+				fatalError(msg);
 			}
 		}
 		else
 		{
 			ref = chr;
-			t.beg = beg;
-			t.end = end;
+			t->beg = beg;
+			t->end = end;
 			if (ref < 0)
 			{
 				msg = "Bad scaffold name: " + region;
-				fatal_error(msg, __FILE__, __LINE__, 0);
+				fatalError(msg);
 			}
 		}
 
 		// initialize nucdiv variables
-		t.init_sfs();
+		t->init_sfs();
 
 		// create population assignments
-		t.assign_pops();
+		t->assign_pops();
 
 		// assign outgroup population
-		if ((t.flag & BAM_OUTGROUP) && found)
-			t.assign_outpop();
+		if ((t->flag & BAM_OUTGROUP) && found)
+			t->assign_outpop();
 
 		// initialize pileup
-		buf = bam_plbuf_init(make_sfs, &t);
+		buf = bam_plbuf_init(make_sfs, t);
 
 		// fetch region from bam file
-		if ((bam_fetch(t.bam_in->x.bam, t.idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
+		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
 		{
 			msg = "Failed to retrieve region " + region + " due to corrupted BAM index file";
-			fatal_error(msg, __FILE__, __LINE__, 0);
+			fatalError(msg);
 		}
 
 		// finalize pileup
 		bam_plbuf_push(0, buf);
 
 		// calculate site frequency spectrum statistics
-		t.calc_sfs();
+		t->calc_sfs();
 
 		// print results to stdout
-		t.print_sfs(chr);
+		t->print_sfs(chr);
 
 		// take out the garbage
-		t.destroy_sfs();
+		t->destroy_sfs();
 		bam_plbuf_destroy(buf);
 	}
 	// end of window interation
 
-	errmod_destroy(t.em);
-	samclose(t.bam_in);
-	bam_index_destroy(t.idx);
-	t.bam_smpl_destroy();
-	for (i=0; i <= t.sm->n; ++i)
+	errmod_destroy(t->em);
+	samclose(t->bam_in);
+	bam_index_destroy(t->idx);
+	t->bam_smpl_destroy();
+	for (i=0; i <= t->sm->n; ++i)
 	{
-		delete [] t.dw[i];
-		delete [] t.hw[i];
+		delete [] t->dw[i];
+		delete [] t->hw[i];
 	}
-	delete [] t.dw;
-	delete [] t.hw;
-	delete [] t.a1;
-	delete [] t.a2;
-	delete [] t.e1;
-	delete [] t.e2;
-	free(t.ref_base);
-
+	delete [] t->dw;
+	delete [] t->hw;
+	delete [] t->a1;
+	delete [] t->a2;
+	delete [] t->e1;
+	delete [] t->e2;
+	free(t->ref_base);
+	delete t;
 	return 0;
 }
 
 int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
 {
-	int i;
-	int fq;
-	unsigned long long sample_cov;
-	unsigned long long *cb = NULL;
-	sfsData *t = NULL;
+	int i = 0;
+	int fq = 0;
+	unsigned long long sample_cov = 0;
+	unsigned long long *cb = nullptr;
+	sfsData *t = nullptr;
 
 	// get control data structure
 	t = (sfsData*)data;
@@ -207,7 +213,7 @@ int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 		// determine how many samples pass the quality filters
 		sample_cov = qfilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
 
-		unsigned int *ncov;
+		unsigned int *ncov = nullptr;
 		ncov = new unsigned int [t->sm->npops]();
 
 		// determine population coverage
@@ -244,9 +250,9 @@ void sfsData::calc_sfs(void)
 {
 	int i, j;
 	int n, s;
-	int avgn;
-	unsigned short freq;
-	unsigned long long pop_type;
+	int avgn = 0;
+	unsigned short freq = 0;
+	unsigned long long pop_type = 0;
 
 	// count number of aligned sites in each population
 	for (i=0; i < num_sites; ++i)
@@ -282,7 +288,7 @@ void sfsData::calc_sfs(void)
 			}
 
 			// finalize calculation of sfs statistics
-			n = (int)(((double)(avgn)/num_snps[i])+0.4999);
+			n = (int)(((double)(avgn) / num_snps[i]) + 0.4999);
 			s = num_snps[i];
 			if ((n > 1) && (s > 0))
 			{
@@ -370,10 +376,7 @@ std::string sfsData::parseCommandLine(int argc, char *argv[])
 
 	// if no input BAM file is specified -- print usage and exit
 	if (glob_opts.size() < 2)
-	{
-		msg = "Need to specify input BAM file name";
-		fatal_error(msg, __FILE__, __LINE__, &sfsUsage);
-	}
+		printUsage("Need to specify input BAM file name");
 	else
 		bamfile = glob_opts[0];
 
@@ -393,15 +396,12 @@ std::string sfsData::parseCommandLine(int argc, char *argv[])
 			std::cerr << "Unexpected error in stat" << std::endl;
 			break;
 		}
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 
 	// check if fastA reference file is specified
 	if (reffile.empty())
-	{
-		msg = "Need to specify fasta reference file name";
-		fatal_error(msg, __FILE__, __LINE__, &sfsUsage);
-	}
+		printUsage("Need to specify fasta reference file name");
 
 	// check is fastA reference file exists on disk
 	if ((stat(reffile.c_str(), &finfo)) != 0)
@@ -419,7 +419,7 @@ std::string sfsData::parseCommandLine(int argc, char *argv[])
 			break;
 		}
 		msg = "Specified reference file: " + reffile + " does not exist";
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 
 	//check if BAM header input file exists on disk
@@ -440,7 +440,7 @@ std::string sfsData::parseCommandLine(int argc, char *argv[])
 				break;
 			}
 			msg = "Specified header file: " + headfile + " does not exist";
-			fatal_error(msg, __FILE__, __LINE__, 0);
+			fatalError(msg);
 		}
 	}
 
@@ -505,7 +505,8 @@ void sfsData::destroy_sfs(void)
 
 void sfsData::calc_dw(void)
 {
-	int n, i;
+	int n = 0;
+	int i = 0;
 
 	dw = new double* [sm->n+1];
 	for (i=0; i <= sm->n; ++i)
@@ -518,8 +519,8 @@ void sfsData::calc_dw(void)
 
 void sfsData::assign_outpop(void)
 {
-	int i;
-	unsigned long long u;
+	int i = 0;
+	unsigned long long u = 0;
 
 	u = 0x1ULL << outidx;
 
@@ -530,7 +531,8 @@ void sfsData::assign_outpop(void)
 
 void sfsData::calc_hw(void)
 {
-	int n, i;
+	int n = 0;
+	int i = 0;
 
 	hw = new double* [sm->n+1];
 	for (i=0; i <= sm->n; ++i)
@@ -543,7 +545,8 @@ void sfsData::calc_hw(void)
 
 void sfsData::calc_a1(void)
 {
-	int i, j;
+	int i = 0;
+	int j = 0;
 
 	a1 = new double [sm->n+1];
 	a1[0] = a1[1] = 1.0;
@@ -559,7 +562,8 @@ void sfsData::calc_a1(void)
 
 void sfsData::calc_a2(void)
 {
-	int i, j;
+	int i = 0;
+	int j = 0;
 
 	a2 = new double [sm->n+2];
 	a2[0] = a2[1] = 1.0;
@@ -575,8 +579,8 @@ void sfsData::calc_a2(void)
 
 void sfsData::calc_e1(void)
 {
-	int i;
-	double b1;
+	int i = 0;
+	double b1 = 0.0;
 
 	e1 = new double [sm->n+1];
 	e1[0] = e1[1] = 1.0;
@@ -590,8 +594,8 @@ void sfsData::calc_e1(void)
 
 void sfsData::calc_e2(void)
 {
-	int i;
-	double b2;
+	int i = 0;
+	double b2 = 0.0;
 
 	e2 = new double [sm->n+1];
 	e2[0] = e2[1] = 1.0;
@@ -603,9 +607,9 @@ void sfsData::calc_e2(void)
 	}
 }
 
-void sfsData::sfsUsage(void)
+void sfsData::printUsage(std::string msg)
 {
-	std::cerr << std::endl;
+	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam sfs [options] <in.bam> [region]" << std::endl;
 	std::cerr << std::endl;
 	std::cerr << "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]" << std::endl;

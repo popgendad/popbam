@@ -228,7 +228,7 @@ enum popbam_func_t {SNP, FASTA, DIVERGE, HAPLO, TREE, NUCDIV, LD, SFS};
 
 /*!
  * \class popbamData
- * \brief The base class for passing parameters and data
+ * \brief The abstract base class for passing parameters and data
  */
 class popbamData
 {
@@ -246,6 +246,8 @@ class popbamData
 		void assign_pops(void);
 		void checkBAM(void);
 		void call_base(int, const bam_pileup1_t*, unsigned long long*);
+
+		virtual void printUsage(std::string) = 0;
 
 		// member variables
 		std::string bamfile;                    //!< File name for the input BAM file
@@ -497,14 +499,11 @@ extern void errmod_destroy(errmod_t *em);
 extern int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *bases, float *q);
 
 /*!
- * \fn void fatal_error(const char *msg, char* file, int line, void(*err_func)(void))
+ * \fn void fatalError(const char *msg, char* file, int line, void(*err_func)(void))
  * \brief Prints error message and exits program
  * \param msg Pointer to string containing error message
- * \param file Pointer to the filename where the error occurred
- * \param line Pointer to the line where the error occurred
- * \param err_func Pointer to any function to be invoked upon error call
  */
-extern void fatal_error(std::string msg, const char* file, int line, void (*err_func)(void));
+extern void fatalError(std::string msg);
 
 /*!
  * \fn int bam_parse_region(bam_header_t *header, std::string region, int *ref_id, int *begin, int *end)

@@ -104,14 +104,14 @@ void popbamData::checkBAM(void)
 	if (!bam_in)
 	{
 		msg = "Cannot read BAM file " + bamfile;
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 
 	// check if BAM header is returned
 	if (!bam_in->header)
 	{
 		msg = "Cannot read BAM header from file " + bamfile;
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 	else
 		h = bam_in->header;
@@ -132,7 +132,7 @@ void popbamData::checkBAM(void)
 	if (!(idx = bam_index_load(bamfile.c_str())))
 	{
 		msg = "Index file not available for BAM file " + bamfile;
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 
 	// check if fastA reference index is available
@@ -140,7 +140,7 @@ void popbamData::checkBAM(void)
 	if (!fai_file)
 	{
 		msg = "Failed to load index for fastA reference file: " + reffile;
-		fatal_error(msg, __FILE__, __LINE__, 0);
+		fatalError(msg);
 	}
 }
 
@@ -164,7 +164,7 @@ void popbamData::assign_pops(void)
 			std::string msg;
 			std::string missing_sample(sm->smpl[i]);
 			msg = "Sample " + missing_sample + " not assigned to a population.\nPlease check BAM header file definitions";
-			fatal_error (msg, __FILE__, __LINE__, 0);
+			fatalError (msg);
 		}
 
 		pop_mask[si] |= 0x1ULL << i;
@@ -175,21 +175,21 @@ void popbamData::assign_pops(void)
 void popbamData::call_base(int n, const bam_pileup1_t *pl, unsigned long long *cb)
 {
 	int i, j;
-	int qq;
-	int baseQ;
-	int tmp_baseQ;
-	int b;
+	int qq = 0;
+	int baseQ = 0;
+	int tmp_baseQ = 0;
+	int b = 0;
 	int si = -1;
-	int rmsq;
+	int rmsq = 0;
 	const int n_smpl = sm->n;
-	unsigned short k;
-	unsigned short *bases = NULL;
+	unsigned short k = 0;
+	unsigned short *bases = nullptr;
 	unsigned long long rms = 0;
 	std::vector<int> depth(sm->n, 0);
-	unsigned char *s = NULL;
+	unsigned char *s = nullptr;
 	float q[16];
 	std::string msg;
-	bam_pileup1_t ***p = NULL;
+	bam_pileup1_t ***p = nullptr;
 	kstring_t buf;
 
 	try
@@ -225,7 +225,7 @@ void popbamData::call_base(int n, const bam_pileup1_t *pl, unsigned long long *c
 			free(buf.s);
 			std::string rogue_rg(bam_aux2Z(s));
 			msg = "Problem assigning read group " + rogue_rg + " to a sample.\nPlease check BAM header for correct SM and PO tags";
-			fatal_error(msg, __FILE__, __LINE__, 0);
+			fatalError(msg);
 		}
 
 		if (depth[si] < max_depth)
@@ -306,7 +306,7 @@ int popbam_usage(void)
 	std::cerr << std::endl;
 	std::cerr << "Program: popbam " << std::endl;
 	std::cerr << "(Tools to perform evolutionary analysis from BAM files)" << std::endl;
-	std::cerr << "Version: " << POPBAM_RELEASE << std::endl; //"  (Revision: " << svn_version() << ")" << std::endl << std::endl;
+	std::cerr << "Version: " << POPBAM_RELEASE << std::endl;
 	std::cerr << "Usage: popbam <command> [options] <in.bam> [region]"  << std::endl << std::endl;
 	std::cerr << "Commands:  snp       output consensus base calls" << std::endl;
 	std::cerr << "           fasta     output alignment as multi-fasta file" << std::endl;

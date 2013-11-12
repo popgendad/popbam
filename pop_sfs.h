@@ -56,7 +56,7 @@ class sfsData: public popbamData
 		void init_sfs(void);
 		void destroy_sfs(void);
 		void print_sfs(int);
-		static void sfsUsage(void);
+		void printUsage(std::string);
 		void assign_outpop(void);
 		void calc_dw(void);
 		void calc_hw(void);

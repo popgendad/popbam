@@ -68,6 +68,7 @@ class treeData: public popbamData
 		std::string parseCommandLine(int, char**);
 		void init_tree(void);
 		void destroy_tree(void);
+		void printUsage(std::string);
 
 	private:
 		// member private variables
@@ -84,7 +85,6 @@ class treeData: public popbamData
 		void setup_tree(tree*);
 		void tree_init(ptarray *);
 		void free_tree(ptarray *);
-		static void treeUsage(void);
 };
 
 ///
