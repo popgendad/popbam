@@ -1,7 +1,11 @@
 # Makefile for the popbam program
+ifndef CC
 CC=               gcc
+endif
 CFLAGS=           -D_FILE_OFFSET_BITS=64
+ifndef CXX
 CXX=              g++
+endif
 CXXFLAGS=         -D_FILE_OFFSET_BITS=64 -std=c++0x
 C_RELEASE_FLAGS=  -Wno-unused -Wno-sign-compare -Wno-write-strings -Wno-unused-result -O2
 C_DEBUG_FLAGS=    -Wall -ggdb -DDEBUG
