@@ -289,11 +289,11 @@ int snpData::printSweep(int chr)
 
 			// polarize the mutation at the site
 			if ((flag & BAM_OUTGROUP) && CHECK_BIT(types[i], outidx))
-				freq = ncov[i][j] - bitcount64(pop_type);
+				freq = ncov[j][i] - bitcount64(pop_type);
 			else
 				freq = bitcount64(pop_type);
 
-			out << '\t' << freq << '\t' << ncov[i][j];
+			out << '\t' << freq << '\t' << ncov[j][i];
 		}
 
 		std::cout << out.str() << std::endl;
