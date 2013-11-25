@@ -35,12 +35,13 @@ class haploData: public popbamData
 		// destructor
 		~haploData() {}
 
-		friend void calc_diff_matrix(haploData&);
-
 		// member public variables
-		hData_t hap;                            //!< Structure to hold haplotype data
 		unsigned int win_size;                  //!< User-specified window size in kilobases
-		unsigned long long *pop_sample_mask;    //!< Bit mask for samples covered from a specific population
+		double min_sites;                       //!< User-specified minimum number of aligned sites to perform analysis
+		double min_pop;                         //!< Minimum proportion of samples present
+		unsigned int *nsite_matrix;             //!< Matrix of pairwise aligned sites
+		unsigned int *diff_matrix;              //!< Matrix of pairwise sequence difference
+		unsigned int *minDxy;                   //!< Array of minimum between-population Dxy
 
 		// member public functions
 		std::string parseCommandLine(int, char**);
@@ -53,19 +54,16 @@ class haploData: public popbamData
 	private:
 		// member private variables
 		int output;                             //!< Analysis output option
-		int min_sites;                          //!< User-specified minimum number of aligned sites to perform analysis
 		int *nhaps;                             //!< Array of number of haplotypes within populations
 		double *hdiv;                           //!< Array of haplotype diversities within populations
-		unsigned short **diff_matrix;           //!< Array of pairwise sequence differences
-		unsigned short *minDxy;                 //!< Array of minimum between-population Dxy
 		double *piw;                            //!< Array of within-population heterozygosities
 		double *pib;                            //!< Array of between-population heterozygosities
 		double *ehhs;                           //!< Array of site-specfic haplotype homozygosity statistics within populations
 
 		// member private function
-		void calc_nhaps(void);
-		void calc_ehhs(void);
-		void calc_minDxy(void);
+		int calc_nhaps(void);
+		int calc_EHHS(void);
+		int calc_Gmin(void);
 };
 
 ///
@@ -83,4 +81,4 @@ class haploData: public popbamData
  */
 int make_haplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
 
-typedef void(haploData::*haplo_func)(void);
+typedef int(haploData::*haplo_func)(void);

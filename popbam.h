@@ -245,7 +245,7 @@ class popbamData
 		void bam_smpl_destroy(void);
 		void assign_pops(void);
 		void checkBAM(void);
-		void call_base(int, const bam_pileup1_t*, unsigned long long*);
+		void callBase(int, const bam_pileup1_t*, unsigned long long*);
 
 		virtual void printUsage(std::string) = 0;
 
@@ -363,7 +363,7 @@ inline unsigned int hamming_distance(unsigned long long x, unsigned long long y)
 	return dist;
 }
 
-inline unsigned long long cal_site_type(int n, unsigned long long *cb)
+inline unsigned long long calculateSiteType(int n, unsigned long long *cb)
 {
 	unsigned long long site_type = 0;
 	for (int i=0; i < n; i++)
@@ -435,7 +435,7 @@ extern char *get_refid(char *htext);
 extern int fetch_func(const bam1_t *b, void *data);
 
 /*!
- * \fn unsigned long long qfilter(int num_samples, unsigned long long *cb, int min_rmsQ, int min_depth, int max_depth)
+ * \fn unsigned long long qualFilter(int num_samples, unsigned long long *cb, int min_rmsQ, int min_depth, int max_depth)
  * \brief Filters data based on quality threshholds
  * \param num_samples  The number of samples in the pileup
  * \param cb  The consensus base call information for the individual
@@ -443,27 +443,27 @@ extern int fetch_func(const bam1_t *b, void *data);
  * \param min_depth  Minimum read depth per individual for site to be considered
  * \param max_depth  Maximum read depth per individual for site to be considered
  */
-extern unsigned long long qfilter(int num_samples, unsigned long long *cb, int min_rmsQ, int min_depth, int max_depth);
+extern unsigned long long qualFilter(int num_samples, unsigned long long *cb, int min_rmsQ, int min_depth, int max_depth);
 
 /*!
- * \fn int segbase(int num_samples, unsigned long long *cb, char ref, int min_snpq)
+ * \fn int segBase(int num_samples, unsigned long long *cb, char ref, int min_snpq)
  * \brief Determines whether a base position is segregating or not
  * \param num_samples  The number of samples in the pileup
  * \param cb  The consensus base call information for the individual
  * \param ref  The reference base
  * \param min_snpq  The minimum acceptable SNP score to consider a site a variant
  */
-extern int segbase(int num_samples, unsigned long long *cb, char ref, int min_snpq);
+extern int segBase(int num_samples, unsigned long long *cb, char ref, int min_snpq);
 
 /*!
- * \fn void clean_heterozygotes(int num_samples, unsigned long long *cb, int ref, int min_snpq)
+ * \fn void cleanHeterozygotes(int num_samples, unsigned long long *cb, int ref, int min_snpq)
  * \brief Reconfigures heterozygous base calls
  * \param num_samples  The number of samples in the pileup
  * \param cb  The consensus base call information for the individual
  * \param ref  The reference base
  * \param min_snpq  The minimum acceptable SNP score to consider a site a variant
  */
-extern void clean_heterozygotes(int num_samples, unsigned long long *cb, int ref, int min_snpq);
+extern void cleanHeterozygotes(int num_samples, unsigned long long *cb, int ref, int min_snpq);
 
 /*!
  * \fn unsigned long long gl2cns(float q[16], unsigned short k)

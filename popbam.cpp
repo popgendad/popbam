@@ -172,7 +172,7 @@ void popbamData::assign_pops(void)
 	}
 }
 
-void popbamData::call_base(int n, const bam_pileup1_t *pl, unsigned long long *cb)
+void popbamData::callBase(int n, const bam_pileup1_t *pl, unsigned long long *cb)
 {
 	int i, j;
 	int qq = 0;

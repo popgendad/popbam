@@ -78,7 +78,7 @@ unsigned long long gl2cns(float q[16], unsigned short k)
 	return snp_quality + num_reads + genotype;
 }
 
-unsigned long long qfilter(int num_samples, unsigned long long *cb, int min_rmsQ, int min_depth, int max_depth)
+unsigned long long qualFilter(int num_samples, unsigned long long *cb, int min_rmsQ, int min_depth, int max_depth)
 {
 	int i = 0;
 	unsigned short rms = 0;
@@ -100,7 +100,7 @@ unsigned long long qfilter(int num_samples, unsigned long long *cb, int min_rmsQ
 	return coverage;
 }
 
-int segbase(int num_samples, unsigned long long *cb, char ref, int min_snpq)
+int segBase(int num_samples, unsigned long long *cb, char ref, int min_snpq)
 {
 	int i, j, k;
 	unsigned char genotype = 0;
@@ -148,7 +148,7 @@ int segbase(int num_samples, unsigned long long *cb, char ref, int min_snpq)
 		return baseCount[k];
 }
 
-void clean_heterozygotes(int num_samples, unsigned long long *cb, int ref, int min_snpq)
+void cleanHeterozygotes(int num_samples, unsigned long long *cb, int ref, int min_snpq)
 {
 	int i = 0;
 	unsigned short snp_quality = 0;

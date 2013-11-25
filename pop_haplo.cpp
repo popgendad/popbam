@@ -138,6 +138,7 @@ int main_haplo(int argc, char *argv[])
 int make_haplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
 {
 	int i = 0;
+	int j = 0;
 	int fq = 0;
 	unsigned long long sample_cov = 0;
 	unsigned long long *cb = nullptr;
@@ -160,44 +161,35 @@ int make_haplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *p
 		}
 
 		// call bases
-		t->call_base(n, pl, cb);
+		t->callBase(n, pl, cb);
 
 		// resolve heterozygous sites
 		if (!(t->flag & BAM_HETEROZYGOTE))
-			clean_heterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->min_snpQ);
+			cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->min_snpQ);
 
 		// determine if site is segregating
-		fq = segbase(t->sm->n, cb, t->ref_base[pos], t->min_snpQ);
+		fq = segBase(t->sm->n, cb, t->ref_base[pos], t->min_snpQ);
 
 		// determine how many samples pass the quality filters
-		sample_cov = qfilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
+		sample_cov = qualFilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
+		
+		// calculate the site type
+		t->types[t->segsites] = calculateSiteType(t->sm->n, cb);
 
-		for (i=0; i < t->sm->npops; i++)
-			t->pop_sample_mask[i] = sample_cov & t->pop_mask[i];
-
-		if (bitcount64(sample_cov) == t->sm->n)
+		// Update the aligned sites and difference matrices
+		for (i=0; i < t->sm->n - 1; i++)
 		{
-			// calculate the site type
-			t->types[t->num_sites] = cal_site_type(t->sm->n, cb);
-
-			if (fq > 0)
+			for (j=i+1; j < t->sm->n; j++)
 			{
-				t->hap.pos[t->segsites] = pos;
-				t->hap.ref[t->segsites] = bam_nt16_table[(int)t->ref_base[pos]];
-				for (i=0; i < t->sm->n; i++)
+				if (CHECK_BIT(sample_cov,i) && CHECK_BIT(sample_cov,j))
 				{
-					t->hap.rms[i][t->segsites] = (cb[i] >> (CHAR_BIT*6)) & 0xffff;
-					t->hap.snpq[i][t->segsites] = (cb[i] >> (CHAR_BIT*4)) & 0xffff;
-					t->hap.num_reads[i][t->segsites] = (cb[i] >> (CHAR_BIT*2)) & 0xffff;
-					t->hap.base[i][t->segsites] = bam_nt16_table[(int)iupac[(cb[i] >> CHAR_BIT) & 0xff]];
-					if (cb[i] & 0x2ULL)
-						t->hap.seq[i][t->segsites/64] |= 0x1ULL << t->segsites % 64;
+					t->nsite_matrix[UTIDX(t->sm->n,i,j)]++;
+					if ((CHECK_BIT(t->types[t->segsites],i) && !(CHECK_BIT(t->types[t->segsites],j))) || (!(CHECK_BIT(t->types[t->segsites],i)) && CHECK_BIT(t->types[t->segsites],j)))
+						t->diff_matrix[UTIDX(t->sm->n,i,j)]++;
 				}
-				t->hap.idx[t->segsites] = t->num_sites;
-				t->segsites++;
 			}
-			t->num_sites++;
 		}
+		t->segsites++;
 
 		// take out the garbage
 		delete [] cb;
@@ -207,14 +199,15 @@ int make_haplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *p
 
 void haploData::calc_haplo(void)
 {
-	calc_diff_matrix(*(this));
-	haplo_func do_haplo[3] = {&haploData::calc_nhaps, &haploData::calc_ehhs, &haploData::calc_minDxy};
+	haplo_func do_haplo[3] = {&haploData::calc_nhaps, &haploData::calc_EHHS, &haploData::calc_Gmin};
 	(this->*do_haplo[output])();
 }
 
-void haploData::calc_nhaps(void)
+int haploData::calc_nhaps(void)
 {
-	int i, j, k;
+	int i = 0;
+	int j = 0;
+	int k = 0;
 	int f = 0;
 	int nelem = 0;
 
@@ -237,13 +230,14 @@ void haploData::calc_nhaps(void)
 			{
 				it2 = b.begin();
 				for (k=j+1, std::advance(it2, j+1); k < nelem; k++, it2++)
-					if ((diff_matrix[j][k] == 0) && (*it2 > *it1))
+					if ((diff_matrix[UTIDX(sm->n,j,k)] == 0) && (*it2 > *it1))
 						b.at(k)=j;
 			}
 
 			// count number of haplotypes and calculate haplotype diversity
 			int ff = 0;
 			double sh = 0.0;
+
 			for (j=0; j < (int)b.size(); j++)
 			{
 				if ((f = count(b.begin(), b.end(), j)) > 0)
@@ -259,11 +253,14 @@ void haploData::calc_nhaps(void)
 			hdiv[i] = 1.0;
 		}
 	}
+
+	return 0;
 }
 
-void haploData::calc_ehhs(void)
+int haploData::calc_EHHS(void)
 {
-	int i, j;
+	int i = 0;
+	int j = 0;
 
 	calc_nhaps();
 
@@ -306,7 +303,7 @@ void haploData::calc_ehhs(void)
 
 				// find the complement of part_type
 				for (j=0; j < sm->n; j++)
-					if (~CHECK_BIT(part_type, j) && CHECK_BIT(pop_mask[i], j))
+					if (~CHECK_BIT(part_type,j) && CHECK_BIT(pop_mask[i],j))
 						part_type_comp |= 0x1ULL << j;
 				before = static_cast<int>(pop_site.size());
 				pop_site.remove(part_type);
@@ -322,60 +319,55 @@ void haploData::calc_ehhs(void)
 
 			// calculate site heterozygosity
 			popf = bitcount64(max_site);
-			sh = (1.0-((double)(SQ(popf)+((pop_nsmpl[i]-popf)*(pop_nsmpl[i]-popf)))/SQ(pop_nsmpl[i])))*(double)(pop_nsmpl[i]/(pop_nsmpl[i]-1));
+			sh = (1.0 - ((double)(SQ(popf) + ((pop_nsmpl[i] - popf) * (pop_nsmpl[i] - popf))) / SQ(pop_nsmpl[i]))) * (double)(pop_nsmpl[i] / (pop_nsmpl[i] - 1));
 
 			// calculate site-specific extended haplotype homozygosity
 			ehhs[i] = hdiv[i] / (1.0 - sh);
 		}
 	}
+
+	return 0;
 }
 
-void haploData::calc_minDxy(void)
+int haploData::calc_Gmin(void)
 {
-	int i, j, v, w;
-	int npops = sm->npops;
-	int n = sm->n;
+	int i = 0;
+	int j = 0;
+	int v = 0;
+	int w = 0;
+	const int npops = sm->npops;
+	const int n = sm->n;
 
 	for (i=0; i < npops; i++)
 	{
-		for (j=i; j < npops; j++)
+		for (j=i+1; j < npops; j++)
 		{
-			if (i != j)
-				minDxy[UTIDX(npops,i,j)] = std::numeric_limits<unsigned int>::max();
+			minDxy[UTIDX(npops,i,j)] = std::numeric_limits<unsigned int>::max();
 			for (v=0; v < n-1; v++)
 			{
 				for (w=v+1; w < n; w++)
 				{
 					if (CHECK_BIT(pop_mask[i],v) && CHECK_BIT(pop_mask[j],w))
 					{
-						if (i == j)
-							piw[i] += (double)diff_matrix[v][w];
-						else
-						{
-							pib[UTIDX(npops,i,j)] += (double)diff_matrix[v][w];
-							minDxy[UTIDX(npops,i,j)] = minDxy[UTIDX(npops,i,j)] < diff_matrix[v][w] ? minDxy[UTIDX(npops,i,j)] : diff_matrix[v][w];
-						}
+						pib[UTIDX(npops,i,j)] += (double)(diff_matrix[UTIDX(n,v,w)]);
+						minDxy[UTIDX(npops,i,j)] = minDxy[UTIDX(npops,i,j)] < diff_matrix[UTIDX(n,v,w)] ? minDxy[UTIDX(npops,i,j)] : diff_matrix[UTIDX(n,v,w)];
 					}
 				}
 			}
-			if (i != j)
-				pib[UTIDX(npops,i,j)] *= 1.0 / (double)(pop_nsmpl[i] * pop_nsmpl[j]);
-			else
-			{
-				piw[i] *= 2.0 / (double)(pop_nsmpl[i] * (pop_nsmpl[i] - 1));
-				if (isnan(piw[i]))
-					piw[i] = 0.0;
-			}
+			pib[UTIDX(npops,i,j)] *= 1.0 / (double)(pop_nsmpl[i] * pop_nsmpl[j]);
 		}
 	}
+
+	return 0;
 }
 
 void haploData::print_haplo(int chr)
 {
-	int i, j;
+	int i = 0;
+	int j = 0;
 
 	//print coordinate information and number of aligned sites
-	std::cout << h->target_name[chr] << "\t" << beg+1 << "\t" << end+1 << "\t" << num_sites;
+	std::cout << h->target_name[chr] << "\t" << beg + 1 << "\t" << end+1 << "\t" << num_sites;
 
 	switch(output)
 	{
@@ -449,22 +441,6 @@ void haploData::print_haplo(int chr)
 	std::cout << std::endl;
 }
 
-void calc_diff_matrix(haploData &h)
-{
-	int i, j, k;
-	int n = h.sm->n;
-	int segs = h.segsites;
-
-	// calculate number of pairwise differences
-	for (i=0; i < n-1; i++)
-		for (j=i+1; j < n; j++)
-		{
-			for (k=0; k <= SEG_IDX(segs); k++)
-				h.diff_matrix[j][i] += hamming_distance(h.hap.seq[i][k], h.hap.seq[j][k]);
-			h.diff_matrix[i][j] = h.diff_matrix[j][i];
-		}
-}
-
 std::string haploData::parseCommandLine(int argc, char *argv[])
 {
 #ifdef _MSC_VER
@@ -486,6 +462,7 @@ std::string haploData::parseCommandLine(int argc, char *argv[])
 	args >> GetOpt::Option('a', min_mapQ);
 	args >> GetOpt::Option('b', min_baseQ);
 	args >> GetOpt::Option('k', min_sites);
+	args >> GetOpt::Option('n', min_pop);
 	args >> GetOpt::Option('w', win_size);
 	if (args >> GetOpt::OptionPresent('w'))
 	{
@@ -582,16 +559,16 @@ haploData::haploData(void)
 {
 	derived_type = HAPLO;
 	output = 0;
-	min_sites = 10;
+	min_sites = 0.5;
+	min_pop = 1.0;
 	win_size = 0;
 }
 
 void haploData::init_haplo(void)
 {
-	int i;
-	int length = end - beg;
-	int n = sm->n;
-	int npops = sm->npops;
+	const int length = end - beg;
+	const int npairs = BINOM(sm->n);
+	const int npops = sm->npops;
 
 	segsites = 0;
 
@@ -600,31 +577,14 @@ void haploData::init_haplo(void)
 		types = new unsigned long long [length]();
 		pop_mask = new unsigned long long [npops]();
 		pop_nsmpl = new unsigned char [npops]();
-		pop_sample_mask = new unsigned long long [npops]();
 		nhaps = new int [npops]();
 		hdiv = new double [npops]();
 		piw = new double [npops]();
 		pib = new double [npops*(npops-1)]();
 		ehhs = new double [npops]();
-		minDxy = new unsigned short [npops*(npops-1)]();
-		hap.pos = new unsigned int [length]();
-		hap.idx = new unsigned int [length]();
-		hap.ref = new unsigned char [length]();
-		hap.seq = new unsigned long long* [n];
-		hap.base = new unsigned char* [n];
-		hap.rms = new unsigned short* [n];
-		hap.snpq = new unsigned short* [n];
-		hap.num_reads = new unsigned short* [n];
-		diff_matrix = new unsigned short* [n];
-		for (i=0; i < n; i++)
-		{
-			hap.seq[i] = new unsigned long long [length]();
-			hap.base[i] = new unsigned char [length]();
-			hap.rms[i] = new unsigned short [length]();
-			hap.snpq[i] = new unsigned short [length]();
-			hap.num_reads[i] = new unsigned short [length]();
-			diff_matrix[i] = new unsigned short [n]();
-		}
+		minDxy = new unsigned int [npops*(npops-1)]();
+		diff_matrix = new unsigned int [npairs];
+		nsite_matrix = new unsigned int [npairs];
 	}
 	catch (std::bad_alloc& ba)
 	{
@@ -634,36 +594,17 @@ void haploData::init_haplo(void)
 
 void haploData::destroy_haplo(void)
 {
-	int i;
-
 	delete [] pop_mask;
 	delete [] types;
 	delete [] pop_nsmpl;
-	delete [] pop_sample_mask;
 	delete [] hdiv;
 	delete [] nhaps;
 	delete [] piw;
 	delete [] pib;
 	delete [] ehhs;
 	delete [] minDxy;
-	delete [] hap.pos;
-	delete [] hap.idx;
-	delete [] hap.ref;
-	for (i=0; i < sm->n; i++)
-	{
-		delete [] hap.seq[i];
-		delete [] hap.base[i];
-		delete [] hap.num_reads[i];
-		delete [] hap.snpq[i];
-		delete [] hap.rms[i];
-		delete [] diff_matrix[i];
-	}
-	delete [] hap.seq;
-	delete [] hap.base;
-	delete [] hap.snpq;
-	delete [] hap.rms;
-	delete [] hap.num_reads;
 	delete [] diff_matrix;
+	delete [] nsite_matrix;
 }
 
 void haploData::printUsage(std::string msg)
@@ -671,21 +612,22 @@ void haploData::printUsage(std::string msg)
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam haplo [options] <in.bam> [region]" << std::endl;
 	std::cerr << std::endl;
-	std::cerr << "Options: -i          base qualities are Illumina 1.3+     [ default: Sanger ]" << std::endl;
-	std::cerr << "         -h  FILE    Input header file                    [ default: none ]" << std::endl;
+	std::cerr << "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]" << std::endl;
+	std::cerr << "         -h  FILE    Input header file                              [ default: none ]" << std::endl;
 	std::cerr << "         -w  INT     use sliding window of size (kb)" << std::endl;
-	std::cerr << "         -k  INT     minimum number of sites in window    [ default: 10 ]" << std::endl;
-	std::cerr << "         -o  INT     analysis to output                   [ default: 0 ]" << std::endl;
+	std::cerr << "         -k  FLT     minimum proportion of sites covered in window  [ default: 0.5 ]" << std::endl;
+	std::cerr << "         -n  FLT     minimum proportion of population covered       [ default: 1.0 ]" << std::endl;
+	std::cerr << "         -o  INT     analysis to output                             [ default: 0 ]" << std::endl;
 	std::cerr << "                     0 : number of haplotypes" << std::endl;
 	std::cerr << "                     1 : extended haplotype homozygosity statistic" << std::endl;
-	std::cerr << "                     2 : minimum Dxy statistic" << std::endl;
+	std::cerr << "                     2 : Gmin statistic" << std::endl;
 	std::cerr << "         -f  FILE    Reference fastA file" << std::endl;
-	std::cerr << "         -m  INT     minimum read coverage                [ default: 3 ]" << std::endl;
-	std::cerr << "         -x  INT     maximum read coverage                [ default: 255 ]" << std::endl;
-	std::cerr << "         -q  INT     minimum rms mapping quality          [ default: 25 ]" << std::endl;
-	std::cerr << "         -s  INT     minimum snp quality                  [ default: 25 ]" << std::endl;
-	std::cerr << "         -a  INT     minimum map quality                  [ default: 13 ]" << std::endl;
-	std::cerr << "         -b  INT     minimum base quality                 [ default: 13 ]" << std::endl;
+	std::cerr << "         -m  INT     minimum read coverage                          [ default: 3 ]" << std::endl;
+	std::cerr << "         -x  INT     maximum read coverage                          [ default: 255 ]" << std::endl;
+	std::cerr << "         -q  INT     minimum rms mapping quality                    [ default: 25 ]" << std::endl;
+	std::cerr << "         -s  INT     minimum snp quality                            [ default: 25 ]" << std::endl;
+	std::cerr << "         -a  INT     minimum map quality                            [ default: 13 ]" << std::endl;
+	std::cerr << "         -b  INT     minimum base quality                           [ default: 13 ]" << std::endl;
 	std::cerr << std::endl;
 	exit(EXIT_FAILURE);
 }

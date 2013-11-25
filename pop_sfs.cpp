@@ -201,17 +201,17 @@ int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 		}
 
 		// call bases
-		t->call_base(n, pl, cb);
+		t->callBase(n, pl, cb);
 
 		// resolve heterozygous sites
 		if (!(t->flag & BAM_HETEROZYGOTE))
-			clean_heterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->min_snpQ);
+			cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->min_snpQ);
 
 		// determine if site is segregating
-		fq = segbase(t->sm->n, cb, t->ref_base[pos], t->min_snpQ);
+		fq = segBase(t->sm->n, cb, t->ref_base[pos], t->min_snpQ);
 
 		// determine how many samples pass the quality filters
-		sample_cov = qfilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
+		sample_cov = qualFilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
 
 		unsigned int *ncov = nullptr;
 		ncov = new unsigned int [t->sm->npops]();
@@ -235,7 +235,7 @@ int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 			{
 				for (int j=0; j < t->sm->npops; ++j)
 					t->ncov[j][t->segsites] = ncov[j];
-				t->types[t->segsites++] = cal_site_type(t->sm->n, cb);
+				t->types[t->segsites++] = calculateSiteType(t->sm->n, cb);
 			}
 		}
 

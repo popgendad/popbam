@@ -160,17 +160,17 @@ int make_tree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl
         }
 
         // call bases
-        t->call_base(n, pl, cb);
+        t->callBase(n, pl, cb);
 
         // resolve heterozygous sites
         if (!(t->flag & BAM_HETEROZYGOTE))
-            clean_heterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->min_snpQ);
+            cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->min_snpQ);
 
         // determine if site is segregating
-        fq = segbase(t->sm->n, cb, t->ref_base[pos], t->min_snpQ);
+        fq = segBase(t->sm->n, cb, t->ref_base[pos], t->min_snpQ);
 
         // determine how many samples pass the quality filters
-        sample_cov = qfilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
+        sample_cov = qualFilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
 
         for (i=0; i < t->sm->npops; i++)
             t->pop_sample_mask[i] = sample_cov & t->pop_mask[i];
@@ -178,7 +178,7 @@ int make_tree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl
         if (bitcount64(sample_cov) == t->sm->n)
         {
             // calculate the site type
-            t->types[t->num_sites] = cal_site_type(t->sm->n, cb);
+            t->types[t->num_sites] = calculateSiteType(t->sm->n, cb);
 
             if (fq > 0)
             {

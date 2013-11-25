@@ -183,17 +183,17 @@ int make_snp(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 		}
 
 		// call bases
-		t->call_base(n, pl, cb);
+		t->callBase(n, pl, cb);
 
 		// resolve heterozygous sites
 		if (!(t->flag & BAM_HETEROZYGOTE))
-			clean_heterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->min_snpQ);
+			cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->min_snpQ);
 
 		// determine if site is segregating
-		fq = segbase(t->sm->n, cb, t->ref_base[pos], t->min_snpQ);
+		fq = segBase(t->sm->n, cb, t->ref_base[pos], t->min_snpQ);
 
 		// determine how many samples pass the quality filters
-		sample_cov = qfilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
+		sample_cov = qualFilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
 		
 		unsigned int *ncov = nullptr;
 		ncov = new unsigned int [t->sm->npops]();
@@ -202,33 +202,41 @@ int make_snp(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 		for (i=0; i < t->sm->npops; ++i)
 		{
 			unsigned long long pc = 0;
+
 			pc = sample_cov & t->pop_mask[i];
 			ncov[i] = bitcount64(pc);
+
 			unsigned int req = (unsigned int)((t->min_pop * t->pop_nsmpl[i]) + 0.4999);
+
 			if (ncov[i] >= req)
 				t->pop_cov[t->num_sites] |= 0x1U << i;
 		}	
 
 		if (t->pop_cov[t->num_sites] > 0)
 		{
-			// calculate the site type
-			t->types[t->num_sites] = cal_site_type(t->sm->n, cb);
-
 			if (fq > 0)
 			{
+				// calculate the site type
+				t->types[t->num_sites] = calculateSiteType(t->sm->n, cb);
+
+				// add to the haplotype matrix
 				t->hap.pos[t->segsites] = pos;
 				t->hap.ref[t->segsites] = bam_nt16_table[(int)t->ref_base[pos]];
+
 				for (i=0; i < t->sm->n; i++)
 				{
 					t->hap.rms[i][t->segsites] = (cb[i] >> (CHAR_BIT * 6)) & 0xffff;
 					t->hap.snpq[i][t->segsites] = (cb[i] >> (CHAR_BIT * 4)) & 0xffff;
 					t->hap.num_reads[i][t->segsites] = (cb[i]>>(CHAR_BIT * 2)) & 0xffff;
 					t->hap.base[i][t->segsites] = bam_nt16_table[(int)iupac[(cb[i] >> CHAR_BIT) & 0xff]];
+
 					if (cb[i] & 0x2ULL)
 						t->hap.seq[i][t->segsites/64] |= 0x1ULL << t->segsites % 64;
 				}
+
 				for (i=0; i < t->sm->npops; i++)
 					t->pop_sample_mask[i][t->segsites] = sample_cov & t->pop_mask[i];
+
 				t->hap.idx[t->segsites] = t->num_sites;
 				t->segsites++;
 			}
@@ -286,12 +294,12 @@ void snpData::print_sweep(int chr)
 		for (j=0; j < sm->npops; j++)
 		{
 			// population-specific site type
-			pop_type = types[hap.idx[i]] & pop_sample_mask[j][i];
+			pop_type = types[i] & pop_sample_mask[j][i];
 
 			// assign derived allele counts and sample sizes
 			pop_n = bitcount64(pop_sample_mask[j][i]);
 
-			if ((flag & BAM_OUTGROUP) && CHECK_BIT(types[hap.idx[i]], outidx))
+			if ((flag & BAM_OUTGROUP) && CHECK_BIT(types[i], outidx))
 				freq = pop_n - bitcount64(pop_type);
 			else
 				freq = bitcount64(pop_type);
@@ -496,9 +504,9 @@ snpData::snpData(void)
 void snpData::init_snp(void)
 {
 	int i = 0;
-	int length = end-beg;
-	int n = sm->n;
-	int npops = sm->npops;
+	const int length = end - beg;
+	const int n = sm->n;
+	const int npops = sm->npops;
 
 	segsites = 0;
 
@@ -507,6 +515,7 @@ void snpData::init_snp(void)
 		types = new unsigned long long [length]();
 		pop_mask = new unsigned long long [npops]();
 		pop_nsmpl = new unsigned char [npops]();
+		pop_cov = new unsigned int [length]();
 		pop_sample_mask = new unsigned long long* [npops];
 		hap.pos = new unsigned int [length]();
 		hap.idx = new unsigned int [length]();
@@ -516,6 +525,7 @@ void snpData::init_snp(void)
 		hap.rms = new unsigned short* [n];
 		hap.snpq = new unsigned short* [n];
 		hap.num_reads = new unsigned short* [n];
+		ncov = new unsigned int* [npops];
 
 		for (i=0; i < n; i++)
 		{
@@ -527,7 +537,10 @@ void snpData::init_snp(void)
 		}
 
 		for (i=0; i < npops; i++)
+		{
+			ncov[i] = new unsigned int [length]();
 			pop_sample_mask[i] = new unsigned long long [length]();
+		}
 	}
 	catch (std::bad_alloc& ba)
 	{
@@ -542,6 +555,7 @@ void snpData::destroy_snp(void)
 
 	delete [] pop_mask;
 	delete [] pop_nsmpl;
+	delete [] pop_cov;
 	delete [] types;
 	delete [] hap.pos;
 	delete [] hap.idx;
@@ -555,7 +569,11 @@ void snpData::destroy_snp(void)
 		delete [] hap.rms[i];
 	}
 	for (i=0; i < npops; i++)
+	{
+		delete [] ncov[i];
 		delete [] pop_sample_mask[i];
+	}
+	delete [] ncov;
 	delete [] pop_sample_mask;
 	delete [] hap.seq;
 	delete [] hap.base;
@@ -568,10 +586,10 @@ void snpData::printUsage(std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam snp [options] <in.bam> [region]" << std::endl << std::endl;
-	std::cerr << "Options: -i          base qualities are Illumina 1.3+              [ default: Sanger ]" << std::endl;
-	std::cerr << "         -h  FILE    Input header file                             [ default: none ]" << std::endl;
-	std::cerr << "         -v          output variant sites only                     [ default: all sites ]" << std::endl;
-	std::cerr << "         -z  FLT     output heterozygous base calls                [ default: consensus ]" << std::endl;
+	std::cerr << "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]" << std::endl;
+	std::cerr << "         -h  FILE    Input header file                              [ default: none ]" << std::endl;
+	std::cerr << "         -v          output variant sites only                      [ default: all sites ]" << std::endl;
+	std::cerr << "         -z  FLT     output heterozygous base calls                 [ default: consensus ]" << std::endl;
 	std::cerr << "         -w  INT     use sliding window of size (kb)" << std::endl;
 	std::cerr << "         -p  STR     sample name of outgroup                        [ default: reference ]" << std::endl;
 	std::cerr << "         -o  INT     output format                                  [ default: 0 ]" << std::endl;
