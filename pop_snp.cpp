@@ -251,18 +251,19 @@ int snpData::printSNP(int chr)
 
 	for (i = 0; i < segsites; i++)
 	{
-		std::string out = h->target_name[chr] + '\t' + hap.pos[i] + 1 + '\t';
-		out += bam_nt16_rev_table[hap.ref[i]];
+		std::stringstream out;
+		out << h->target_name[chr] << '\t' << hap.pos[i] + 1 << '\t';
+		out << bam_nt16_rev_table[hap.ref[i]];
 
 		for (j = 0; j < sm->n; j++)
 		{
-			out += '\t' + bam_nt16_rev_table[hap.base[j][i]];
-			out += '\t' + hap.snpq[j][i];
-			out += '\t' + hap.rms[j][i];
-			out += '\t' + hap.num_reads[j][i];
+			out << '\t' << bam_nt16_rev_table[hap.base[j][i]];
+			out << '\t' << hap.snpq[j][i];
+			out << '\t' << hap.rms[j][i];
+			out << '\t' << hap.num_reads[j][i];
 		}
 
-		std::cout << out << std::endl;
+		std::cout << out.str() << std::endl;
 	}
 
 	return 0;
@@ -278,7 +279,8 @@ int snpData::printSweep(int chr)
 
 	for (i = 0; i < segsites; i++)
 	{
-		std::string out = h->target_name[chr] + '\t' + hap.pos[i] + 1;
+		std::stringstream out;
+		out << h->target_name[chr] << '\t' << hap.pos[i] + 1;
 
 		for (j = 0; j < sm->npops; j++)
 		{
@@ -291,10 +293,10 @@ int snpData::printSweep(int chr)
 			else
 				freq = bitcount64(pop_type);
 
-			out += '\t' + freq + '\t' + ncov[i][j];
+			out << '\t' << freq << '\t' << ncov[i][j];
 		}
 
-		std::cout << out << std::endl;
+		std::cout << out.str() << std::endl;
 	}
 
 	return 0;
@@ -341,26 +343,23 @@ int snpData::printMS(int chr)
 int snpData::printMSHeader(long nwindows)
 {
 	int i = 0;
-	std::string out;
+	std::stringstream out;
 
 	if (sm->npops > 1)
 	{
-		out = "ms " + sm->n + ' ' + nwindows;
-		out += " -t 5.0 -I ";
-		out += sm->npops << ' ';
+		out << "ms " << sm->n << ' ' << nwindows;
+		out << " -t 5.0 -I " << sm->npops << ' ';
 
 		for (i = 0; i < sm->npops; i++)
-			out += (int)(pop_nsmpl[i]) + ' ';
+			out << (int)(pop_nsmpl[i]) << ' ';
 	}
 	else
 	{
-		out = "ms " + sm->n + ' ' + nwindows;
-		out += " -t 5.0 ";
+		out << "ms " << sm->n << ' ' << nwindows << " -t 5.0 ";
 	}
 
-	out += '\n';
-	out += "1350154902";
-	std::cout << out << std::endl << std::endl;
+	out << '\n' << "1350154902";
+	std::cout << out.str() << std::endl << std::endl;
 }
 
 std::string snpData::parseCommandLine(int argc, char *argv[])
