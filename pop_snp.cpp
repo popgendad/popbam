@@ -123,7 +123,7 @@ int main_snp(int argc, char *argv[])
 
 		// print ms header if first window iteration
 		if ((t->output == 2) && (cw == 0))
-			t->print_ms_header(num_windows);
+			t->printMSHeader(num_windows);
 
 		// initialize pileup
 		buf = bam_plbuf_init(make_snp, t);
@@ -188,7 +188,7 @@ int make_snp(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 		ncov = new unsigned int [t->sm->npops]();
 
 		// determine population coverage
-		for (i=0; i < t->sm->npops; ++i)
+		for (i = 0; i < t->sm->npops; ++i)
 		{
 			unsigned long long pc = 0;
 
@@ -206,13 +206,15 @@ int make_snp(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 			if (fq > 0)
 			{
 				// calculate the site type
-				t->types[t->num_sites] = calculateSiteType(t->sm->n, cb);
+				for (i = 0; i < t->sm->npops; ++i)
+					t->ncov[i][t->segsites] = ncov[i];
+				t->types[t->segsites] = calculateSiteType(t->sm->n, cb);
 
 				// add to the haplotype matrix
 				t->hap.pos[t->segsites] = pos;
 				t->hap.ref[t->segsites] = bam_nt16_table[(int)t->ref_base[pos]];
 
-				for (i=0; i < t->sm->n; i++)
+				for (i = 0; i < t->sm->n; i++)
 				{
 					t->hap.rms[i][t->segsites] = (cb[i] >> (CHAR_BIT * 6)) & 0xffff;
 					t->hap.snpq[i][t->segsites] = (cb[i] >> (CHAR_BIT * 4)) & 0xffff;
@@ -222,10 +224,6 @@ int make_snp(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 					if (cb[i] & 0x2ULL)
 						t->hap.seq[i][t->segsites/64] |= 0x1ULL << t->segsites % 64;
 				}
-
-				for (i=0; i < t->sm->npops; i++)
-					t->pop_sample_mask[i][t->segsites] = sample_cov & t->pop_mask[i];
-
 				t->hap.idx[t->segsites] = t->num_sites;
 				t->segsites++;
 			}
@@ -242,33 +240,35 @@ int make_snp(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 
 void snpData::print_snp(int chr)
 {
-	snp_func fp[3] = {&snpData::print_popbam_snp, &snpData::print_sweep, &snpData::print_ms};
+	snp_func fp[3] = {&snpData::printSNP, &snpData::printSweep, &snpData::printMS};
 	(this->*fp[output])(chr);
 }
 
-void snpData::print_popbam_snp(int chr)
+int snpData::printSNP(int chr)
 {
 	int i = 0;
 	int j = 0;
 
-	for (i=0; i < segsites; i++)
+	for (i = 0; i < segsites; i++)
 	{
-		std::cout << h->target_name[chr] << "\t" << hap.pos[i] + 1 << "\t";
-		std::cout << bam_nt16_rev_table[hap.ref[i]];
+		std::string out = h->target_name[chr] + '\t' + hap.pos[i] + 1 + '\t';
+		out += bam_nt16_rev_table[hap.ref[i]];
 
-		for (j=0; j < sm->n; j++)
+		for (j = 0; j < sm->n; j++)
 		{
-			std::cout << "\t" << bam_nt16_rev_table[hap.base[j][i]];
-			std::cout << "\t" << hap.snpq[j][i];
-			std::cout << "\t" << hap.rms[j][i];
-			std::cout << "\t" << hap.num_reads[j][i];
+			out += '\t' + bam_nt16_rev_table[hap.base[j][i]];
+			out += '\t' + hap.snpq[j][i];
+			out += '\t' + hap.rms[j][i];
+			out += '\t' + hap.num_reads[j][i];
 		}
 
-		std::cout << std::endl;
+		std::cout << out << std::endl;
 	}
+
+	return 0;
 }
 
-void snpData::print_sweep(int chr)
+int snpData::printSweep(int chr)
 {
 	int i = 0;
 	int j = 0;
@@ -276,31 +276,31 @@ void snpData::print_sweep(int chr)
 	unsigned short pop_n = 0;
 	unsigned long long pop_type = 0;
 
-	for (i=0; i < segsites; i++)
+	for (i = 0; i < segsites; i++)
 	{
-		std::cout << h->target_name[chr] << "\t" << hap.pos[i] + 1;
+		std::string out = h->target_name[chr] + '\t' + hap.pos[i] + 1;
 
-		for (j=0; j < sm->npops; j++)
+		for (j = 0; j < sm->npops; j++)
 		{
 			// population-specific site type
-			pop_type = types[i] & pop_sample_mask[j][i];
+			pop_type = types[j] & pop_mask[i];
 
-			// assign derived allele counts and sample sizes
-			pop_n = bitcount64(pop_sample_mask[j][i]);
-
+			// polarize the mutation at the site
 			if ((flag & BAM_OUTGROUP) && CHECK_BIT(types[i], outidx))
-				freq = pop_n - bitcount64(pop_type);
+				freq = ncov[i][j] - bitcount64(pop_type);
 			else
 				freq = bitcount64(pop_type);
 
-			std::cout << "\t" << freq << "\t" << pop_n;
+			out += '\t' + freq + '\t' + ncov[i][j];
 		}
 
-		std::cout << std::endl;
+		std::cout << out << std::endl;
 	}
+
+	return 0;
 }
 
-void snpData::print_ms(int chr)
+int snpData::printMS(int chr)
 {
 	int i = 0;
 	int j = 0;
@@ -309,13 +309,13 @@ void snpData::print_ms(int chr)
 	std::cout << "segsites: " << segsites << std::endl;
 	std::cout << "positions: ";
 
-	for (i=0; i < segsites; i++)
+	for (i = 0; i < segsites; i++)
 		std::cout << std::setprecision(8) << (double)(hap.pos[i] - beg) / (end - beg) << " ";
 	std::cout << std::endl;
 
-	for (i=0; i < sm->n; i++)
+	for (i = 0; i < sm->n; i++)
 	{
-		for (j=0; j < segsites; j++)
+		for (j = 0; j < segsites; j++)
 		{
 			if ((flag & BAM_OUTGROUP) && CHECK_BIT(types[hap.idx[j]], outidx))
 			{
@@ -335,22 +335,32 @@ void snpData::print_ms(int chr)
 		std::cout << std::endl;
 	}
 	std::cout << std::endl;
-
+	return 0;
 }
 
-void snpData::print_ms_header(long nwindows)
+int snpData::printMSHeader(long nwindows)
 {
+	int i = 0;
+	std::string out;
+
 	if (sm->npops > 1)
 	{
-		std::cout << "ms " << sm->n << " " << nwindows << " -t 5.0 -I " << sm->npops << " ";
+		out = "ms " + sm->n + ' ' + nwindows;
+		out += " -t 5.0 -I ";
+		out += sm->npops << ' ';
 
-		for (int i=0; i < sm->npops; i++)
-			std::cout << (int)pop_nsmpl[i] << " ";
+		for (i = 0; i < sm->npops; i++)
+			out += (int)(pop_nsmpl[i]) + ' ';
 	}
 	else
-		std::cout << "ms " << sm->n << " " << nwindows << " -t 5.0 ";
+	{
+		out = "ms " + sm->n + ' ' + nwindows;
+		out += " -t 5.0 ";
+	}
 
-	std::cout << std::endl << "1350154902" << std::endl << std::endl;
+	out += '\n';
+	out += "1350154902";
+	std::cout << out << std::endl << std::endl;
 }
 
 std::string snpData::parseCommandLine(int argc, char *argv[])
@@ -505,7 +515,6 @@ void snpData::init_snp(void)
 		pop_mask = new unsigned long long [npops]();
 		pop_nsmpl = new unsigned char [npops]();
 		pop_cov = new unsigned int [length]();
-		pop_sample_mask = new unsigned long long* [npops];
 		hap.pos = new unsigned int [length]();
 		hap.idx = new unsigned int [length]();
 		hap.ref = new unsigned char [length]();
@@ -526,10 +535,7 @@ void snpData::init_snp(void)
 		}
 
 		for (i=0; i < npops; i++)
-		{
 			ncov[i] = new unsigned int [length]();
-			pop_sample_mask[i] = new unsigned long long [length]();
-		}
 	}
 	catch (std::bad_alloc& ba)
 	{
@@ -557,13 +563,9 @@ void snpData::destroy_snp(void)
 		delete [] hap.snpq[i];
 		delete [] hap.rms[i];
 	}
-	for (i=0; i < npops; i++)
-	{
+	for (i = 0; i < npops; i++)
 		delete [] ncov[i];
-		delete [] pop_sample_mask[i];
-	}
 	delete [] ncov;
-	delete [] pop_sample_mask;
 	delete [] hap.seq;
 	delete [] hap.base;
 	delete [] hap.snpq;
