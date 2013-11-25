@@ -150,18 +150,8 @@ int make_ld(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, 
 	// only consider sites located in designated region
 	if ((t->beg <= (int)pos) && (t->end > (int)pos))
 	{
-		// allocate memory pileup data
-		try
-		{
-			cb = new unsigned long long [t->sm->n]();
-		}
-		catch (std::bad_alloc& ba)
-		{
-			std::cerr << "bad_alloc caught: " << ba.what() << std::endl;
-		}
-
 		// call bases
-		t->callBase(n, pl, cb);
+		cb = callBase(t, n, pl);
 
 		// resolve heterozygous sites
 		if (!(t->flag & BAM_HETEROZYGOTE))
@@ -220,7 +210,7 @@ void ldData::calc_zns(void)
 		n = pop_nsmpl[i];
 
 		// iterate through segregating sites
-		for (j=0; j < segsites-1; j++)
+		for (j=0; j < segsites - 1; j++)
 		{
 			// get first population-specific site and count of the "derived" allele
 			type0 = types[j] & pop_mask[i];
@@ -258,7 +248,11 @@ void ldData::calc_zns(void)
 
 void ldData::calc_omegamax(void)
 {
-	int i, j, k, m, n;
+	int i;
+	int j = 0;
+	int k = 0;
+	int m = 0;
+	int n = 0;
 	int count1 = 0;
 	int count2 = 0;
 	int left = 0;
@@ -296,7 +290,7 @@ void ldData::calc_omegamax(void)
 		count2 = 0;
 		n = pop_nsmpl[j];
 
-		for (i=0; i < segsites-1; i++)
+		for (i=0; i < segsites - 1; i++)
 		{
 			type0 = types[i] & pop_mask[j];
 			x0 = bitcount64(type0);
@@ -337,7 +331,7 @@ void ldData::calc_omegamax(void)
 		omegamax[j] = 0;
 
 		// consider all partitions of r2 matrix
-		for (i=1; i < num_snps[j]-1; i++)
+		for (i=1; i < num_snps[j] - 1; i++)
 		{
 
 			// sum over SNPs to the left
@@ -351,7 +345,7 @@ void ldData::calc_omegamax(void)
 					sumbetween += r2[k][m];
 
 			// sum over SNPs to the right
-			for (k=i+1; k < num_snps[j]-1; k++)
+			for (k=i+1; k < num_snps[j] - 1; k++)
 				for (m=k+1; m < num_snps[j]; m++)
 					sumright += r2[k][m];
 
@@ -376,7 +370,9 @@ void ldData::calc_omegamax(void)
 
 void ldData::calc_wall(void)
 {
-	int i, j, k;
+	int i = 0;
+	int j = 0;
+	int k = 0;
 	unsigned long long last_type = 0;
 	int *num_congruent = nullptr;
 	int *num_part = nullptr;

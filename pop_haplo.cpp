@@ -150,18 +150,8 @@ int make_haplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *p
 	// only consider sites located in designated region
 	if ((t->beg <= (int)pos) && (t->end > (int)pos))
 	{
-		// allocate memory pileup data
-		try
-		{
-			cb = new unsigned long long [t->sm->n]();
-		}
-		catch (std::bad_alloc& ba)
-		{
-			std::cerr << "bad_alloc caught: " << ba.what() << std::endl;
-		}
-
 		// call bases
-		t->callBase(n, pl, cb);
+		cb = callBase(t, n, pl);
 
 		// resolve heterozygous sites
 		if (!(t->flag & BAM_HETEROZYGOTE))
@@ -277,7 +267,7 @@ int haploData::calc_EHHS(void)
 			// make list container of all non-singleton partitions present in population i
 			for (j=0; j < segsites; j++)
 			{
-				pop_type = types[hap.idx[j]] & pop_mask[i];
+				pop_type = types[j] & pop_mask[i];
 				popf = bitcount64(pop_type);
 				if ((popf > 1) && (popf < (pop_nsmpl[i] - 1)))
 					pop_site.push_back(pop_type);

@@ -149,18 +149,8 @@ int make_tree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl
     // only consider sites located in designated region
     if ((t->beg <= (int)pos) && (t->end > (int)pos))
     {
-        // allocate memory pileup data
-        try
-        {
-            cb = new unsigned long long [t->sm->n]();
-        }
-        catch (std::bad_alloc& ba)
-        {
-            std::cerr << "bad_alloc caught: " << ba.what() << std::endl;
-        }
-
         // call bases
-        t->callBase(n, pl, cb);
+        cb = callBase(t, n, pl);
 
         // resolve heterozygous sites
         if (!(t->flag & BAM_HETEROZYGOTE))
