@@ -4,7 +4,7 @@
  *  \version 0.3
 */
 
-#include "popbam.h"
+#include "pop_base.h"
 
 ///
 /// Additional include headers

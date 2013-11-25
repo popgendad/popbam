@@ -7,7 +7,7 @@
  * Akiko Fuseki, Sean Lamont, and Andrew Keefe at the University of Washington
 */
 
-#include "popbam.h"
+#include "pop_base.h"
 
 //
 // Define data structures
@@ -53,14 +53,17 @@ class treeData: public popbamData
 		// destructor
 		~treeData() {}
 
-		friend void calc_diff_matrix(treeData&);
-
 		// member public variables
 		hData_t hap;                            //!< Structure to hold haplotype data (public)
 		unsigned int win_size;                  //!< Size of sliding window in kilobases (public)
 		unsigned long long *pop_sample_mask;    //!< Bit mask for samples covered from a specific population
 		char *refid;                            //!< Pointer to string that holds the reference sequence name
 		std::string dist;                       //!< Pointer to the name of the desired distance metric	(-d switch)
+		unsigned short **diff_matrix;           //!< Array of pairwise sequence differences
+		double **dist_matrix;                   //!< Array of divergence calculations
+		int min_sites;                          //!< User-specified minimum number of aligned sites to perform analysis
+		int ntaxa;                              //!< Total number of tips in the tree
+		int *enterorder;                        //!< Array containing the input order of OTUs for the NJ algorithm
 
 		// member public functions
 		void make_nj(int);
@@ -70,13 +73,9 @@ class treeData: public popbamData
 		void destroy_tree(void);
 		void printUsage(std::string);
 
-	private:
+	//private:
 		// member private variables
-		unsigned short **diff_matrix;           //!< Array of pairwise sequence differences
-		double **dist_matrix;                   //!< Array of divergence calculations
-		int min_sites;                          //!< User-specified minimum number of aligned sites to perform analysis
-		int ntaxa;                              //!< Total number of tips in the tree
-		int *enterorder;                        //!< Array containing the input order of OTUs for the NJ algorithm
+
 
 		// member private functions
 		void join_tree(tree, node**);
@@ -112,3 +111,5 @@ template unsigned long long* callBase<treeData>(treeData *t, int n, const bam_pi
  * \param data A pointer to the user-passed data
  */
 int make_tree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
+
+void calc_diff_matrix(treeData*);

@@ -4,7 +4,7 @@
  *  \version 0.4
 */
 
-#include "popbam.h"
+#include "pop_base.h"
 
 char bam_nt16_rev_table[16] = {'=','A','C','M','G','R','S','V','T','W','Y','H','K','D','B','N'};
 

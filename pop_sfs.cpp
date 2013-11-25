@@ -4,7 +4,6 @@
  *  \version 0.4
 */
 #include "pop_sfs.h"
-#include "tables.h"
 
 int main_sfs(int argc, char *argv[])
 {

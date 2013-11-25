@@ -4,8 +4,7 @@
  *  \version 0.4
 */
 
-#include "popbam.h"
-
+#include "pop_base.h"
 //
 // Define data structures
 //

@@ -4,7 +4,6 @@
  *  \version 0.4
 */
 #include "pop_ld.h"
-#include "tables.h"
 
 int main_ld(int argc, char *argv[])
 {

@@ -5,7 +5,6 @@
 */
 
 #include "pop_haplo.h"
-#include "tables.h"
 
 int main_haplo(int argc, char *argv[])
 {
