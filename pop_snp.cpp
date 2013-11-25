@@ -306,14 +306,13 @@ int snpData::printMS(int chr)
 {
 	int i = 0;
 	int j = 0;
+	std::stringstream out;
 
-	std::cout << "//" << std::endl;
-	std::cout << "segsites: " << segsites << std::endl;
-	std::cout << "positions: ";
+	out << "//\n" << "segsites: " << segsites << "\npositions: ";
 
 	for (i = 0; i < segsites; i++)
-		std::cout << std::setprecision(8) << (double)(hap.pos[i] - beg) / (end - beg) << " ";
-	std::cout << std::endl;
+		out << std::setprecision(8) << (double)(hap.pos[i] - beg) / (end - beg) << ' ';
+	out << '\n';
 
 	for (i = 0; i < sm->n; i++)
 	{
@@ -322,21 +321,21 @@ int snpData::printMS(int chr)
 			if ((flag & BAM_OUTGROUP) && CHECK_BIT(types[hap.idx[j]], outidx))
 			{
 				if (CHECK_BIT(hap.seq[i][j/64], j % 64))
-					std::cout << "0";
+					out << '0';
 				else
-					std::cout << "1";
+					out << '1';
 			}
 			else
 			{
 				if (CHECK_BIT(hap.seq[i][j/64], j % 64))
-					std::cout << "1";
+					out << '1';
 				else
-					std::cout << "0";
+					out << '0';
 			}
 		}
-		std::cout << std::endl;
+		out << '\n';
 	}
-	std::cout << std::endl;
+	std::cout << out.str() << std::endl;
 	return 0;
 }
 
