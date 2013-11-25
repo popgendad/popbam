@@ -285,7 +285,7 @@ int snpData::printSweep(int chr)
 		for (j = 0; j < sm->npops; j++)
 		{
 			// population-specific site type
-			pop_type = types[j] & pop_mask[i];
+			pop_type = types[i] & pop_mask[i];
 
 			// polarize the mutation at the site
 			if ((flag & BAM_OUTGROUP) && CHECK_BIT(types[i], outidx))
