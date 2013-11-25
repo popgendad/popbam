@@ -160,7 +160,7 @@ int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *
 		}
 
 		// call bases
-		t->call_base(n, pl, cb);
+		callBase(n, pl, cb);
 
 		// resolve heterozygous sites
 		if (!(t->flag & BAM_HETEROZYGOTE))
@@ -295,7 +295,7 @@ void nucdivData::print_nucdiv(int chr)
 		{
 			std::cout << "\tns[" <<  sm->popul[i] << "-" << sm->popul[j] << "]:";
 			std::cout << "\t" << ns_between[UTIDX(sm->npops,i,j)];
-			if (ns_between[UTIDX(sm->npops, i, j)] >= (unsigned long int)((end - beg) * min_sites))
+			if (ns_between[UTIDX(sm->npops,i,j)] >= (unsigned long int)((end - beg) * min_sites))
 			{
 				std::cout << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
 				std::cout << "\t" << std::fixed << std::setprecision(5) << pib[UTIDX(sm->npops,i,j)];
@@ -429,7 +429,7 @@ nucdivData::nucdivData(void)
 
 void nucdivData::init_nucdiv(void)
 {
-	int i;
+	int i = 0;
 	int length = end - beg;
 	int npops = sm->npops;
 
@@ -458,7 +458,7 @@ void nucdivData::init_nucdiv(void)
 
 void nucdivData::destroy_nucdiv(void)
 {
-	int i;
+	int i = 0;
 	int npops = sm->npops;
 
 	delete [] pop_mask;

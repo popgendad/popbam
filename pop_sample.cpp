@@ -43,10 +43,10 @@ int popbamData::bam_smpl_add(void)
 		// if no PO tag is found in the header
 		if (r && q && !s)
 		{
-			char *u;
-			char *v;
-			int oq;
-			int or1;
+			char *u = nullptr;
+			char *v = nullptr;
+			int oq = 0;
+			int or1 = 0;
 			for (u=(char*)q; *u && *u != '\t' && *u != '\n'; ++u);
 			for (v=(char*)r; *v && *v != '\t' && *v != '\n'; ++v);
 			oq = *u;
@@ -63,8 +63,12 @@ int popbamData::bam_smpl_add(void)
 		// if PO tag is found
 		else if (r && q && s)
 		{
-			char *u, *v, *w;
-			int oq, or1, os;
+			char *u = nullptr;
+			char *v = nullptr;
+			char *w = nullptr;
+			int oq= 0;
+			int or1= 0;
+			int os = 0;
 			for (u=(char *)q; *u && *u != '\t' && *u != '\n'; ++u);
 			for (v=(char *)r; *v && *v != '\t' && *v != '\n'; ++v);
 			for (w=(char *)s; *w && *w != '\t' && *w != '\n'; ++w);
@@ -179,6 +183,7 @@ static void add_sample_pair(bam_sample_t *sm, khash_t(sm) *sm2id, const char *ke
 
 		//add new entry in sm2id hash table
 		k_sm = kh_put(sm, sm2id, sm->smpl[sm->n], &ret);
+
 		if (ret > 0)
 			kh_val(sm2id, k_sm) = sm->n++;
 	}

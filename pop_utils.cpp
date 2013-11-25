@@ -102,7 +102,9 @@ unsigned long long qfilter(int num_samples, unsigned long long *cb, int min_rmsQ
 
 int segbase(int num_samples, unsigned long long *cb, char ref, int min_snpq)
 {
-	int i, j, k;
+	int i = 0;
+	int j = 0;
+	int k = 0;
 	unsigned char genotype = 0;
 	unsigned char allele1 = 0;
 	unsigned char allele2 = 0;
@@ -257,6 +259,7 @@ void errmod_destroy(errmod_t *em)
 {
 	if (em == 0)
 		return;
+
 	free(em->coef->lhet);
 	free(em->coef->fk);
 	free(em->coef->beta);
@@ -268,7 +271,8 @@ void errmod_destroy(errmod_t *em)
 int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *bases, float *q)
 {
 	call_aux_t aux;
-	int i, j, k, w[32];
+	int i, j, k;
+	int w[32];
 
 	if (m > m)
 		return -1;
@@ -294,6 +298,7 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 	{
 		unsigned short b = bases[j];
 		int q = b >> 5 < NBASES ? NBASES : b >> 5;
+
 		if (q > 63)
 			q = 63;
 		k = b & 0x1f;
@@ -306,10 +311,10 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 	// generate likelihood
 	for (j=0; j != m; ++j)
 	{
-		float tmp1;
-		float tmp3;
-		int tmp2;
-		int bar_e;
+		float tmp1 = 0.0;
+		float tmp3 = 0.0;
+		int tmp2 = 0;
+		int bar_e = 0;
 
 		// homozygous
 		for (k=0, tmp1=tmp3=0.0, tmp2=0; k != m; ++k)
@@ -331,6 +336,7 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 		for (k=j+1; k < m; ++k)
 		{
 			int cjk = aux.c[j] + aux.c[k];
+
 			for (i=0, tmp2=0, tmp1=tmp3=0.0; i < m; ++i)
 			{
 				if ((i == j) || (i == k))
@@ -340,6 +346,7 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 				tmp2 += aux.c[i];
 				tmp3 += aux.fsum[i];
 			}
+
 			if (tmp2)
 			{
 				bar_e = (int)(tmp1 / tmp3 + 0.499);
@@ -384,8 +391,8 @@ void bam_init_header_hash(bam_header_t *header)
 
 int bam_parse_region(bam_header_t *header, std::string region, int *ref_id, int *beg, int *end)
 {
-	std::size_t l;
-	std::size_t name_end;
+	std::size_t l = 0;
+	std::size_t name_end = 0;
 	khiter_t iter;
 	khash_t(s) *h;
 
@@ -436,8 +443,10 @@ int bam_parse_region(bam_header_t *header, std::string region, int *ref_id, int 
 	}
 	else
 		iter = kh_get(s, h, region.c_str());
+
 	if (iter == kh_end(h))
 		return -1;
+	
 	*ref_id = kh_val(h, iter);
 
 	// parse the interval
@@ -447,8 +456,10 @@ int bam_parse_region(bam_header_t *header, std::string region, int *ref_id, int 
 		std::size_t parse = coords.find("-");
 		std::string first = coords.substr(0, parse);
 		*beg = atoi(first.c_str());
+
 		if (*beg > 0)
 			--*beg;
+
 		std::string last = coords.substr(parse+1);
 		*end = atoi(last.c_str());
 	}

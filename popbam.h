@@ -152,7 +152,8 @@
  * struct hData_t
  * \brief A structure to represent a haplotype data set
  */
-typedef struct {
+typedef struct
+{
 	unsigned long long **seq;         //!< binary encoding of haplotype data
 	unsigned int *pos;                //!< reference coordinate for each position
 	unsigned int *idx;                //!< position index of each segregating site
@@ -245,9 +246,10 @@ class popbamData
 		void bam_smpl_destroy(void);
 		void assign_pops(void);
 		void checkBAM(void);
-		void call_base(int, const bam_pileup1_t*, unsigned long long*);
 
+		// virtual functions
 		virtual void printUsage(std::string) = 0;
+		virtual std::string parseCommandLine(int, char**) = 0;
 
 		// member variables
 		std::string bamfile;                    //!< File name for the input BAM file
@@ -444,6 +446,15 @@ extern int fetch_func(const bam1_t *b, void *data);
  * \param max_depth  Maximum read depth per individual for site to be considered
  */
 extern unsigned long long qfilter(int num_samples, unsigned long long *cb, int min_rmsQ, int min_depth, int max_depth);
+
+/*!
+* \fn void callBase(int num_samples, unsigned long long *cb, char ref, int min_snpq)
+* \brief Determines whether a base position is segregating or not
+* \param n  The number of samples in the pileup
+* \param pl  The reference base
+* \param cb  The consensus base call information for the individual
+*/
+extern void callBase(int n, const bam_pileup1_t *pl, unsigned long long *cb);
 
 /*!
  * \fn int segbase(int num_samples, unsigned long long *cb, char ref, int min_snpq)

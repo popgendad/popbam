@@ -151,7 +151,7 @@ void popbamData::assign_pops(void)
 
 	memset(&buf, 0, sizeof(kstring_t));
 
-	for (int i=0; i < sm->n; i++)
+	for (int i = 0; i < sm->n; i++)
 	{
 		if (sm->smpl[i])
 			si = bam_smpl_sm2popid(sm, bamfile.c_str(), sm->smpl[i], &buf);
@@ -172,9 +172,10 @@ void popbamData::assign_pops(void)
 	}
 }
 
-void popbamData::call_base(int n, const bam_pileup1_t *pl, unsigned long long *cb)
+void callBase(int n, const bam_pileup1_t *pl, unsigned long long *cb)
 {
-	int i, j;
+	int i = 0;
+	int j = 0;
 	int qq = 0;
 	int baseQ = 0;
 	int tmp_baseQ = 0;
@@ -195,7 +196,7 @@ void popbamData::call_base(int n, const bam_pileup1_t *pl, unsigned long long *c
 	try
 	{
 		p = new bam_pileup1_t** [n_smpl];
-		for (i=0; i < n_smpl; i++)
+		for (i = 0; i < n_smpl; i++)
 			p[i] = new bam_pileup1_t* [max_depth];
 	}
 	catch (std::bad_alloc& ba)
@@ -206,7 +207,7 @@ void popbamData::call_base(int n, const bam_pileup1_t *pl, unsigned long long *c
 	memset(&buf, 0, sizeof(kstring_t));
 
 	// partition pileup according to sample
-	for (i=0; i < n; i++)
+	for (i = 0; i < n; i++)
 	{
 		if ((pl+i)->is_del || (pl+i)->is_refskip || ((pl+i)->b->core.flag & BAM_FUNMAP))
 			continue;
@@ -238,7 +239,7 @@ void popbamData::call_base(int n, const bam_pileup1_t *pl, unsigned long long *c
 	}
 
 	// fill in the base array
-	for (j=0; j < n_smpl; ++j)
+	for (j = 0; j < n_smpl; ++j)
 	{
 		rmsq = 0;
 		if (depth[j] > 0)
@@ -255,21 +256,30 @@ void popbamData::call_base(int n, const bam_pileup1_t *pl, unsigned long long *c
 			for (i=k=0; i < depth[j]; ++i)
 			{
 				tmp_baseQ = bam1_qual(p[j][i]->b)[p[j][i]->qpos];
+
 				if (flag & BAM_ILLUMINA)
 					baseQ = tmp_baseQ > 31 ? tmp_baseQ - 31 : 0;
 				else
 					baseQ = tmp_baseQ;
+
 				assert(baseQ >= 0);
+
 				if ((baseQ < min_baseQ) || (p[j][i]->b->core.qual < min_mapQ))
 					continue;
+
 				b = bam_nt16_nt4_table[bam1_seqi(bam1_seq(p[j][i]->b), p[j][i]->qpos)];
+
 				if (b > 3)
 					continue;
+
 				qq = baseQ < p[j][i]->b->core.qual ? baseQ : p[j][i]->b->core.qual;
+
 				if (qq < 4)
 					qq = 4;
+
 				if (qq > 63)
 					qq = 63;
+
 				bases[k++] = qq << 5 | (unsigned short)bam1_strand(p[j][i]->b) << 4 | b;
 				rmsq += SQ(p[j][i]->b->core.qual);
 			}
@@ -284,7 +294,7 @@ void popbamData::call_base(int n, const bam_pileup1_t *pl, unsigned long long *c
 			cb[j] = gl2cns(q, k);
 
 			// add root-mean map quality score to cb array
-			cb[j] |= rms << (CHAR_BIT*6);
+			cb[j] |= rms << (CHAR_BIT * 6);
 
 			// take out some garbage
 			delete [] bases;
@@ -295,7 +305,7 @@ void popbamData::call_base(int n, const bam_pileup1_t *pl, unsigned long long *c
 	}
 
 	// take out garbage
-	for (i=0; i < n_smpl; i++)
+	for (i = 0; i < n_smpl; i++)
 		delete [] p[i];
 	delete [] p;
 	free(buf.s);
