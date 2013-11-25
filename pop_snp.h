@@ -35,15 +35,15 @@ class snpData: public popbamData
 		// member public functions
 		std::string parseCommandLine(int, char**);
 		void init_snp(void);
-		void print_ms_header(long);
+		int printMSHeader(long);
 		void print_snp(int);
 		void destroy_snp(void);
 
 	private:
 		// member private functions
-		void print_popbam_snp(int);
-		void print_sweep(int);
-		void print_ms(int);
+		int printSNP(int);
+		int printSweep(int);
+		int printMS(int);
 		void printUsage(std::string);
 };
 
@@ -73,4 +73,4 @@ template unsigned long long* callBase<snpData>(snpData *t, int n, const bam_pile
  */
 int make_snp(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
 
-typedef void(snpData::*snp_func)(int);
+typedef int(snpData::*snp_func)(int);
