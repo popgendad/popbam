@@ -206,13 +206,11 @@ int treeData::makeNJ(int chr)
 	int i = 0;
 	tree curtree;
 	node **cluster = nullptr;
-	std::stringstream out;
 
 	if ((num_sites < min_sites) || (segsites < 1))
 	{
-		out << h->target_name[chr] << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites;
-		out << "\tNA";
-		std::cout << out.str() << std::endl;
+		std::cout << h->target_name[chr] << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites;
+		std::cout << "\tNA" << std::endl;
 		return 0;
 	}
 
@@ -244,10 +242,8 @@ int treeData::makeNJ(int chr)
 
 	join_tree(curtree, cluster);
 	curtree.start = curtree.nodep[0]->back;
-	out << h->target_name[chr] << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites << '\t';
-	std::cout << out.str();
+	std::cout << h->target_name[chr] << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites << '\t';
 	print_tree(curtree.start, curtree.start);
-	std::cout << std::endl;
 
 	free_tree(&curtree.nodep);
 	delete [] cluster;
@@ -460,38 +456,35 @@ void treeData::hookup(node *p, node *q)
 
 void treeData::print_tree(node *p, node *start)
 {
-	std::stringstream out;
-
 	if (p->tip)
 	{
 		if (p->index == 1)
-			out << refid;
+			std::cout << refid;
 		else
-			out << sm->smpl[p->index-2];
+			std::cout << sm->smpl[p->index-2];
 	}
 	else
 	{
-		out << '(';
+		std::cout << '(';
 		print_tree(p->next->back, start);
-		out << ',';
+		std::cout << ',';
 		print_tree(p->next->next->back, start);
 		if (p == start)
 		{
-			out << ',';
+			std::cout << ',';
 			print_tree(p->back, start);
 		}
-		out << ')';
+		std::cout << ')';
 	}
 	if (p == start)
-		out << ';' << std::endl;
+		std::cout << ';' << std::endl;
 	else
 	{
 		if (p->v < 0)
-			out << ":0.00000";
+			std::cout << ":0.00000";
 		else
-			out << ':' << std::fixed << std::setprecision(5) << p->v;
+			std::cout << ':' << std::fixed << std::setprecision(5) << p->v;
 	}
-	std::cout << out.str();
 }
 
 void calc_diff_matrix(treeData *t)
