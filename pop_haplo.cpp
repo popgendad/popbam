@@ -543,7 +543,11 @@ void haploData::init_haplo(void)
 		nsite_matrix = new unsigned int [npairs];
 		hap.resize(npops);
 		for (int i=0; i < npops; ++i)
+		{
 			hap[i].resize(pop_nsmpl[i]);
+			for (int j=0; j < pop_nsmpl[i]; ++j)
+				hap[i][j] = "";
+		}
 	}
 	catch (std::bad_alloc& ba)
 	{
