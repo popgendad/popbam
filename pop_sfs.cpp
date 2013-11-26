@@ -5,7 +5,7 @@
 */
 #include "pop_sfs.h"
 
-int main_sfs(int argc, char *argv[])
+int mainSFS(int argc, char *argv[])
 {
 	bool found = false;           //! is the outgroup sequence found?
 	int i = 0;
@@ -42,7 +42,7 @@ int main_sfs(int argc, char *argv[])
 	// if outgroup option is used check to make sure it exists
 	if (t->flag & BAM_OUTGROUP)
 	{
-		for (i=0; i < t->sm->n; i++)
+		for (i = 0; i < t->sm->n; i++)
 		{
 			if (strcmp(t->sm->smpl[i], t->outgroup.c_str()) == 0)
 			{
@@ -86,13 +86,13 @@ int main_sfs(int argc, char *argv[])
 	}
 
 	// iterate through all windows along specified genomic region
-	for (cw=0; cw < num_windows; cw++)
+	for (cw = 0; cw < num_windows; cw++)
 	{
 		// construct genome coordinate string
 		std::string scaffold_name(t->h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
 		winc.seekp(0, std::ios::end);
-		winc << ":" << beg + (cw * t->win_size) + 1 << "-" << ((cw + 1) * t->win_size) + (beg - 1);
+		winc << ':' << beg + (cw * t->win_size) + 1 << '-' << ((cw + 1) * t->win_size) + (beg - 1);
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
@@ -131,7 +131,7 @@ int main_sfs(int argc, char *argv[])
 			t->assign_outpop();
 
 		// initialize pileup
-		buf = bam_plbuf_init(make_sfs, t);
+		buf = bam_plbuf_init(makeSFS, t);
 
 		// fetch region from bam file
 		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
@@ -144,10 +144,10 @@ int main_sfs(int argc, char *argv[])
 		bam_plbuf_push(0, buf);
 
 		// calculate site frequency spectrum statistics
-		t->calc_sfs();
+		t->calcSFS();
 
 		// print results to stdout
-		t->print_sfs(chr);
+		t->printSFS(chr);
 
 		// take out the garbage
 		t->destroy_sfs();
@@ -159,7 +159,7 @@ int main_sfs(int argc, char *argv[])
 	samclose(t->bam_in);
 	bam_index_destroy(t->idx);
 	t->bam_smpl_destroy();
-	for (i=0; i <= t->sm->n; ++i)
+	for (i = 0; i <= t->sm->n; ++i)
 	{
 		delete [] t->dw[i];
 		delete [] t->hw[i];
@@ -172,12 +172,14 @@ int main_sfs(int argc, char *argv[])
 	delete [] t->e2;
 	free(t->ref_base);
 	delete t;
+
 	return 0;
 }
 
-int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
+int makeSFS(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
 {
 	int i = 0;
+	int j = 0;
 	int fq = 0;
 	unsigned long long sample_cov = 0;
 	unsigned long long *cb = nullptr;
@@ -206,7 +208,7 @@ int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 		ncov = new unsigned int [t->sm->npops]();
 
 		// determine population coverage
-		for (i=0; i < t->sm->npops; ++i)
+		for (i = 0; i < t->sm->npops; ++i)
 		{
 			unsigned long long pc = 0;
 			pc = sample_cov & t->pop_mask[i];
@@ -222,7 +224,7 @@ int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 			t->num_sites++;
 			if (fq > 0)
 			{
-				for (int j=0; j < t->sm->npops; ++j)
+				for (j = 0; j < t->sm->npops; ++j)
 					t->ncov[j][t->segsites] = ncov[j];
 				t->types[t->segsites++] = calculateSiteType(t->sm->n, cb);
 			}
@@ -235,28 +237,30 @@ int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 	return 0;
 }
 
-void sfsData::calc_sfs(void)
+int sfsData::calcSFS(void)
 {
-	int i, j;
-	int n, s;
+	int i = 0;
+	int j = 0;
+	int n = 0;
+	int s = 0;
 	int avgn = 0;
 	unsigned short freq = 0;
 	unsigned long long pop_type = 0;
 
 	// count number of aligned sites in each population
-	for (i=0; i < num_sites; ++i)
-		for (j=0; j < sm->npops; ++j)
+	for (i = 0; i < num_sites; ++i)
+		for (j = 0; j < sm->npops; ++j)
 			if (CHECK_BIT(pop_cov[i],j))
 				++ns[j];
 
-	for (i=0; i < sm->npops; i++)
+	for (i = 0; i < sm->npops; i++)
 	{
 		if (ns[i] >= (unsigned long int)((end - beg) * min_sites))
 		{
 			// get site frequency spectra and number of segregating sites
 			num_snps[i] = 0;
 			avgn = 0;
-			for (j=0; j < segsites; j++)
+			for (j = 0; j < segsites; j++)
 			{
 				pop_type = types[j] & pop_mask[i];
 
@@ -297,32 +301,38 @@ void sfsData::calc_sfs(void)
 			fwh[i] = std::numeric_limits<double>::quiet_NaN();
 		}
 	}
+
+	return 0;
 }
 
-void sfsData::print_sfs(int chr)
+int sfsData::printSFS(int chr)
 {
-	int i;
+	int i = 0;
+	std::stringstream out;
 
-	std::cout << h->target_name[chr] << "\t" << beg+1 << "\t" << end+1;
-	for (i=0; i < sm->npops; i++)
+	out << h->target_name[chr] << '\t' << beg + 1 << '\t' << end + 1;
+
+	for (i = 0; i < sm->npops; i++)
 	{
-		std::cout << "\tns[" << sm->popul[i] << "]:\t" << ns[i];
+		out << "\tns[" << sm->popul[i] << "]:\t" << ns[i];
 		if (isnan(td[i]))
-			std::cout << "\tD[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+			out << "\tD[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
 		else
 		{
-			std::cout << "\tD[" << sm->popul[i] << "]:";
-			std::cout << "\t" << std::fixed << std::setprecision(5) << td[i];
+			out << "\tD[" << sm->popul[i] << "]:";
+			out << '\t' << std::fixed << std::setprecision(5) << td[i];
 		}
 		if (isnan(fwh[i]))
-			std::cout << "\tH[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+			out << "\tH[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
 		else
 		{
-			std::cout << "\tH[" << sm->popul[i] << "]:";
-			std::cout << "\t" << std::fixed << std::setprecision(5) << fwh[i];
+			out << "\tH[" << sm->popul[i] << "]:";
+			out << '\t' << std::fixed << std::setprecision(5) << fwh[i];
 		}
 	}
-	std::cout << std::endl;
+	std::cout << out.str() << std::endl;
+
+	return 0;
 }
 
 std::string sfsData::parseCommandLine(int argc, char *argv[])
@@ -448,8 +458,8 @@ sfsData::sfsData(void)
 
 void sfsData::init_sfs(void)
 {
-	int i;
-	int length = end-beg;
+	int i = 0;
+	int length = end - beg;
 	int npops = sm->npops;
 
 	segsites = 0;
@@ -476,7 +486,7 @@ void sfsData::init_sfs(void)
 
 void sfsData::destroy_sfs(void)
 {
-	int i;
+	int i = 0;
 	int npops = sm->npops;
 
 	delete [] pop_mask;
@@ -487,7 +497,7 @@ void sfsData::destroy_sfs(void)
 	delete [] num_snps;
 	delete [] td;
 	delete [] fwh;
-	for (i=0; i < npops; ++i)
+	for (i = 0; i < npops; ++i)
 		delete [] ncov[i];
 	delete [] ncov;
 }
@@ -498,11 +508,11 @@ void sfsData::calc_dw(void)
 	int i = 0;
 
 	dw = new double* [sm->n+1];
-	for (i=0; i <= sm->n; ++i)
+	for (i = 0; i <= sm->n; ++i)
 		dw[i] = new double [sm->n+1]();
 
-	for (n=2; n <= sm->n; ++n)
-		for(i=1; i <= sm->n; ++i)
+	for (n = 2; n <= sm->n; ++n)
+		for(i = 1; i <= sm->n; ++i)
 			dw[n][i] = (((2.0 * i * (n - i)) / (SQ(n-1))) - (1.0 / a1[n]));
 }
 
@@ -513,7 +523,7 @@ void sfsData::assign_outpop(void)
 
 	u = 0x1ULL << outidx;
 
-	for (i=0; i < sm->npops; ++i)
+	for (i = 0; i < sm->npops; ++i)
 		if (pop_mask[i] & u)
 			outpop = i;
 }
@@ -524,11 +534,11 @@ void sfsData::calc_hw(void)
 	int i = 0;
 
 	hw = new double* [sm->n+1];
-	for (i=0; i <= sm->n; ++i)
+	for (i = 0; i <= sm->n; ++i)
 		hw[i] = new double [sm->n+1]();
 
-	for (n=2; n <= sm->n; ++n)
-		for (i=1; i <= sm->n; ++i)
+	for (n = 2; n <= sm->n; ++n)
+		for (i = 1; i <= sm->n; ++i)
 			hw[n][i] = ((1.0 / a1[n]) - ((double)(i) / (n - 1)));
 }
 
@@ -541,10 +551,10 @@ void sfsData::calc_a1(void)
 	a1[0] = a1[1] = 1.0;
 
 	// consider all sample sizes
-	for (i=2; i <= sm->n; i++)
+	for (i = 2; i <= sm->n; i++)
 	{
 		a1[i] = 0;
-		for (j=1; j < i; j++)
+		for (j = 1; j < i; j++)
 			a1[i] += 1.0 / (double)(j);
 	}
 }
@@ -558,10 +568,10 @@ void sfsData::calc_a2(void)
 	a2[0] = a2[1] = 1.0;
 
 	// consider all sample sizes
-	for (i=2; i <= sm->n+1; i++)
+	for (i = 2; i <= sm->n+1; i++)
 	{
 		a2[i] = 0;
-		for (j=1; j < i; j++)
+		for (j = 1; j < i; j++)
 			a2[i] += 1.0 / (double)SQ(j);
 	}
 }
@@ -574,7 +584,7 @@ void sfsData::calc_e1(void)
 	e1 = new double [sm->n+1];
 	e1[0] = e1[1] = 1.0;
 
-	for (i=2; i <= sm->n; i++)
+	for (i = 2; i <= sm->n; i++)
 	{
 		b1 = (i + 1.0) / (3.0 * (i-1));
 		e1[i] = (b1 - (1.0 / a1[i])) / a1[i];
@@ -589,7 +599,7 @@ void sfsData::calc_e2(void)
 	e2 = new double [sm->n+1];
 	e2[0] = e2[1] = 1.0;
 
-	for (i=2; i <= sm->n; i++)
+	for (i = 2; i <= sm->n; i++)
 	{
 		b2 = (2.0 * (SQ(i) + i + 3.0)) / (9.0 * i * (i-1));
 		e2[i] = (b2 - ((i + 2.0) / (a1[i] * i)) + (a2[i] / SQ(a1[i]))) / (SQ(a1[i]) + a2[i]);

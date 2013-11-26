@@ -47,9 +47,9 @@ class ldData: public popbamData
 		double *zns;                            //!< Pointer to array of ZnS values
 
 		// member functions
-		void calc_zns(void);
-		void calc_omegamax(void);
-		void calc_wall(void );
+		int calcZns(void);
+		int calcOmegamax(void);
+		int calcWall(void );
 		std::string parseCommandLine(int, char**);
 		void init_ld(void);
 		void destroy_ld(void);
@@ -81,6 +81,6 @@ template unsigned long long* callBase<ldData>(ldData *t, int n, const bam_pileup
  * \param pl A pointer to the alignment covering a single position
  * \param data A pointer to the user-passed data
  */
-int make_ld(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
+int makeLD(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
 
-typedef void(ldData::*ld_func)(void);
+typedef int(ldData::*ld_func)(void);

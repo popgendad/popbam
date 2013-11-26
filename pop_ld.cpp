@@ -5,7 +5,7 @@
 */
 #include "pop_ld.h"
 
-int main_ld(int argc, char *argv[])
+int mainLD(int argc, char *argv[])
 {
 	int k = 0;
 	int chr = 0;                  //! chromosome identifier
@@ -58,14 +58,14 @@ int main_ld(int argc, char *argv[])
 	}
 
 	// iterate through all windows along specified genomic region
-	for (cw=0; cw < num_windows; cw++)
+	for (cw = 0; cw < num_windows; cw++)
 	{
 
 		// construct genome coordinate string
 		std::string scaffold_name(t->h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
 		winc.seekp(0, std::ios::end);
-		winc << ":" << beg + (cw * t->win_size) + 1 << "-" << ((cw + 1) * t->win_size) + (beg - 1);
+		winc << ':' << beg + (cw * t->win_size) + 1 << '-' << ((cw + 1) * t->win_size) + (beg - 1);
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
@@ -100,7 +100,7 @@ int main_ld(int argc, char *argv[])
 		t->assign_pops();
 
 		// initialize pileup
-		buf = bam_plbuf_init(make_ld, t);
+		buf = bam_plbuf_init(makeLD, t);
 
 		// fetch region from bam file
 		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
@@ -113,7 +113,7 @@ int main_ld(int argc, char *argv[])
 		bam_plbuf_push(0, buf);
 
 		// calculate linkage disequilibrium statistics
-		ld_func fp[3] = {&ldData::calc_zns, &ldData::calc_omegamax, &ldData::calc_wall};
+		ld_func fp[3] = {&ldData::calcZns, &ldData::calcOmegamax, &ldData::calcWall};
 		(t->*fp[t->output])();
 
 		// print results to stdout
@@ -135,7 +135,7 @@ int main_ld(int argc, char *argv[])
 	return 0;
 }
 
-int make_ld(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
+int makeLD(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
 {
 	int i = 0;
 	int fq = 0;
@@ -163,7 +163,7 @@ int make_ld(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, 
 		sample_cov = qualFilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
 
 		// determine population coverage
-		for (i=0; i < t->sm->npops; ++i)
+		for (i = 0; i < t->sm->npops; ++i)
 		{
 			unsigned long long pc = 0;
 			pc = sample_cov & t->pop_mask[i];
@@ -186,7 +186,7 @@ int make_ld(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, 
 	return 0;
 }
 
-void ldData::calc_zns(void)
+int ldData::calcZns(void)
 {
 	int i = 0;
 	int j = 0;
@@ -202,14 +202,14 @@ void ldData::calc_zns(void)
 		return;
 
 	// iterate through populations
-	for (i=0; i < sm->npops; i++)
+	for (i = 0; i < sm->npops; i++)
 	{
 		// Zero the SNP counter
 		num_snps[i] = 0;
 		n = pop_nsmpl[i];
 
 		// iterate through segregating sites
-		for (j=0; j < segsites - 1; j++)
+		for (j = 0; j < segsites - 1; j++)
 		{
 			// get first population-specific site and count of the "derived" allele
 			type0 = types[j] & pop_mask[i];
@@ -222,7 +222,7 @@ void ldData::calc_zns(void)
 				++num_snps[i];
 
 				// iterate over all remaining sites
-				for (k=j+1; k < segsites; k++)
+				for (k = j + 1; k < segsites; k++)
 				{
 					// get second population-specific site and count of the "derived" allele
 					type1 = types[k] & pop_mask[i];
@@ -243,9 +243,11 @@ void ldData::calc_zns(void)
 		zns[i] *= 1.0 / BINOM(num_snps[i]);
 		// end pairwise comparisons
 	}
+
+	return 0;
 }
 
-void ldData::calc_omegamax(void)
+int ldData::calcOmegamax(void)
 {
 	int i;
 	int j = 0;
@@ -275,7 +277,7 @@ void ldData::calc_omegamax(void)
 		try
 		{
 			r2 = new double* [segsites];
-			for (i=0; i < segsites; i++)
+			for (i = 0; i < segsites; i++)
 				r2[i] = new double [segsites]();
 		}
 		catch (std::bad_alloc& ba)
@@ -289,7 +291,7 @@ void ldData::calc_omegamax(void)
 		count2 = 0;
 		n = pop_nsmpl[j];
 
-		for (i=0; i < segsites - 1; i++)
+		for (i = 0; i < segsites - 1; i++)
 		{
 			type0 = types[i] & pop_mask[j];
 			x0 = bitcount64(type0);
@@ -299,7 +301,7 @@ void ldData::calc_omegamax(void)
 			{
 				++num_snps[j];
 				count2 = count1;
-				for (k=i+1; k < segsites; k++)
+				for (k = i + 1; k < segsites; k++)
 				{
 					type1 = types[k] & pop_mask[j];
 					x1 = bitcount64(type1);
@@ -330,22 +332,22 @@ void ldData::calc_omegamax(void)
 		omegamax[j] = 0;
 
 		// consider all partitions of r2 matrix
-		for (i=1; i < num_snps[j] - 1; i++)
+		for (i = 1; i < num_snps[j] - 1; i++)
 		{
 
 			// sum over SNPs to the left
-			for (k=0; k < i; k++)
-				for (m=k+1; m <= i; m++)
+			for (k = 0; k < i; k++)
+				for (m = k + 1; m <= i; m++)
 					sumleft += r2[k][m];
 
 			// sum over SNPs on either side
-			for (k=i+1; k < num_snps[j]; k++)
-				for (m=0; m <= i; m++)
+			for (k = i + 1; k < num_snps[j]; k++)
+				for (m = 0; m <= i; m++)
 					sumbetween += r2[k][m];
 
 			// sum over SNPs to the right
-			for (k=i+1; k < num_snps[j] - 1; k++)
-				for (m=k+1; m < num_snps[j]; m++)
+			for (k = i + 1; k < num_snps[j] - 1; k++)
+				for (m = k + 1; m < num_snps[j]; m++)
 					sumright += r2[k][m];
 
 			// get numbers of SNPs in the partition
@@ -361,17 +363,21 @@ void ldData::calc_omegamax(void)
 		}
 
 		// take out the garbage
-		for (i=0; i < segsites; i++)
+		for (i = 0; i < segsites; i++)
 			delete [] r2[i];
 		delete [] r2;
 	}
+
+	return 0;
 }
 
-void ldData::calc_wall(void)
+int ldData::calcWall(void)
 {
 	int i = 0;
 	int j = 0;
 	int k = 0;
+	int x = 0;
+	int y = 0;
 	unsigned long long last_type = 0;
 	int *num_congruent = nullptr;
 	int *num_part = nullptr;
@@ -392,16 +398,16 @@ void ldData::calc_wall(void)
 		std::cerr << "bad_alloc caught: " << ba.what() << std::endl;
 	}
 
-	for (i=0; i < segsites; i++)
+	for (i = 0; i < segsites; i++)
 	{
-		for (j=0; j < sm->npops; j++)
+		for (j = 0; j < sm->npops; j++)
 		{
 			// initialize population specific type and its complement
 			type = 0;
 			complem = 0;
 
 			// define bit mask variables
-			for (k=0; k < sm->n; k++)
+			for (k = 0; k < sm->n; k++)
 			{
 				if (CHECK_BIT(types[i],k) & CHECK_BIT(pop_mask[j],k))
 					type |= 0x1ULL << k;
@@ -427,8 +433,8 @@ void ldData::calc_wall(void)
 					if ((type == last_type) || (complem == last_type))
 					{
 						num_congruent[j]++;
-						int x = count(uniq_part_types[j].begin(), uniq_part_types[j].end(), type);
-						int y = count(uniq_part_types[j].begin(), uniq_part_types[j].end(), complem);
+						x = count(uniq_part_types[j].begin(), uniq_part_types[j].end(), type);
+						y = count(uniq_part_types[j].begin(), uniq_part_types[j].end(), complem);
 						if ((x == 0) && (y == 0))
 						{
 							uniq_part_types[j].push_back(type);
@@ -443,7 +449,7 @@ void ldData::calc_wall(void)
 	}
 
 	// calculate Wall's B statistic for each population
-	for (i=0; i < sm->npops; i++)
+	for (i = 0; i < sm->npops; i++)
 	{
 		wallb[i] = (double)(num_congruent[i]) / (num_snps[i] - 1);
 		wallq[i] = (double)(num_congruent[i] + num_part[i]) / num_snps[i];
@@ -452,6 +458,8 @@ void ldData::calc_wall(void)
 	// take out the garbage
 	delete [] num_congruent;
 	delete [] num_part;
+
+	return 0;
 }
 
 std::string ldData::parseCommandLine(int argc, char *argv[])
@@ -621,14 +629,15 @@ void ldData::init_ld(void)
 void ldData::print_ld(int chr)
 {
 	int i = 0;
+	std::stringstream out;
 
 	//print coordinate information and number of aligned sites
-	std::cout << h->target_name[chr] << "\t" << beg + 1 << "\t" << end + 1 << "\t" << num_sites;
+	out << h->target_name[chr] << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites;
 
 	//print results for each population
-	for (i=0; i < sm->npops; i++)
+	for (i = 0; i < sm->npops; i++)
 	{
-		std::cout << "\tS[" << sm->popul[i] << "]:\t" << num_snps[i];
+		out << "\tS[" << sm->popul[i] << "]:\t" << num_snps[i];
 
 		//If window passes the minimum number of SNPs filter
 		if (num_snps[i] >= min_snps)
@@ -636,24 +645,24 @@ void ldData::print_ld(int chr)
 			switch (output)
 			{
 			case 0:
-				std::cout << "\tZns[" << sm->popul[i] << "]:";
-				std::cout << "\t" << std::fixed << std::setprecision(5) << zns[i];
+				out << "\tZns[" << sm->popul[i] << "]:";
+				out << '\t' << std::fixed << std::setprecision(5) << zns[i];
 				break;
 			case 1:
-				std::cout << "\tomax[" << sm->popul[i] << "]:";
-				std::cout << "\t" << std::fixed << std::setprecision(5) << omegamax[i];
+				out << "\tomax[" << sm->popul[i] << "]:";
+				out << '\t' << std::fixed << std::setprecision(5) << omegamax[i];
 				break;
 			case 2:
-				std::cout << "\tB[" << sm->popul[i] << "]:";
-				std::cout << "\t" << std::fixed << std::setprecision(5) << wallb[i];
-				std::cout << "\tQ[" << sm->popul[i] << "]:";
-				std::cout << "\t" << std::fixed << std::setprecision(5) << wallq[i];
+				out << "\tB[" << sm->popul[i] << "]:";
+				out << '\t' << std::fixed << std::setprecision(5) << wallb[i];
+				out << "\tQ[" << sm->popul[i] << "]:";
+				out << "\t" << std::fixed << std::setprecision(5) << wallq[i];
 				wallb[i] = 0.0;
 				wallq[i] = 0.0;
 				break;
 			default:
-				std::cout << "\tZns[" << sm->popul[i] << "]:";
-				std::cout << "\t" << std::fixed << std::setprecision(5) << zns[i];
+				out << "\tZns[" << sm->popul[i] << "]:";
+				out << '\t' << std::fixed << std::setprecision(5) << zns[i];
 				break;
 			}
 		}
@@ -662,24 +671,24 @@ void ldData::print_ld(int chr)
 			switch(output)
 			{
 			case 0:
-				std::cout << "\tZns[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+				out << "\tZns[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
 				break;
 			case 1:
-				std::cout << "\tomax[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+				out << "\tomax[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
 				break;
 			case 2:
-				std::cout << "\tB[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
-				std::cout << "\tQ[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+				out << "\tB[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+				out << "\tQ[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
 				wallb[i] = 0.0;
 				wallq[i] = 0.0;
 				break;
 			default:
-				std::cout << "\tZns[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+				out << "\tZns[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
 				break;
 			}
 		}
 	}
-	std::cout << std::endl;
+	std::cout << out.str() << std::endl;
 }
 
 void ldData::destroy_ld(void)

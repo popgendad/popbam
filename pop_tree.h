@@ -17,7 +17,8 @@
  * \struct node
  * \brief A structure to represent an individual node in a bifurcating tree
  */
-typedef struct _node {
+typedef struct _node
+{
 	struct _node *next;               //!< Pointer to the next node in the list
 	struct _node *back;               //!< Pointer to the previous node in the list
 	bool tip;                         //!< Is the node a tip?
@@ -35,7 +36,8 @@ typedef node **ptarray;
  * \struct tree
  * \brief A structure to represent a bifurcating tree
  */
-typedef struct _tree {
+typedef struct _tree
+{
 	node *start;                      //!< Pointer to the start node of the tree
 	ptarray nodep;                    //!< Pointer to the linked list of nodes in the tree
 } tree;
@@ -66,7 +68,7 @@ class treeData: public popbamData
 		int *enterorder;                        //!< Array containing the input order of OTUs for the NJ algorithm
 
 		// member public functions
-		void make_nj(int);
+		int makeNJ(int);
 		void calc_dist_matrix(void);
 		std::string parseCommandLine(int, char**);
 		void init_tree(void);
@@ -110,6 +112,6 @@ template unsigned long long* callBase<treeData>(treeData *t, int n, const bam_pi
  * \param pl A pointer to the alignment covering a single position
  * \param data A pointer to the user-passed data
  */
-int make_tree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
+int makeTree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
 
 void calc_diff_matrix(treeData*);

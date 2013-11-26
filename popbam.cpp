@@ -55,19 +55,19 @@ int main(int argc, char *argv[])
 	if (argc < 2)
 		return popbam_usage();
 	if (!strcmp(argv[1], "snp"))
-		return main_snp(argc-1, argv+1);
+		return mainSNP(argc-1, argv+1);
 	else if (!strcmp(argv[1], "haplo"))
-		return main_haplo(argc-1, argv+1);
+		return mainHaplo(argc-1, argv+1);
 	else if (!strcmp(argv[1], "diverge"))
-		return main_diverge(argc-1, argv+1);
+		return mainDiverge(argc-1, argv+1);
 	else if (!strcmp(argv[1], "tree"))
-		return main_tree(argc-1, argv+1);
+		return mainTree(argc-1, argv+1);
 	else if (!strcmp(argv[1], "nucdiv"))
-		return main_nucdiv(argc-1, argv+1);
+		return mainNucdiv(argc-1, argv+1);
 	else if (!strcmp(argv[1], "ld"))
-		return main_ld(argc-1, argv+1);
+		return mainLD(argc-1, argv+1);
 	else if (!strcmp(argv[1], "sfs"))
-		return main_sfs(argc - 1, argv + 1);
+		return mainSFS(argc - 1, argv + 1);
 	else if (!strcmp(argv[1], "fasta"))
 		return 0;
 	else

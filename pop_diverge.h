@@ -35,11 +35,11 @@ class divergeData: public popbamData
 
 		// member public functions
 		std::string parseCommandLine(int, char**);
-		void calc_diverge(void);
+		int calcDiverge(void);
 		void init_diverge(void);
 		void set_min_pop_n(void);
 		void destroy_diverge(void);
-		void print_diverge(int);
+		int printDiverge(int);
 		void printUsage(std::string);
 
 	private:
@@ -65,7 +65,7 @@ class divergeData: public popbamData
 template unsigned long long* callBase<divergeData>(divergeData *t, int n, const bam_pileup1_t *pl);
 
 /*!
- * \fn int make_diverge(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
+ * \fn int makeDiverge(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
  * \brief Calculate divergence with reference genome sequence
  * \param tid Chromosome identifier
  * \param pos Genomic position
@@ -73,4 +73,4 @@ template unsigned long long* callBase<divergeData>(divergeData *t, int n, const 
  * \param pl A pointer to the alignment covering a single position
  * \param data A pointer to the user-passed data
  */
-int make_diverge(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
+int makeDiverge(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);

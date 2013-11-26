@@ -46,8 +46,8 @@ class haploData: public popbamData
 		// member public functions
 		std::string parseCommandLine(int, char**);
 		void init_haplo(void);
-		void calc_haplo(void);
-		void print_haplo(int);
+		int calcHaplo(void);
+		int printHaplo(int);
 		void destroy_haplo(void);
 		void printUsage(std::string);
 
@@ -61,9 +61,9 @@ class haploData: public popbamData
 		double *ehhs;                           //!< Array of site-specfic haplotype homozygosity statistics within populations
 
 		// member private function
-		int calc_nhaps(void);
-		int calc_EHHS(void);
-		int calc_Gmin(void);
+		int calcNhaps(void);
+		int calcEHHS(void);
+		int calcGmin(void);
 };
 
 ///
@@ -90,6 +90,6 @@ template unsigned long long* callBase<haploData>(haploData *t, int n, const bam_
  * \param pl A pointer to the alignment covering a single position
  * \param data A pointer to the user-passed data
  */
-int make_haplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
+int makeHaplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
 
 typedef int(haploData::*haplo_func)(void);

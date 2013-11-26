@@ -63,7 +63,7 @@ class snpData: public popbamData
 template unsigned long long* callBase<snpData>(snpData *t, int n, const bam_pileup1_t *pl);
 
 /*!
- * \fn int make_snp(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
+ * \fn int makeSNP(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
  * \brief Runs the SNP analysis
  * \param tid Chromosome identifier
  * \param pos Genomic position
@@ -71,6 +71,6 @@ template unsigned long long* callBase<snpData>(snpData *t, int n, const bam_pile
  * \param pl A pointer to the alignment covering a single position
  * \param data A pointer to the user-passed data
  */
-int make_snp(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
+int makeSNP(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
 
 typedef int(snpData::*snp_func)(int);

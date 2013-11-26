@@ -6,19 +6,19 @@
 
 #include "pop_tree.h"
 
-int main_tree(int argc, char *argv[])
+int mainTree(int argc, char *argv[])
 {
-	int k;
-	int chr;                  //! chromosome identifier
-	int beg;                  //! beginning coordinate for analysis
-	int end;                  //! end coordinate for analysis
-	int ref;                  //! ref
-	long num_windows;         //! number of windows
-	long cw;
+	int k = 0;
+	int chr = 0;                  //! chromosome identifier
+	int beg = 0;                  //! beginning coordinate for analysis
+	int end = 0;                  //! end coordinate for analysis
+	int ref = 0;                  //! ref
+	long num_windows = 1;         //! number of windows
+	long cw = 0;
 	std::string region;
-	std::string msg;          //! string for error message
-	bam_plbuf_t *buf;         //! pileup buffer
-	treeData *t;
+	std::string msg;              //! string for error message
+	bam_plbuf_t *buf;             //! pileup buffer
+	treeData *t = nullptr;
 
 	t = new treeData;
 
@@ -61,13 +61,13 @@ int main_tree(int argc, char *argv[])
 	}
 
 	// iterate through all windows along specified genomic region
-	for (cw=0; cw < num_windows; cw++)
+	for (cw = 0; cw < num_windows; cw++)
 	{
 		// construct genome coordinate string
 		std::string scaffold_name(t->h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
 		winc.seekp(0, std::ios::end);
-		winc << ":" << beg + (cw * t->win_size) + 1 << "-" << ((cw + 1) * t->win_size) + (beg - 1);
+		winc << ':' << beg + (cw * t->win_size) + 1 << '-' << ((cw + 1) * t->win_size) + (beg - 1);
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
@@ -102,7 +102,7 @@ int main_tree(int argc, char *argv[])
 		t->assign_pops();
 
 		// initialize pileup
-		buf = bam_plbuf_init(make_tree, t);
+		buf = bam_plbuf_init(makeTree, t);
 
 		// fetch region from bam file
 		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
@@ -121,7 +121,7 @@ int main_tree(int argc, char *argv[])
 		t->calc_dist_matrix();
 
 		// construct nj tree
-		t->make_nj(chr);
+		t->makeNJ(chr);
 
 		// take out the garbage
 		t->destroy_tree();
@@ -140,11 +140,11 @@ int main_tree(int argc, char *argv[])
 	return 0;
 }
 
-int make_tree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
+int makeTree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
 {
 	int i = 0;
 	int fq = 0;
-	unsigned long long sample_cov;
+	unsigned long long sample_cov = 0;
 	unsigned long long *cb = nullptr;
 	treeData *t = nullptr;
 
@@ -167,7 +167,7 @@ int make_tree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl
 		// determine how many samples pass the quality filters
 		sample_cov = qualFilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
 
-		for (i=0; i < t->sm->npops; i++)
+		for (i = 0; i < t->sm->npops; i++)
 			t->pop_sample_mask[i] = sample_cov & t->pop_mask[i];
 
 		if (bitcount64(sample_cov) == t->sm->n)
@@ -179,7 +179,7 @@ int make_tree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl
 			{
 				t->hap.pos[t->segsites] = pos;
 				t->hap.ref[t->segsites] = bam_nt16_table[(int)t->ref_base[pos]];
-				for (i=0; i < t->sm->n; i++)
+				for (i = 0; i < t->sm->n; i++)
 				{
 					t->hap.rms[i][t->segsites] = (cb[i] >> (CHAR_BIT * 6)) & 0xffff;
 					t->hap.snpq[i][t->segsites] = (cb[i] >> (CHAR_BIT * 4)) & 0xffff;
@@ -197,20 +197,23 @@ int make_tree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl
 		// take out the garbage
 		delete [] cb;
 	}
+
 	return 0;
 }
 
-void treeData::make_nj(int chr)
+int treeData::makeNJ(int chr)
 {
 	int i = 0;
 	tree curtree;
 	node **cluster = nullptr;
+	std::stringstream out;
 
 	if ((num_sites < min_sites) || (segsites < 1))
 	{
-		std::cout << h->target_name[chr] << "\t" << beg+1 << "\t" << end+1 << "\t" << num_sites;
-		std::cout << "\tNA" << std::endl;
-		return;
+		out << h->target_name[chr] << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites;
+		out << "\tNA";
+		std::cout << out.str() << std::endl;
+		return 0;
 	}
 
 	try
@@ -224,7 +227,7 @@ void treeData::make_nj(int chr)
 	}
 
 	for (i = 0; i < ntaxa; i++)
-		enterorder[i] = i+1;
+		enterorder[i] = i + 1;
 
 	tree_init(&curtree.nodep);
 	node *p = nullptr;
@@ -241,8 +244,10 @@ void treeData::make_nj(int chr)
 
 	join_tree(curtree, cluster);
 	curtree.start = curtree.nodep[0]->back;
-	std::cout << h->target_name[chr] << "\t" << beg+1 << "\t" << end+1 << "\t" << num_sites << "\t";
+	out << h->target_name[chr] << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites << '\t';
+	std::cout << out.str();
 	print_tree(curtree.start, curtree.start);
+	std::cout << std::endl;
 
 	free_tree(&curtree.nodep);
 	delete [] cluster;
@@ -255,7 +260,12 @@ void treeData::join_tree(tree curtree, node **cluster)
 	int nextnode = 0;
 	int mini = 0;
 	int minj = 0;
-	int i, j, jj, ii, ia, ja;
+	int i = 0;
+	int j = 0;
+	int jj = 0;
+	int ii = 0;
+	int ia = 0;
+	int ja = 0;
 	int nude = 0;
 	int iter = 0;
 	int el[3];
@@ -281,7 +291,7 @@ void treeData::join_tree(tree curtree, node **cluster)
 		for (i = 0; i < ntaxa; i++)
 		{
 			x[i] = new double [ntaxa];
-			memcpy(x[i], dist_matrix[i], ntaxa*sizeof(double));
+			memcpy(x[i], dist_matrix[i], ntaxa * sizeof(double));
 		}
 	}
 	catch (std::bad_alloc& ba)
@@ -293,7 +303,7 @@ void treeData::join_tree(tree curtree, node **cluster)
 	{
 		for (j = i + 1; j < ntaxa; j++)
 		{
-			da = (x[i][j]+x[j][i])/2.0;
+			da = (x[i][j] + x[j][i]) / 2.0;
 			x[i][j] = da;
 			x[j][i] = da;
 		}
@@ -385,7 +395,7 @@ void treeData::join_tree(tree curtree, node **cluster)
 
 		// re-initialization
 		fotu2 -= 1.0;
-		for (j=0; j < ntaxa; j++)
+		for (j = 0; j < ntaxa; j++)
 		{
 			if (cluster[j] != 0)
 			{
@@ -396,7 +406,7 @@ void treeData::join_tree(tree curtree, node **cluster)
 					x[j][mini-1] = da;
 			}
 		}
-		for (j=0; j < ntaxa; j++)
+		for (j = 0; j < ntaxa; j++)
 		{
 			x[minj-1][j] = 0.0;
 			x[j][minj-1] = 0.0;
@@ -450,35 +460,38 @@ void treeData::hookup(node *p, node *q)
 
 void treeData::print_tree(node *p, node *start)
 {
+	std::stringstream out;
+
 	if (p->tip)
 	{
 		if (p->index == 1)
-			std::cout << refid;
+			out << refid;
 		else
-			std::cout << sm->smpl[p->index-2];
+			out << sm->smpl[p->index-2];
 	}
 	else
 	{
-		std::cout << "(";
+		out << '(';
 		print_tree(p->next->back, start);
-		std::cout << ",";
+		out << ',';
 		print_tree(p->next->next->back, start);
 		if (p == start)
 		{
-			std::cout << ",";
+			out << ',';
 			print_tree(p->back, start);
 		}
-		std::cout << ")";
+		out << ')';
 	}
 	if (p == start)
-		std::cout << ";" << std::endl;
+		out << ';' << std::endl;
 	else
 	{
 		if (p->v < 0)
-			std::cout << ":0.00000";
+			out << ":0.00000";
 		else
-			std::cout << ":" << std::fixed << std::setprecision(5) << p->v;
+			out << ':' << std::fixed << std::setprecision(5) << p->v;
 	}
+	std::cout << out.str();
 }
 
 void calc_diff_matrix(treeData *t)
@@ -512,7 +525,7 @@ void treeData::calc_dist_matrix(void)
 	int i = 0;
 	int j = 0;
 
-	for (i = 0; i < ntaxa-1; i++)
+	for (i = 0; i < ntaxa - 1; i++)
 	{
 		for (j = i + 1; j < ntaxa; j++)
 		{

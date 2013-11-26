@@ -42,11 +42,11 @@ class nucdivData: public popbamData
 		double min_pop;                         //!< Minimum proportion of samples present
 
 		// member public functions
-		void calc_nucdiv(void);
+		int calcNucdiv(void);
 		std::string parseCommandLine(int, char**);
-		void init_nucdiv(void);
-		void destroy_nucdiv(void);
-		void print_nucdiv(int);
+		int initNucdiv(void);
+		int destroyNucdiv(void);
+		int printNucdiv(int);
 		void printUsage(std::string);
 
 	private:
@@ -72,7 +72,7 @@ class nucdivData: public popbamData
 template unsigned long long* callBase<nucdivData>(nucdivData *t, int n, const bam_pileup1_t *pl);
 
 /*!
- * \fn int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
+ * \fn int makeNucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
  * \brief Runs the nucleotide diversity calculations
  * \param tid Chromosome identifier
  * \param pos Genomic position
@@ -80,4 +80,4 @@ template unsigned long long* callBase<nucdivData>(nucdivData *t, int n, const ba
  * \param pl A pointer to the alignment covering a single position
  * \param data A pointer to the user-passed data
  */
-int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
+int makeNucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);

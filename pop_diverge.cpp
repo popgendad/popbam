@@ -6,9 +6,10 @@
 
 #include "pop_diverge.h"
 
-int main_diverge(int argc, char *argv[])
+int mainDiverge(int argc, char *argv[])
 {
 	bool found = false;           //! is the outgroup sequence found?
+	int i = 0;
 	int k = 0;
 	int chr = 0;                  //! chromosome identifier
 	int beg = 0;                  //! beginning coordinate for analysis
@@ -42,7 +43,7 @@ int main_diverge(int argc, char *argv[])
 	// if outgroup option is used check to make sure it exists
 	if (t->flag & BAM_OUTGROUP)
 	{
-		for (int i=0; i < t->sm->n; i++)
+		for (i = 0; i < t->sm->n; i++)
 			if (strcmp(t->sm->smpl[i], t->outgroup.c_str()) == 0)
 			{
 				t->outidx = i;
@@ -76,13 +77,13 @@ int main_diverge(int argc, char *argv[])
 	}
 
 	// iterate through all windows along specified genomic region
-	for (cw=0; cw < num_windows; cw++)
+	for (cw = 0; cw < num_windows; cw++)
 	{
 		// construct genome coordinate string
 		std::string scaffold_name(t->h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
 		winc.seekp(0, std::ios::end);
-		winc << ":" << beg + (cw * t->win_size) + 1 << "-" << ((cw + 1) * t->win_size) + (beg - 1);
+		winc << ':' << beg + (cw * t->win_size) + 1 << '-' << ((cw + 1) * t->win_size) + (beg - 1);
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
@@ -121,7 +122,7 @@ int main_diverge(int argc, char *argv[])
 		t->set_min_pop_n();
 
 		// initialize pileup
-		buf = bam_plbuf_init(make_diverge, t);
+		buf = bam_plbuf_init(makeDiverge, t);
 
 		// fetch region from bam file
 		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
@@ -134,8 +135,8 @@ int main_diverge(int argc, char *argv[])
 		bam_plbuf_push(0, buf);
 
 		// print results to stdout
-		t->calc_diverge();
-		t->print_diverge(chr);
+		t->calcDiverge();
+		t->printDiverge(chr);
 
 		// take out the garbage
 		t->destroy_diverge();
@@ -153,7 +154,7 @@ int main_diverge(int argc, char *argv[])
 	return 0;
 }
 
-int make_diverge(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
+int makeDiverge(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
 {
 	int i = 0;
 	int fq = 0;
@@ -180,7 +181,7 @@ int make_diverge(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t 
 		// determine how many samples pass the quality filters
 		sample_cov = qualFilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
 
-		for (i=0; i < t->sm->npops; i++)
+		for (i = 0; i < t->sm->npops; i++)
 			t->pop_sample_mask[i] = sample_cov & t->pop_mask[i];
 
 		if (bitcount64(sample_cov) == t->sm->n)
@@ -192,7 +193,7 @@ int make_diverge(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t 
 			{
 				t->hap.pos[t->segsites] = pos;
 				t->hap.ref[t->segsites] = (unsigned char)bam_nt16_table[(int)t->ref_base[pos]];
-				for (i=0; i < t->sm->n; i++)
+				for (i = 0; i < t->sm->n; i++)
 				{
 					t->hap.rms[i][t->segsites] = (cb[i] >> (CHAR_BIT * 6)) & 0xffff;
 					t->hap.snpq[i][t->segsites] = (cb[i] >> (CHAR_BIT * 4)) & 0xffff;
@@ -213,25 +214,26 @@ int make_diverge(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t 
 	return 0;
 }
 
-void divergeData::calc_diverge(void)
+int divergeData::calcDiverge(void)
 {
-	int i, j;
+	int i = 0;
+	int j = 0;
+	unsigned short freq = 0;
+	unsigned long long pop_type = 0;
 
 	// calculate number of differences with reference sequence
 	switch (output)
 	{
 		case 0:
-			for (i=0; i < sm->n; i++)
-				for (j=0; j <= SEG_IDX(segsites); j++)
+			for (i = 0; i < sm->n; i++)
+				for (j = 0; j <= SEG_IDX(segsites); j++)
 					ind_div[i] += bitcount64(hap.seq[i][j]);
 			break;
 		case 1:
-			unsigned long long pop_type;
-			unsigned short freq;
-			for (i=0; i < sm->npops; i++)
+			for (i = 0; i < sm->npops; i++)
 			{
 				num_snps[i] = 0;
-				for (j=0; j < segsites; j++)
+				for (j = 0; j < segsites; j++)
 				{
 					pop_type = types[hap.idx[j]] & pop_mask[i];
 
@@ -252,6 +254,8 @@ void divergeData::calc_diverge(void)
 		default:
 			break;
 	}
+
+	return 0;
 }
 
 std::string divergeData::parseCommandLine(int argc, char *argv[])
@@ -430,7 +434,7 @@ void divergeData::init_diverge(void)
 			default:
 				break;
 		}
-		for (i=0; i < n; i++)
+		for (i = 0; i < n; i++)
 		{
 			hap.seq[i] = new unsigned long long [length]();
 			hap.base[i] = new unsigned char [length]();
@@ -469,7 +473,7 @@ void divergeData::destroy_diverge(void)
 		default:
 			break;
 	}
-	for (i=0; i < sm->n; i++)
+	for (i = 0; i < sm->n; i++)
 	{
 		delete [] hap.seq[i];
 		delete [] hap.base[i];
@@ -484,91 +488,93 @@ void divergeData::destroy_diverge(void)
 	delete [] hap.num_reads;
 }
 
-void divergeData::print_diverge(int chr)
+int divergeData::printDiverge(int chr)
 {
 	int i = 0;
+	double pdist = 0.0;
+	double jc = 0.0;
+	std::stringstream out;
 
-	std::cout << h->target_name[chr] << "\t" << beg + 1 << "\t" << end + 1 << "\t" << num_sites;
+	out << h->target_name[chr] << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites;
 
 	switch (output)
 	{
 		case 0:
-			for (i=0; i < sm->n; i++)
+			for (i = 0; i < sm->n; i++)
 			{
 				if (num_sites >= min_sites)
 				{
 					if (dist == "pdist")
 					{
-						std::cout << "\td[" << sm->smpl[i] << "]:";
-						std::cout << "\t" << std::fixed << std::setprecision(5) << (double)ind_div[i] / num_sites;
+						out << "\td[" << sm->smpl[i] << "]:";
+						out << '\t' << std::fixed << std::setprecision(5) << (double)(ind_div[i]) / num_sites;
 					}
 					else if (dist == "jc")
 					{
-						double pdist = (double)ind_div[i] / num_sites;
-						double jc = -0.75 * log(1.0 - pdist * (4.0 / 3.0));
-						std::cout << "\td[" << sm->smpl[i] << "]:";
-						std::cout << "\t" << std::fixed << std::setprecision(5) << jc;
+						pdist = (double)(ind_div[i]) / num_sites;
+						jc = -0.75 * log(1.0 - pdist * (4.0 / 3.0));
+						out << "\td[" << sm->smpl[i] << "]:";
+						out << '\t' << std::fixed << std::setprecision(5) << jc;
 					}
 					else
-						std::cout << "\td[" << sm->smpl[i] << "]:\t" << std::setw(7) << "NA";
+						out << "\td[" << sm->smpl[i] << "]:\t" << std::setw(7) << "NA";
 				}
 				else
-					std::cout << "\td[" << sm->smpl[i] << "]:\t" << std::setw(7) << "NA";
+					out << "\td[" << sm->smpl[i] << "]:\t" << std::setw(7) << "NA";
 			}
-			std::cout << std::endl;
 			break;
 		case 1:
-			for (i=0; i < sm->npops; i++)
+			for (i = 0; i < sm->npops; i++)
 			{
 				if (num_sites >= min_sites)
 				{
-					std::cout << "\tFixed[" << sm->popul[i] << "]:\t" << pop_div[i];
-					std::cout << "\tSeg[" << sm->popul[i] << "]:\t" << num_snps[i];
-					std::cout << "\td[" << sm->popul[i] << "]:";
+					out << "\tFixed[" << sm->popul[i] << "]:\t" << pop_div[i];
+					out << "\tSeg[" << sm->popul[i] << "]:\t" << num_snps[i];
+					out << "\td[" << sm->popul[i] << "]:";
 					if (dist == "pdist")
 					{
 						if (flag & BAM_SUBSTITUTE)
-							std::cout << "\t" << std::fixed << std::setprecision(5) << (double)pop_div[i] / num_sites;
+							out << '\t' << std::fixed << std::setprecision(5) << (double)(pop_div[i]) / num_sites;
 						else
-							std::cout << "\t" << std::fixed << std::setprecision(5) << (double)(pop_div[i] + num_snps[i]) / num_sites;
+							out << '\t' << std::fixed << std::setprecision(5) << (double)(pop_div[i] + num_snps[i]) / num_sites;
 					}
 					else if (dist == "jc")
 					{
-						double pdist;
-						double jc;
 						if (flag & BAM_SUBSTITUTE)
-							pdist = (double)pop_div[i] / num_sites;
+							pdist = (double)(pop_div[i]) / num_sites;
 						else
 							pdist = (double)(pop_div[i] + num_snps[i]) / num_sites;
 						jc = -0.75 * log(1.0 - pdist * (4.0 / 3.0));
-						std::cout << "\t" << std::fixed << std::setprecision(5) << jc;
+						out << '\t' << std::fixed << std::setprecision(5) << jc;
 					}
 					else
 					{
-						std::cout << "\tFixed[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
-						std::cout << "\tSeg[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
-						std::cout << "\td[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+						out << "\tFixed[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+						out << "\tSeg[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+						out << "\td[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
 					}
 				}
 				else
 				{
-					std::cout << "\tFixed[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
-					std::cout << "\tSeg[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
-					std::cout << "\td[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+					out << "\tFixed[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+					out << "\tSeg[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+					out << "\td[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
 				}
 			}
-			std::cout << std::endl;
 			break;
 		default:
 			break;
 	}
+	std::cout << out.str() << std::endl;
+
+	return 0;
 }
 
 void divergeData::set_min_pop_n(void)
 {
 	int j = 0;
 
-	for (j=0; j < sm->npops; j++)
+	for (j = 0; j < sm->npops; j++)
 		min_pop_n[j] = (unsigned short)pop_nsmpl[j];
 }
 

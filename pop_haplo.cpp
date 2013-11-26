@@ -6,7 +6,7 @@
 
 #include "pop_haplo.h"
 
-int main_haplo(int argc, char *argv[])
+int mainHaplo(int argc, char *argv[])
 {
 	int k = 0;
 	int chr = 0;                  //! chromosome identifier
@@ -59,13 +59,13 @@ int main_haplo(int argc, char *argv[])
 	}
 
 	// iterate through all windows along specified genomic region
-	for (cw=0; cw < num_windows; cw++)
+	for (cw = 0; cw < num_windows; cw++)
 	{
 		// construct genome coordinate string
 		std::string scaffold_name(t->h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
 		winc.seekp(0, std::ios::end);
-		winc << ":" << beg + (cw * t->win_size) + 1 << "-" << ((cw + 1) * t->win_size) + (beg - 1);
+		winc << ':' << beg + (cw * t->win_size) + 1 << '-' << ((cw + 1) * t->win_size) + (beg - 1);
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
@@ -100,7 +100,7 @@ int main_haplo(int argc, char *argv[])
 		t->assign_pops();
 
 		// initialize pileup
-		buf = bam_plbuf_init(make_haplo, t);
+		buf = bam_plbuf_init(makeHaplo, t);
 
 		// fetch region from bam file
 		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
@@ -113,10 +113,10 @@ int main_haplo(int argc, char *argv[])
 		bam_plbuf_push(0, buf);
 
 		// calculate haplotype-based statistics
-		t->calc_haplo();
+		t->calcHaplo();
 
 		// print results to stdout
-		t->print_haplo(chr);
+		t->printHaplo(chr);
 
 		// take out the garbage
 		t->destroy_haplo();
@@ -134,7 +134,7 @@ int main_haplo(int argc, char *argv[])
 	return 0;
 }
 
-int make_haplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
+int makeHaplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
 {
 	int i = 0;
 	int j = 0;
@@ -166,9 +166,9 @@ int make_haplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *p
 		t->types[t->segsites] = calculateSiteType(t->sm->n, cb);
 
 		// Update the aligned sites and difference matrices
-		for (i=0; i < t->sm->n - 1; i++)
+		for (i = 0; i < t->sm->n - 1; i++)
 		{
-			for (j=i+1; j < t->sm->n; j++)
+			for (j = i + 1; j < t->sm->n; j++)
 			{
 				if (CHECK_BIT(sample_cov,i) && CHECK_BIT(sample_cov,j))
 				{
@@ -186,13 +186,15 @@ int make_haplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *p
 	return 0;
 }
 
-void haploData::calc_haplo(void)
+int haploData::calcHaplo(void)
 {
-	haplo_func do_haplo[3] = {&haploData::calc_nhaps, &haploData::calc_EHHS, &haploData::calc_Gmin};
+	haplo_func do_haplo[3] = {&haploData::calcNhaps, &haploData::calcEHHS, &haploData::calcGmin};
 	(this->*do_haplo[output])();
+
+	return 0;
 }
 
-int haploData::calc_nhaps(void)
+int haploData::calcNhaps(void)
 {
 	int i = 0;
 	int j = 0;
@@ -200,7 +202,7 @@ int haploData::calc_nhaps(void)
 	int f = 0;
 	int nelem = 0;
 
-	for (i=0; i < sm->npops; i++)
+	for (i = 0; i < sm->npops; i++)
 	{
 		nelem = pop_nsmpl[i];
 		if (nelem > 1)
@@ -210,15 +212,15 @@ int haploData::calc_nhaps(void)
 			std::vector<int>::iterator it2;
 
 			// initialize the haplotype identity vector
-			for (j=0; j < sm->n; j++)
+			for (j = 0; j < sm->n; j++)
 				if (CHECK_BIT(pop_mask[i], j))
 					b.push_back(j);
 
 			// assign haplotype identifiers
-			for (j=0, it1=b.begin(); j < nelem-1; j++, it1++)
+			for (j = 0, it1 = b.begin(); j < nelem - 1; j++, it1++)
 			{
 				it2 = b.begin();
-				for (k=j+1, std::advance(it2, j+1); k < nelem; k++, it2++)
+				for (k = j + 1, std::advance(it2, j+1); k < nelem; k++, it2++)
 					if ((diff_matrix[UTIDX(sm->n,j,k)] == 0) && (*it2 > *it1))
 						b.at(k)=j;
 			}
@@ -227,7 +229,7 @@ int haploData::calc_nhaps(void)
 			int ff = 0;
 			double sh = 0.0;
 
-			for (j=0; j < (int)b.size(); j++)
+			for (j = 0; j < (int)b.size(); j++)
 			{
 				if ((f = count(b.begin(), b.end(), j)) > 0)
 					++nhaps[i];
@@ -246,14 +248,14 @@ int haploData::calc_nhaps(void)
 	return 0;
 }
 
-int haploData::calc_EHHS(void)
+int haploData::calcEHHS(void)
 {
 	int i = 0;
 	int j = 0;
 
-	calc_nhaps();
+	calcNhaps();
 
-	for (i=0; i < sm->npops; i++)
+	for (i = 0; i < sm->npops; i++)
 	{
 		if (pop_nsmpl[i] < 4)
 			ehhs[i] = std::numeric_limits<double>::quiet_NaN();
@@ -264,7 +266,7 @@ int haploData::calc_EHHS(void)
 			std::list<unsigned long long> pop_site;
 
 			// make list container of all non-singleton partitions present in population i
-			for (j=0; j < segsites; j++)
+			for (j = 0; j < segsites; j++)
 			{
 				pop_type = types[j] & pop_mask[i];
 				popf = bitcount64(pop_type);
@@ -286,12 +288,12 @@ int haploData::calc_EHHS(void)
 			uniq.sort();
 			uniq.unique();
 
-			for (it=uniq.begin(); it != uniq.end(); it++)
+			for (it = uniq.begin(); it != uniq.end(); it++)
 			{
 				part_type = *it;
 
 				// find the complement of part_type
-				for (j=0; j < sm->n; j++)
+				for (j = 0; j < sm->n; j++)
 					if (~CHECK_BIT(part_type,j) && CHECK_BIT(pop_mask[i],j))
 						part_type_comp |= 0x1ULL << j;
 				before = static_cast<int>(pop_site.size());
@@ -318,7 +320,7 @@ int haploData::calc_EHHS(void)
 	return 0;
 }
 
-int haploData::calc_Gmin(void)
+int haploData::calcGmin(void)
 {
 	int i = 0;
 	int j = 0;
@@ -327,14 +329,14 @@ int haploData::calc_Gmin(void)
 	const int npops = sm->npops;
 	const int n = sm->n;
 
-	for (i=0; i < npops; i++)
+	for (i = 0; i < npops; i++)
 	{
-		for (j=i+1; j < npops; j++)
+		for (j = i + 1; j < npops; j++)
 		{
 			minDxy[UTIDX(npops,i,j)] = std::numeric_limits<unsigned int>::max();
-			for (v=0; v < n-1; v++)
+			for (v = 0; v < n - 1; v++)
 			{
-				for (w=v+1; w < n; w++)
+				for (w = v + 1; w < n; w++)
 				{
 					if (CHECK_BIT(pop_mask[i],v) && CHECK_BIT(pop_mask[j],w))
 					{
@@ -350,76 +352,77 @@ int haploData::calc_Gmin(void)
 	return 0;
 }
 
-void haploData::print_haplo(int chr)
+int haploData::printHaplo(int chr)
 {
 	int i = 0;
 	int j = 0;
+	std::stringstream out;
 
 	//print coordinate information and number of aligned sites
-	std::cout << h->target_name[chr] << "\t" << beg + 1 << "\t" << end+1 << "\t" << num_sites;
+	out << h->target_name[chr] << '\t' << beg + 1 << '\t' << end+1 << '\t' << num_sites;
 
 	switch(output)
 	{
 	case 0:
-		for (i=0; i < sm->npops; i++)
+		for (i = 0; i < sm->npops; i++)
 		{
 			if (num_sites >= min_sites)
 			{
-				std::cout << "\tK[" << sm->popul[i] << "]:\t" << nhaps[i];
-				std::cout << "\tKdiv[" << sm->popul[i] << "]:";
-				std::cout << "\t" << std::fixed << std::setprecision(5) << 1.0 - hdiv[i];
+				out << "\tK[" << sm->popul[i] << "]:\t" << nhaps[i];
+				out << "\tKdiv[" << sm->popul[i] << "]:";
+				out << '\t' << std::fixed << std::setprecision(5) << 1.0 - hdiv[i];
 			}
 			else
 			{
-				std::cout << "\tK[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
-				std::cout << "\tKdiv[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+				out << "\tK[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+				out << "\tKdiv[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
 			}
 		}
 		break;
 	case 1:
-		for (i=0; i < sm->npops; i++)
+		for (i = 0; i < sm->npops; i++)
 		{
 			if (num_sites >= min_sites)
 			{
 				if (isnan(ehhs[i]))
-					std::cout << "\tEHHS[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+					out << "\tEHHS[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
 				else
 				{
-					std::cout << "\tEHHS[" << sm->popul[i] << "]:";
-					std::cout << "\t" << std::fixed << std::setprecision(5) << ehhs[i];
+					out << "\tEHHS[" << sm->popul[i] << "]:";
+					out << '\t' << std::fixed << std::setprecision(5) << ehhs[i];
 				}
 			}
 			else
-				std::cout << "\tEHHS[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+				out << "\tEHHS[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
 		}
 		break;
 	case 2:
-		for (i=0; i < sm->npops; i++)
+		for (i = 0; i < sm->npops; i++)
 		{
 			if (num_sites >= min_sites)
 			{
-				std::cout << "\tpi[" << sm->popul[i] << "]:";
-				std::cout << "\t" << std::fixed << std::setprecision(5) << piw[i];
+				out << "\tpi[" << sm->popul[i] << "]:";
+				out << '\t' << std::fixed << std::setprecision(5) << piw[i];
 			}
 			else
-				std::cout << "\tpi[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+				out << "\tpi[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
 		}
 
-		for (i=0; i < sm->npops-1; i++)
+		for (i = 0; i < sm->npops-1; i++)
 		{
-			for (j=i+1; j < sm->npops; j++)
+			for (j = i + 1; j < sm->npops; j++)
 			{
 				if (num_sites >= min_sites)
 				{
-					std::cout << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
-					std::cout << "\t" << std::fixed << std::setprecision(5) << pib[UTIDX(sm->npops,i,j)];
-					std::cout << "\tmin[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
-					std::cout << "\t" << minDxy[UTIDX(sm->npops,i,j)];
+					out << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
+					out << '\t' << std::fixed << std::setprecision(5) << pib[UTIDX(sm->npops,i,j)];
+					out << "\tmin[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
+					out << '\t' << minDxy[UTIDX(sm->npops,i,j)];
 				}
 				else
 				{
-					std::cout << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:\t" << std::setw(7) << "NA";
-					std::cout << "\tmin[" << sm->popul[i] << "-" << sm->popul[j] << "]:\t" << std::setw(7) << "NA";
+					out << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:\t" << std::setw(7) << "NA";
+					out << "\tmin[" << sm->popul[i] << "-" << sm->popul[j] << "]:\t" << std::setw(7) << "NA";
 				}
 			}
 		}
@@ -427,7 +430,9 @@ void haploData::print_haplo(int chr)
 	default:
 		break;
 	}
-	std::cout << std::endl;
+	std::cout << out.str() << std::endl;
+
+	return 0;
 }
 
 std::string haploData::parseCommandLine(int argc, char *argv[])

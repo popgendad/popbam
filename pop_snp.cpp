@@ -5,7 +5,7 @@
 */
 #include "pop_snp.h"
 
-int main_snp(int argc, char *argv[])
+int mainSNP(int argc, char *argv[])
 {
 	bool found = false;           //! is the outgroup found?
 	int i = 0;
@@ -42,7 +42,7 @@ int main_snp(int argc, char *argv[])
 	// if outgroup option is used check to make sure it exists
 	if (t->flag & BAM_OUTGROUP)
 	{
-		for (i=0; i < t->sm->n; i++)
+		for (i = 0; i < t->sm->n; i++)
 		{
 			if (strcmp(t->sm->smpl[i], t->outgroup.c_str()) == 0)
 			{
@@ -126,7 +126,7 @@ int main_snp(int argc, char *argv[])
 			t->printMSHeader(num_windows);
 
 		// initialize pileup
-		buf = bam_plbuf_init(make_snp, t);
+		buf = bam_plbuf_init(makeSNP, t);
 
 		// fetch region from bam file
 		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
@@ -157,7 +157,7 @@ int main_snp(int argc, char *argv[])
 	return 0;
 }
 
-int make_snp(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
+int makeSNP(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
 {
 	int i = 0;
 	int fq = 0;

@@ -55,12 +55,12 @@ class sfsData: public popbamData
 		std::string parseCommandLine(int, char**);
 		void init_sfs(void);
 		void destroy_sfs(void);
-		void print_sfs(int);
+		int printSFS(int);
 		void printUsage(std::string);
 		void assign_outpop(void);
 		void calc_dw(void);
 		void calc_hw(void);
-		void calc_sfs(void);
+		int calcSFS(void);
 		void calc_a1(void);
 		void calc_a2(void);
 		void calc_e1(void);
@@ -83,7 +83,7 @@ class sfsData: public popbamData
 template unsigned long long* callBase<sfsData>(sfsData *t, int n, const bam_pileup1_t *pl);
 
 /*!
- * \fn int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
+ * \fn int makeSFS(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
  * \brief Runs the site frequency spectrum analysis
  * \param tid Chromosome identifier
  * \param pos Genomic position
@@ -91,4 +91,4 @@ template unsigned long long* callBase<sfsData>(sfsData *t, int n, const bam_pile
  * \param pl A pointer to the alignment covering a single position
  * \param data A pointer to the user-passed data
  */
-int make_sfs(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
+int makeSFS(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);

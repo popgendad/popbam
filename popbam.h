@@ -287,14 +287,14 @@ class popbamData
 ///
 
 // Entry points to the main popbam functions
-extern int main_snp(int, char**);
-extern int main_fasta(int, char**);
-extern int main_haplo(int, char**);
-extern int main_diverge(int, char**);
-extern int main_tree(int, char**);
-extern int main_nucdiv(int, char**);
-extern int main_ld(int, char**);
-extern int main_sfs(int, char**);
+extern int mainSNP(int, char**);
+extern int mainFasta(int, char**);
+extern int mainHaplo(int, char**);
+extern int mainDiverge(int, char**);
+extern int mainTree(int, char**);
+extern int mainNucdiv(int, char**);
+extern int mainLD(int, char**);
+extern int mainSFS(int, char**);
 
 /*!
  * \fn inline unsigned int log2int(const unsigned int val)

@@ -6,7 +6,7 @@
 
 #include "pop_nucdiv.h"
 
-int main_nucdiv(int argc, char *argv[])
+int mainNucdiv(int argc, char *argv[])
 {
 	int k = 0;
 	int chr = 0;                  //! chromosome identifier
@@ -59,13 +59,13 @@ int main_nucdiv(int argc, char *argv[])
 	}
 
 	// iterate through all windows along specified genomic region
-	for (cw=0; cw < num_windows; cw++)
+	for (cw = 0; cw < num_windows; cw++)
 	{
 		// construct genome coordinate string
 		std::string scaffold_name(t->h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
 		winc.seekp(0, std::ios::end);
-		winc << ":" << beg + (cw * t->win_size) + 1 << "-" << ((cw + 1) * t->win_size) + (beg - 1);
+		winc << ':' << beg + (cw * t->win_size) + 1 << '-' << ((cw + 1) * t->win_size) + (beg - 1);
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
@@ -94,13 +94,13 @@ int main_nucdiv(int argc, char *argv[])
 		}
 
 		// initialize nucdiv variables
-		t->init_nucdiv();
+		t->initNucdiv();
 
 		// create population assignments
 		t->assign_pops();
 
 		// initialize pileup
-		buf = bam_plbuf_init(make_nucdiv, t);
+		buf = bam_plbuf_init(makeNucdiv, t);
 
 		// fetch region from bam file
 		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
@@ -113,13 +113,13 @@ int main_nucdiv(int argc, char *argv[])
 		bam_plbuf_push(0, buf);
 
 		// calculate nucleotide diversity in window
-		t->calc_nucdiv();
+		t->calcNucdiv();
 
 		// print results to stdout
-		t->print_nucdiv(chr);
+		t->printNucdiv(chr);
 
 		// take out the garbage
-		t->destroy_nucdiv();
+		t->destroyNucdiv();
 		bam_plbuf_destroy(buf);
 	}
 	// end of window iteration
@@ -134,9 +134,10 @@ int main_nucdiv(int argc, char *argv[])
 	return 0;
 }
 
-int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
+int makeNucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
 {
 	int i = 0;
+	int j = 0;
 	int fq = 0;
 	unsigned long long sample_cov = 0;
 	unsigned long long *cb = nullptr;
@@ -165,7 +166,7 @@ int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *
 		ncov = new unsigned int [t->sm->npops]();
 
 		// determine population coverage
-		for (i=0; i < t->sm->npops; ++i)
+		for (i = 0; i < t->sm->npops; ++i)
 		{
 			unsigned long long pc = 0;
 			pc = sample_cov & t->pop_mask[i];
@@ -181,7 +182,7 @@ int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *
 			t->num_sites++;
 			if (fq > 0)
 			{
-				for (int j = 0; j < t->sm->npops; ++j)
+				for (j = 0; j < t->sm->npops; ++j)
 					t->ncov[j][t->segsites] = ncov[j];
 				t->types[t->segsites++] = calculateSiteType(t->sm->n, cb);
 			}
@@ -195,7 +196,7 @@ int make_nucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *
 	return 0;
 }
 
-void nucdivData::calc_nucdiv(void)
+int nucdivData::calcNucdiv(void)
 {
 	int i = 0;
 	int j = 0;
@@ -205,27 +206,27 @@ void nucdivData::calc_nucdiv(void)
 	double sum = 0.0;
 
 	freq = new unsigned short* [sm->npops];
-	for (i=0; i < sm->npops; i++)
+	for (i = 0; i < sm->npops; i++)
 		freq[i] = new unsigned short [segsites];
 
 	// calculate the number of aligned sites within and between populations
-	for (i=0; i < num_sites; ++i)
+	for (i = 0; i < num_sites; ++i)
 	{
-		for (j=0; j < sm->npops; ++j)
+		for (j = 0; j < sm->npops; ++j)
 			if (CHECK_BIT(pop_cov[i],j))
 				++ns_within[j];
-		for (j=0; j < sm->npops-1; ++j)
-			for (k=j+1; k < sm->npops; ++k)
+		for (j = 0; j < sm->npops-1; ++j)
+			for (k = j + 1; k < sm->npops; ++k)
 				if (CHECK_BIT(pop_cov[i],j) && CHECK_BIT(pop_cov[i],k))
 					++ns_between[UTIDX(sm->npops,j,k)];
 	}
 
 	// calculate within population heterozygosity
-	for (i=0; i < sm->npops; i++)
+	for (i = 0; i < sm->npops; i++)
 	{
 		num_snps[i] = 0;
 		sum = 0.0;
-		for (j=0; j < segsites; j++)
+		for (j = 0; j < segsites; j++)
 		{
 			pop_type = types[j] & pop_mask[i];
 			freq[i][j] = bitcount64(pop_type);
@@ -239,12 +240,12 @@ void nucdivData::calc_nucdiv(void)
 
 	// calculate between population heterozygosity
 	// this still will always include singletons
-	for (i=0; i < sm->npops-1; i++)
+	for (i = 0; i < sm->npops-1; i++)
 	{
-		for (j=i+1; j < sm->npops; j++)
+		for (j = i + 1; j < sm->npops; j++)
 		{
 			sum = 0.0;
-			for (k=0; k < segsites; k++)
+			for (k = 0; k < segsites; k++)
 				if ((ncov[i][k] > 0) && (ncov[j][k] > 0))
 					sum += (double)(freq[i][k] * (ncov[j][k] - freq[j][k]) + freq[j][k] * (ncov[i][k] - freq[i][k])) / (ncov[i][k] * ncov[j][k]);
 			pib[UTIDX(sm->npops,i,j)] = sum / ns_between[UTIDX(sm->npops,i,j)];
@@ -252,48 +253,51 @@ void nucdivData::calc_nucdiv(void)
 	}
 
 	// take out the garbage
-	for (i=0; i < sm->npops; i++)
+	for (i = 0; i < sm->npops; i++)
 		delete [] freq[i];
 	delete [] freq;
+
+	return 0;
 }
 
 
-void nucdivData::print_nucdiv(int chr)
+int nucdivData::printNucdiv(int chr)
 {
 	int i = 0;
 	int j = 0;
+	std::stringstream out;
 
-	std::cout << h->target_name[chr] << "\t" << beg + 1 << "\t" << end + 1;
+	out << h->target_name[chr] << '\t' << beg + 1 << '\t' << end + 1;
 
-	for (i=0; i < sm->npops; i++)
+	for (i = 0; i < sm->npops; i++)
 	{
-		std::cout << "\tns[" << sm->popul[i] << "]:";
-		std::cout << "\t" << ns_within[i];
+		out << "\tns[" << sm->popul[i] << "]:";
+		out << '\t' << ns_within[i];
 		if (ns_within[i] >= min_sites)
 		{
-			std::cout << "\tpi[" << sm->popul[i] << "]:";
-			std::cout << "\t" << std::fixed << std::setprecision(5) << piw[i];
+			out << "\tpi[" << sm->popul[i] << "]:";
+			out << '\t' << std::fixed << std::setprecision(5) << piw[i];
 		}
 		else
-			std::cout << "\tpi[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+			out << "\tpi[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
 	}
 
-	for (i=0; i < sm->npops-1; i++)
+	for (i = 0; i < sm->npops-1; i++)
 	{
-		for (j=i+1; j < sm->npops; j++)
+		for (j = i + 1; j < sm->npops; j++)
 		{
-			std::cout << "\tns[" <<  sm->popul[i] << "-" << sm->popul[j] << "]:";
-			std::cout << "\t" << ns_between[UTIDX(sm->npops,i,j)];
+			out << "\tns[" <<  sm->popul[i] << "-" << sm->popul[j] << "]:";
+			out << '\t' << ns_between[UTIDX(sm->npops,i,j)];
 			if (ns_between[UTIDX(sm->npops,i,j)] >= (unsigned long int)((end - beg) * min_sites))
 			{
-				std::cout << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
-				std::cout << "\t" << std::fixed << std::setprecision(5) << pib[UTIDX(sm->npops,i,j)];
+				out << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
+				out << '\t' << std::fixed << std::setprecision(5) << pib[UTIDX(sm->npops,i,j)];
 			}
 			else
-				std::cout << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:\t" << std::setw(7) << "NA";
+				out << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:\t" << std::setw(7) << "NA";
 		}
 	}
-	std::cout << std::endl;
+	std::cout << out.str() << std::endl;
 }
 
 std::string nucdivData::parseCommandLine(int argc, char *argv[])
@@ -416,7 +420,7 @@ nucdivData::nucdivData(void)
 	min_pop = 1.0;
 }
 
-void nucdivData::init_nucdiv(void)
+int nucdivData::initNucdiv(void)
 {
 	int i = 0;
 	int length = end - beg;
@@ -443,9 +447,11 @@ void nucdivData::init_nucdiv(void)
 	{
 		std::cerr << "bad_alloc caught: " << ba.what() << std::endl;
 	}
+
+	return 0;
 }
 
-void nucdivData::destroy_nucdiv(void)
+int nucdivData::destroyNucdiv(void)
 {
 	int i = 0;
 	int npops = sm->npops;
@@ -462,6 +468,8 @@ void nucdivData::destroy_nucdiv(void)
 	for (i=0; i < npops; ++i)
 		delete [] ncov[i];
 	delete [] ncov;
+
+	return 0;
 }
 
 void nucdivData::printUsage(std::string msg)
