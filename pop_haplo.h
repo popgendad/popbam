@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <vector>
 #include <list>
+#include <set>
 
 ///
 /// Definitions
@@ -36,12 +37,13 @@ class haploData: public popbamData
 		~haploData() {}
 
 		// member public variables
-		unsigned int win_size;                  //!< User-specified window size in kilobases
-		double min_sites;                       //!< User-specified minimum number of aligned sites to perform analysis
-		double min_pop;                         //!< Minimum proportion of samples present
-		unsigned int *nsite_matrix;             //!< Matrix of pairwise aligned sites
-		unsigned int *diff_matrix;              //!< Matrix of pairwise sequence difference
-		unsigned int *minDxy;                   //!< Array of minimum between-population Dxy
+		unsigned int win_size;                      //!< User-specified window size in kilobases
+		double min_sites;                           //!< User-specified minimum number of aligned sites to perform analysis
+		double min_pop;                             //!< Minimum proportion of samples present
+		unsigned int *nsite_matrix;                 //!< Matrix of pairwise aligned sites
+		unsigned int *diff_matrix;                  //!< Matrix of pairwise sequence difference
+		unsigned int *minDxy;                       //!< Array of minimum between-population Dxy
+		std::vector<std::vector<std::string>> hap;  //!< Vector of strings to hold the haplotypes
 
 		// member public functions
 		std::string parseCommandLine(int, char**);

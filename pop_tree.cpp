@@ -613,11 +613,6 @@ void treeData::free_tree(ptarray *treenode)
 
 std::string treeData::parseCommandLine(int argc, char *argv[])
 {
-#ifdef _MSC_VER
-	struct _stat finfo;
-#else
-	struct stat finfo;
-#endif
 	std::vector<std::string> glob_opts;
 	std::string msg;
 
@@ -650,33 +645,20 @@ std::string treeData::parseCommandLine(int argc, char *argv[])
 	args >> GetOpt::GlobalOption(glob_opts);
 
 	// run some checks on the command line
-
 	// check to see if distance was specified, else use p-distance
 	if (dist.empty())
 		dist = "pdist";
 
 	// if no input BAM file is specified -- print usage and exit
 	if (glob_opts.size() < 2)
-		printUsage("Need to specify BAM file name");
+		printUsage("Need to specify BAM file name and region");
 	else
 		bamfile = glob_opts[0];
 
 	// check if specified BAM file exists on disk
-	if ((stat(bamfile.c_str(), &finfo)) != 0)
+	if (!(is_file_exist(bamfile.c_str())))
 	{
 		msg = "Specified input file: " + bamfile + " does not exist";
-		switch(errno)
-		{
-		case ENOENT:
-			std::cerr << "File not found" << std::endl;
-			break;
-		case EINVAL:
-			std::cerr << "Invalid parameter to stat" << std::endl;
-			break;
-		default:
-			std::cerr << "Unexpected error in stat" << std::endl;
-			break;
-		}
 		fatalError(msg);
 	}
 
@@ -685,20 +667,8 @@ std::string treeData::parseCommandLine(int argc, char *argv[])
 		printUsage("Need to specify fastA reference file");
 
 	// check is fastA reference file exists on disk
-	if ((stat(reffile.c_str(), &finfo)) != 0)
+	if (!(is_file_exist(reffile.c_str())))
 	{
-		switch(errno)
-		{
-		case ENOENT:
-			std::cerr << "File not found" << std::endl;
-			break;
-		case EINVAL:
-			std::cerr << "Invalid parameter to stat" << std::endl;
-			break;
-		default:
-			std::cerr << "Unexpected error in stat" << std::endl;
-			break;
-		}
 		msg = "Specified reference file: " + reffile + " does not exist";
 		fatalError(msg);
 	}
@@ -706,20 +676,8 @@ std::string treeData::parseCommandLine(int argc, char *argv[])
 	//check if BAM header input file exists on disk
 	if (flag & BAM_HEADERIN)
 	{
-		if ((stat(headfile.c_str(), &finfo)) != 0)
+		if (!(is_file_exist(headfile.c_str())))
 		{
-			switch(errno)
-			{
-			case ENOENT:
-				std::cerr << "File not found" << std::endl;
-				break;
-			case EINVAL:
-				std::cerr << "Invalid parameter to stat" << std::endl;
-				break;
-			default:
-				std::cerr << "Unexpected error in stat" << std::endl;
-				break;
-			}
 			msg = "Specified header file: " + headfile + " does not exist";
 			fatalError(msg);
 		}

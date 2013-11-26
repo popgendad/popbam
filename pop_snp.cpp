@@ -79,13 +79,13 @@ int mainSNP(int argc, char *argv[])
 	}
 
 	// iterate through all windows along specified genomic region
-	for (cw=0; cw < num_windows; cw++)
+	for (cw = 0; cw < num_windows; cw++)
 	{
 		// construct genome coordinate string
 		std::string scaffold_name(t->h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
 		winc.seekp(0, std::ios::end);
-		winc << ":" << beg + (cw * t->win_size) + 1 << "-" << ((cw + 1) * t->win_size) + (beg - 1);
+		winc << ':' << beg + (cw * t->win_size) + 1 << '-' << ((cw + 1) * t->win_size) + (beg - 1);
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
@@ -357,22 +357,16 @@ int snpData::printMSHeader(long nwindows)
 		out << "ms " << sm->n << ' ' << nwindows << " -t 5.0 ";
 	}
 
-	out << '\n' << "1350154902";
+	out << "\n1350154902";
 	std::cout << out.str() << std::endl << std::endl;
 }
 
 std::string snpData::parseCommandLine(int argc, char *argv[])
 {
-#ifdef _MSC_VER
-	struct _stat finfo;
-#else
-	struct stat finfo;
-#endif
 	std::vector<std::string> glob_opts;
 	std::string msg;
 
 	GetOpt::GetOpt_pp args(argc, argv);
-
 	args >> GetOpt::Option('f', reffile);
 	args >> GetOpt::Option('h', headfile);
 	args >> GetOpt::Option('m', min_depth);
@@ -386,7 +380,6 @@ std::string snpData::parseCommandLine(int argc, char *argv[])
 	args >> GetOpt::Option('p', outgroup);
 	args >> GetOpt::Option('n', min_pop);
 	args >> GetOpt::Option('w', win_size);
-
 	if (args >> GetOpt::OptionPresent('w'))
 	{
 		win_size *= KB;
@@ -406,58 +399,30 @@ std::string snpData::parseCommandLine(int argc, char *argv[])
 	args >> GetOpt::GlobalOption(glob_opts);
 
 	// run some checks on the command line
-
 	// check if output option is valid
 	if ((output < 0) || (output > 2))
 		printUsage("Not a valid output option");
 
 	// if no input BAM file is specified -- print usage and exit
 	if (glob_opts.size() < 2)
-		printUsage("Need to specify input BAM file name");
+		printUsage("Need to specify BAM file name and region");
 	else
 		bamfile = glob_opts[0];
 
 	// check if specified BAM file exists on disk
-	if ((stat(bamfile.c_str(), &finfo)) != 0)
+	if (!(is_file_exist(bamfile.c_str())))
 	{
 		msg = "Specified input file: " + bamfile + " does not exist";
-
-		switch(errno)
-		{
-		case ENOENT:
-			std::cerr << "File not found" << std::endl;
-			break;
-		case EINVAL:
-			std::cerr << "Invalid parameter to stat" << std::endl;
-			break;
-		default:
-			std::cerr << "Unexpected error in stat" << std::endl;
-			break;
-		}
-
 		fatalError(msg);
 	}
 
 	// check if fastA reference file is specified
 	if (reffile.empty())
-		printUsage("Need to specify a fasta reference file");
+		printUsage("Need to specify fastA reference file");
 
 	// check is fastA reference file exists on disk
-	if ((stat(reffile.c_str(), &finfo)) != 0)
+	if (!(is_file_exist(reffile.c_str())))
 	{
-		switch(errno)
-		{
-		case ENOENT:
-			std::cerr << "File not found" << std::endl;
-			break;
-		case EINVAL:
-			std::cerr << "Invalid parameter to stat" << std::endl;
-			break;
-		default:
-			std::cerr << "Unexpected error in stat" << std::endl;
-			break;
-		}
-
 		msg = "Specified reference file: " + reffile + " does not exist";
 		fatalError(msg);
 	}
@@ -465,21 +430,8 @@ std::string snpData::parseCommandLine(int argc, char *argv[])
 	//check if BAM header input file exists on disk
 	if (flag & BAM_HEADERIN)
 	{
-		if ((stat(headfile.c_str(), &finfo)) != 0)
+		if (!(is_file_exist(headfile.c_str())))
 		{
-			switch(errno)
-			{
-			case ENOENT:
-				std::cerr << "File not found" << std::endl;
-				break;
-			case EINVAL:
-				std::cerr << "Invalid parameter to stat" << std::endl;
-				break;
-			default:
-				std::cerr << "Unexpected error in stat" << std::endl;
-				break;
-			}
-
 			msg = "Specified header file: " + headfile + " does not exist";
 			fatalError(msg);
 		}
@@ -523,7 +475,7 @@ void snpData::init_snp(void)
 		hap.num_reads = new unsigned short* [n];
 		ncov = new unsigned int* [npops];
 
-		for (i=0; i < n; i++)
+		for (i = 0; i < n; i++)
 		{
 			hap.seq[i] = new unsigned long long [length]();
 			hap.base[i] = new unsigned char [length]();
@@ -532,7 +484,7 @@ void snpData::init_snp(void)
 			hap.num_reads[i] = new unsigned short [length]();
 		}
 
-		for (i=0; i < npops; i++)
+		for (i = 0; i < npops; i++)
 			ncov[i] = new unsigned int [length]();
 	}
 	catch (std::bad_alloc& ba)
@@ -553,7 +505,7 @@ void snpData::destroy_snp(void)
 	delete [] hap.pos;
 	delete [] hap.idx;
 	delete [] hap.ref;
-	for (i=0; i < sm->n; i++)
+	for (i = 0; i < sm->n; i++)
 	{
 		delete [] hap.seq[i];
 		delete [] hap.base[i];

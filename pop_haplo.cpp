@@ -161,7 +161,35 @@ int makeHaplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl
 
 		// determine how many samples pass the quality filters
 		sample_cov = qualFilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
-		
+
+		// determine population coverage
+		for (i = 0; i < t->sm->npops; ++i)
+		{
+			unsigned long long pc = 0;
+			pc = sample_cov & t->pop_mask[i];
+			unsigned int ncov = bitcount64(pc);
+			unsigned int req = (unsigned int)((t->min_pop * t->pop_nsmpl[i]) + 0.4999);
+			unsigned long long type = calculateSiteType(t->sm->n, cb);
+			unsigned short segi = bitcount64(type & t->pop_mask[i]);
+			int k = 0;
+			if ((ncov == t->pop_nsmpl[i]) && (segi > 0) && (segi < t->pop_nsmpl[i]))
+			{
+				for (j = 0, k = 0; j < t->sm->n; j++)
+				{
+					if ((CHECK_BIT(type,j)) && (CHECK_BIT(t->pop_mask[i],j)))
+					{
+						t->hap[i][k].push_back('1');
+						++k;
+					}
+					else if (!(CHECK_BIT(type,j)) && (CHECK_BIT(t->pop_mask[i],j)))
+					{
+						t->hap[i][k].push_back('0');
+						++k;
+					}
+				}
+			}
+		}
+
 		// calculate the site type
 		t->types[t->segsites] = calculateSiteType(t->sm->n, cb);
 
@@ -196,53 +224,28 @@ int haploData::calcHaplo(void)
 
 int haploData::calcNhaps(void)
 {
-	int i = 0;
-	int j = 0;
-	int k = 0;
-	int f = 0;
-	int nelem = 0;
-
-	for (i = 0; i < sm->npops; i++)
+	// iterate over populations
+	for (int i = 0; i < sm->npops; i++)
 	{
-		nelem = pop_nsmpl[i];
-		if (nelem > 1)
+		std::set<std::string> hapcount;
+		std::multiset<std::string> hapfreq;
+		double hom = 0.0;
+		for (unsigned int j = 0; j < pop_nsmpl[i]; j++)
 		{
-			std::vector<int> b;
-			std::vector<int>::iterator it1;
-			std::vector<int>::iterator it2;
-
-			// initialize the haplotype identity vector
-			for (j = 0; j < sm->n; j++)
-				if (CHECK_BIT(pop_mask[i], j))
-					b.push_back(j);
-
-			// assign haplotype identifiers
-			for (j = 0, it1 = b.begin(); j < nelem - 1; j++, it1++)
-			{
-				it2 = b.begin();
-				for (k = j + 1, std::advance(it2, j+1); k < nelem; k++, it2++)
-					if ((diff_matrix[UTIDX(sm->n,j,k)] == 0) && (*it2 > *it1))
-						b.at(k)=j;
-			}
-
-			// count number of haplotypes and calculate haplotype diversity
-			int ff = 0;
-			double sh = 0.0;
-
-			for (j = 0; j < (int)b.size(); j++)
-			{
-				if ((f = count(b.begin(), b.end(), j)) > 0)
-					++nhaps[i];
-				ff += SQ(f);
-			}
-			sh = (double)(ff) / SQ(nelem);
-			hdiv[i] = 1.0 - ((1.0 - sh) * (double)(nelem / (nelem - 1)));
+			hapcount.insert(hap[i][j]);
+			hapfreq.insert(hap[i][j]);
 		}
+		nhaps[i] = hapcount.size();
+		std::set<std::string>::iterator it;
+		for (it = hapcount.begin(); it != hapcount.end(); ++it)
+		{
+			int k = hapfreq.count(*it);
+			hom += (double)(SQ(k)) / SQ(pop_nsmpl[i]);
+		}
+		if ((nhaps[i] > 1) || (pop_nsmpl[i] > 1))
+			hdiv[i] = 1.0 - ((1.0 - hom) * (double)(pop_nsmpl[i] / (pop_nsmpl[i] - 1)));
 		else
-		{
-			nhaps[i] = 1;
-			hdiv[i] = 1.0;
-		}
+			hdiv[i] = 0.0;
 	}
 
 	return 0;
@@ -252,6 +255,16 @@ int haploData::calcEHHS(void)
 {
 	int i = 0;
 	int j = 0;
+	unsigned short popf = 0;
+	unsigned long long pop_type = 0;
+	int before = 0;
+	int after = 0;
+	int part_count = 0;
+	int part_max_count = 0;
+	unsigned long long part_type = 0;
+	unsigned long long part_type_comp = 0;
+	unsigned long long max_site = 0;
+	double sh = 0.0;
 
 	calcNhaps();
 
@@ -261,8 +274,6 @@ int haploData::calcEHHS(void)
 			ehhs[i] = std::numeric_limits<double>::quiet_NaN();
 		else
 		{
-			unsigned short popf;
-			unsigned long long pop_type;
 			std::list<unsigned long long> pop_site;
 
 			// make list container of all non-singleton partitions present in population i
@@ -275,14 +286,6 @@ int haploData::calcEHHS(void)
 			}
 
 			// count unique partitions
-			int before = 0;
-			int after = 0;
-			int part_count = 0;
-			int part_max_count = 0;
-			unsigned long long part_type = 0;
-			unsigned long long part_type_comp = 0;
-			unsigned long long max_site = 0;
-			double sh = 0.0;
 			std::list<unsigned long long> uniq(pop_site);
 			std::list<unsigned long long>::iterator it;
 			uniq.sort();
@@ -437,11 +440,6 @@ int haploData::printHaplo(int chr)
 
 std::string haploData::parseCommandLine(int argc, char *argv[])
 {
-#ifdef _MSC_VER
-	struct _stat finfo;
-#else
-	struct stat finfo;
-#endif
 	std::vector<std::string> glob_opts;
 	std::string msg;
 
@@ -477,26 +475,14 @@ std::string haploData::parseCommandLine(int argc, char *argv[])
 
 	// if no input BAM file is specified -- print usage and exit
 	if (glob_opts.size() < 2)
-		printUsage("Need to specify BAM file name");
+		printUsage("Need to specify BAM file name and region");
 	else
 		bamfile = glob_opts[0];
 
 	// check if specified BAM file exists on disk
-	if ((stat(bamfile.c_str(), &finfo)) != 0)
+	if (!(is_file_exist(bamfile.c_str())))
 	{
 		msg = "Specified input file: " + bamfile + " does not exist";
-		switch(errno)
-		{
-		case ENOENT:
-			std::cerr << "File not found" << std::endl;
-			break;
-		case EINVAL:
-			std::cerr << "Invalid parameter to stat" << std::endl;
-			break;
-		default:
-			std::cerr << "Unexpected error in stat" << std::endl;
-			break;
-		}
 		fatalError(msg);
 	}
 
@@ -505,20 +491,8 @@ std::string haploData::parseCommandLine(int argc, char *argv[])
 		printUsage("Need to specify fastA reference file");
 
 	// check is fastA reference file exists on disk
-	if ((stat(reffile.c_str(), &finfo)) != 0)
+	if (!(is_file_exist(reffile.c_str())))
 	{
-		switch(errno)
-		{
-		case ENOENT:
-			std::cerr << "File not found" << std::endl;
-			break;
-		case EINVAL:
-			std::cerr << "Invalid parameter to stat" << std::endl;
-			break;
-		default:
-			std::cerr << "Unexpected error in stat" << std::endl;
-			break;
-		}
 		msg = "Specified reference file: " + reffile + " does not exist";
 		fatalError(msg);
 	}
@@ -526,20 +500,8 @@ std::string haploData::parseCommandLine(int argc, char *argv[])
 	//check if BAM header input file exists on disk
 	if (flag & BAM_HEADERIN)
 	{
-		if ((stat(headfile.c_str(), &finfo)) != 0)
+		if (!(is_file_exist(headfile.c_str())))
 		{
-			switch(errno)
-			{
-			case ENOENT:
-				std::cerr << "File not found" << std::endl;
-				break;
-			case EINVAL:
-				std::cerr << "Invalid parameter to stat" << std::endl;
-				break;
-			default:
-				std::cerr << "Unexpected error in stat" << std::endl;
-				break;
-			}
 			msg = "Specified header file: " + headfile + " does not exist";
 			fatalError(msg);
 		}
@@ -579,6 +541,9 @@ void haploData::init_haplo(void)
 		minDxy = new unsigned int [npops*(npops-1)]();
 		diff_matrix = new unsigned int [npairs];
 		nsite_matrix = new unsigned int [npairs];
+		hap.resize(npops);
+		for (int i=0; i < npops; ++i)
+			hap[i].resize(pop_nsmpl[i]);
 	}
 	catch (std::bad_alloc& ba)
 	{

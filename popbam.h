@@ -38,7 +38,6 @@
 #include <cfloat>
 #include <cmath>
 #include <cerrno>
-#include <sys/stat.h>
 #include "faidx.h"
 #include "sam.h"
 #include "kstring.h"
@@ -46,7 +45,6 @@
 
 #ifdef _MSC_VER
 #define isnan(x) _isnan(x)
-#define stat(x,y) _stat(x,y)
 #endif
 
 ///
@@ -379,6 +377,12 @@ inline unsigned long long calculateSiteType(int n, unsigned long long *cb)
  * \brief Prints general command usage options to stdout
  */
 extern int popbam_usage(void);
+
+/*!
+ * \fn bool is_file_exist(const char *fileName)
+ * \brief Checks whether a file exists on disk
+ */
+extern bool is_file_exist(const char *fileName);
 
 /*!
  * \fn bam_sample_t *bam_smpl_init(void)

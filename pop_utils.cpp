@@ -54,9 +54,9 @@ unsigned long long gl2cns(float q[16], unsigned short k)
 	float likelihood = 0.0;
 	std::string msg;
 
-	for (i=0; i < NBASES; ++i)
+	for (i = 0; i < NBASES; ++i)
 	{
-		for (j=i; j < NBASES; ++j)
+		for (j = i; j < NBASES; ++j)
 		{
 			likelihood = q[i << 2 | j];
 			if (likelihood < min)
@@ -85,7 +85,7 @@ unsigned long long qualFilter(int num_samples, unsigned long long *cb, int min_r
 	unsigned short num_reads = 0;
 	unsigned long long coverage = 0;
 
-	for (i=0; i < num_samples; ++i)
+	for (i = 0; i < num_samples; ++i)
 	{
 		rms = (cb[i] >> (CHAR_BIT * 6)) & 0xffff;
 		num_reads = (cb[i] >> (CHAR_BIT * 2)) & 0xffff;
@@ -111,7 +111,7 @@ int segBase(int num_samples, unsigned long long *cb, char ref, int min_snpq)
 	unsigned short snp_quality = 0;
 	int baseCount[NBASES] = {0, 0, 0, 0};
 
-	for (i=0; i < num_samples; ++i)
+	for (i = 0; i < num_samples; ++i)
 	{
 		genotype = (cb[i] >> CHAR_BIT) & 0xff;
 		allele1 = (genotype >> 2) & 0x3;
@@ -135,7 +135,7 @@ int segBase(int num_samples, unsigned long long *cb, char ref, int min_snpq)
 	}
 
 	// check for infinite sites model
-	for (i=0, j=0, k=0; i < NBASES; ++i)
+	for (i = 0, j = 0, k = 0; i < NBASES; ++i)
 	{
 		if (baseCount[i] > 0)
 		{
@@ -158,7 +158,7 @@ void cleanHeterozygotes(int num_samples, unsigned long long *cb, int ref, int mi
 	unsigned char allele1 = 0;
 	unsigned char allele2 = 0;
 
-	for (i=0; i < num_samples; ++i)
+	for (i = 0; i < num_samples; ++i)
 	{
 		genotype = (cb[i] >> CHAR_BIT) & 0xff;
 		allele1 = (genotype >> 2) & 0x3;
@@ -199,32 +199,32 @@ static errmod_coef_t *cal_coef(double depcorr, double eta)
 	// initialize ->fk
 	ec->fk = (double*)calloc(256, sizeof(double));
 	ec->fk[0] = 1.0;
-	for (n=1; n != 256; ++n)
+	for (n = 1; n != 256; ++n)
 		ec->fk[n] = pow(1.0 - depcorr, n) * (1.0 - eta) + eta;
 
 	// initialize ->coef
 	ec->beta = (double*)calloc(SQ(256) * 64, sizeof(double));
 	lC = (double*)calloc(SQ(256), sizeof(double));
 
-	for (n=1; n != 256; ++n)
+	for (n = 1; n != 256; ++n)
 	{
 		double lgn = LogGamma(n + 1);
-		for (k=1; k <= n; ++k)
+		for (k = 1; k <= n; ++k)
 			lC[n << 8 | k] = lgn - LogGamma(k + 1) - LogGamma(n - k + 1);
 	}
 
-	for (q=1; q != 64; ++q)
+	for (q = 1; q != 64; ++q)
 	{
 		double e = pow(10.0, -q / 10.0);
 		double le = log(e);
 		double le1 = log(1.0 - e);
 
-		for (n=1; n <= 255; ++n)
+		for (n = 1; n <= 255; ++n)
 		{
 			double *beta = ec->beta + (q << 16 | n << 8);
 			sum1 = sum = 0.0;
 
-			for (k=n; k >= 0; --k, sum1 = sum)
+			for (k = n; k >= 0; --k, sum1 = sum)
 			{
 				sum = sum1 + expl(lC[n << 8 | k] + k * le + (n - k) * le1);
 				beta[k] = -10.0 / M_LN10 * logl(sum1 / sum);
@@ -235,8 +235,8 @@ static errmod_coef_t *cal_coef(double depcorr, double eta)
 	// initialize ->lhet
 	ec->lhet = (double*)calloc(SQ(256), sizeof(double));
 
-	for (n=0; n < 256; ++n)
-		for (k=0; k < 256; ++k)
+	for (n = 0; n < 256; ++n)
+		for (k = 0; k < 256; ++k)
 			ec->lhet[n << 8 | k] = lC[n << 8 | k] - M_LN2 * n;
 
 	free(lC);
@@ -271,7 +271,9 @@ void errmod_destroy(errmod_t *em)
 int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *bases, float *q)
 {
 	call_aux_t aux;
-	int i, j, k;
+	int i = 0;
+	int j = 0;
+	int k = 0;
 	int w[32];
 
 	if (m > m)
@@ -294,7 +296,7 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 	memset(&aux, 0, sizeof(call_aux_t));
 
 	// calculate esum and fsum
-	for (j=n-1; j >= 0; --j)
+	for (j = n - 1; j >= 0; --j)
 	{
 		unsigned short b = bases[j];
 		int q = b >> 5 < NBASES ? NBASES : b >> 5;
@@ -309,7 +311,7 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 	}
 
 	// generate likelihood
-	for (j=0; j != m; ++j)
+	for (j = 0; j != m; ++j)
 	{
 		float tmp1 = 0.0;
 		float tmp3 = 0.0;
@@ -317,7 +319,7 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 		int bar_e = 0;
 
 		// homozygous
-		for (k=0, tmp1=tmp3=0.0, tmp2=0; k != m; ++k)
+		for (k = 0, tmp1 = tmp3 = 0.0, tmp2 = 0; k != m; ++k)
 		{
 			if (k == j)
 				continue;
@@ -333,11 +335,11 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 			q[j * m + j] = tmp1;
 		}
 		// heterozygous
-		for (k=j+1; k < m; ++k)
+		for (k = j + 1; k < m; ++k)
 		{
 			int cjk = aux.c[j] + aux.c[k];
 
-			for (i=0, tmp2=0, tmp1=tmp3=0.0; i < m; ++i)
+			for (i = 0, tmp2 = 0, tmp1 = tmp3 = 0.0; i < m; ++i)
 			{
 				if ((i == j) || (i == k))
 					continue;
@@ -361,7 +363,7 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 				q[j*m+k] = q[k*m+j] = -4.343 * em->coef->lhet[cjk << 8 | aux.c[k]];
 		}
 
-		for (k=0; k != m; ++k)
+		for (k = 0; k != m; ++k)
 			if (q[j*m+k] < 0.0)
 				q[j*m+k] = 0.0;
 	}
@@ -381,7 +383,7 @@ void bam_init_header_hash(bam_header_t *header)
 
 		header->hash = h = kh_init(s);
 
-		for (i=0; i < header->n_targets; ++i)
+		for (i = 0; i < header->n_targets; ++i)
 		{
 			iter = kh_put(s, h, header->target_name[i], &ret);
 			kh_value(h, iter) = i;
@@ -417,7 +419,7 @@ int bam_parse_region(bam_header_t *header, std::string region, int *ref_id, int 
 	// check if this is really the end
 	if (name_end < l)
 	{
-		std::string coords = region.substr(name_end+1);
+		std::string coords = region.substr(name_end + 1);
 		std::size_t n_hyphen = std::count(coords.begin(), coords.end(), '-');
 		std::size_t n_nondigits = coords.find_first_not_of("0123456789,-");
 
@@ -489,7 +491,7 @@ char *get_refid(char *htext)
 
 	u = v + 3;
 
-	for (z=0, w=(char*)u; *w && *w != '\t' && *w != '\n'; ++w, ++z);
+	for (z = 0, w = (char*)u; *w && *w != '\t' && *w != '\n'; ++w, ++z);
 
 	try
 	{
@@ -505,6 +507,12 @@ char *get_refid(char *htext)
 	refid[z] = '\0';
 
 	return refid;
+}
+
+bool is_file_exist(const char *fileName)
+{
+	std::ifstream infile(fileName);
+	return infile.good();
 }
 
 int fetch_func(const bam1_t *b, void *data)
