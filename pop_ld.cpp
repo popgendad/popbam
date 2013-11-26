@@ -199,7 +199,7 @@ int ldData::calcZns(void)
 	unsigned long long type1 = 0;
 
 	if (segsites < 1)
-		return;
+		return 0;
 
 	// iterate through populations
 	for (i = 0; i < sm->npops; i++)
@@ -270,7 +270,7 @@ int ldData::calcOmegamax(void)
 	double omega = 0.0;
 
 	if (segsites < 1)
-		return;
+		return 0;
 
 	for (j=0; j < sm->npops; j++)
 	{
@@ -386,7 +386,7 @@ int ldData::calcWall(void)
 	std::vector<std::vector<unsigned long long> > uniq_part_types(sm->npops);
 
 	if (segsites < 1)
-		return;
+		return 0;
 
 	try
 	{
