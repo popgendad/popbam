@@ -119,7 +119,7 @@ int mainTree(int argc, char *argv[])
 		bam_plbuf_push(0, buf);
 
 		// count pairwise differences
-		calc_diff_matrix(&t);
+		calcDiffMatrix(&t);
 
 		// construct distance matrix
 		t.calcDistMatrix();
@@ -489,7 +489,7 @@ void treeData::printTree(node *p, node *start)
 	}
 }
 
-void calc_diff_matrix(treeData *t)
+void calcDiffMatrix(treeData *t)
 {
 	int i = 0;
 	int j = 0;

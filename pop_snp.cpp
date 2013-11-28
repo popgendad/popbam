@@ -454,7 +454,7 @@ snpData::~snpData(void)
 	delete [] hap.rms;
 	delete [] hap.num_reads;
 }
-s
+
 void usageSNP(const std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
