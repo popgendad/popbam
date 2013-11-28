@@ -50,36 +50,27 @@ class treeData: public popbamData
 {
 	public:
 		// constructor
-		treeData();
+		treeData(const popbamOptions&);
 
 		// destructor
-		~treeData() {}
+		~treeData(void);
 
 		// member public variables
 		hData_t hap;                            //!< Structure to hold haplotype data (public)
-		unsigned int win_size;                  //!< Size of sliding window in kilobases (public)
 		unsigned long long *pop_sample_mask;    //!< Bit mask for samples covered from a specific population
 		char *refid;                            //!< Pointer to string that holds the reference sequence name
 		std::string dist;                       //!< Pointer to the name of the desired distance metric	(-d switch)
 		unsigned short **diff_matrix;           //!< Array of pairwise sequence differences
 		double **dist_matrix;                   //!< Array of divergence calculations
-		int min_sites;                          //!< User-specified minimum number of aligned sites to perform analysis
+		int minSites;                           //!< User-specified minimum number of aligned sites to perform analysis
 		int ntaxa;                              //!< Total number of tips in the tree
 		int *enterorder;                        //!< Array containing the input order of OTUs for the NJ algorithm
 
 		// member public functions
-		int makeNJ(int);
-		void calc_dist_matrix(void);
-		std::string parseCommandLine(int, char**);
-		void init_tree(void);
-		void destroy_tree(void);
-		void printUsage(std::string);
-
-	//private:
-		// member private variables
-
-
-		// member private functions
+		int makeNJ(const std::string);
+		int calc_dist_matrix(void);
+		int allocTree(void);
+		void printUsage(const std::string);
 		void join_tree(tree, node**);
 		void print_tree(node*, node*);
 		void hookup(node*, node*);

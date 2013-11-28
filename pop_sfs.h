@@ -26,19 +26,18 @@ class sfsData: public popbamData
 {
 	public:
 		// constructor
-		sfsData();
+		sfsData(const popbamOptions&);
 
 		// destructor
-		~sfsData() {}
+		~sfsData(void);
 
 		// member variables
-		unsigned int win_size;                  //!< Size of sliding window in kilobases
-		double min_sites;                       //!< User-specified minimum proportion of aligned sites to perform analysis
+		double minSites;                        //!< User-specified minimum proportion of aligned sites to perform analysis
 		unsigned long *ns;                      //!< Number of aligned sites within each population
 		unsigned int **ncov;                    //!< Sample size per population per segregating site
 		int *num_snps;                          //!< Number of SNPs in a given window
 		unsigned int *pop_cov;                  //!< Boolean for population coverage
-		double min_pop;                         //!< Minimum proportion of samples present
+		double minPop;                          //!< Minimum proportion of samples present
 		std::string outgroup;                   //!< Sample name of outgroup to use
 		int outidx;                             //!< Index of outgroup sequence
 		int outpop;                             //!< Population of outgroup sequence
@@ -52,19 +51,17 @@ class sfsData: public popbamData
 		double *fwh;                            //!< Pointer to the array of standardized Fay and Wu's H statistics
 
 		// member functions
-		std::string parseCommandLine(int, char**);
-		void init_sfs(void);
-		void destroy_sfs(void);
-		int printSFS(int);
-		void printUsage(std::string);
-		void assign_outpop(void);
-		void calc_dw(void);
-		void calc_hw(void);
+		int allocSFS(void);
+		int printSFS(const std::string);
+		int assignOutpop(void);
+		int calc_dw(void);
+		int calc_hw(void);
 		int calcSFS(void);
-		void calc_a1(void);
-		void calc_a2(void);
-		void calc_e1(void);
-		void calc_e2(void);
+		int calc_a1(void);
+		int calc_a2(void);
+		int calc_e1(void);
+		int calc_e2(void);
+		void printUsage(const std::string);
 };
 
 ///

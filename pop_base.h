@@ -86,7 +86,7 @@ template <class T> unsigned long long* callBase(T *t, int n, const bam_pileup1_t
 				std::cerr << "bad_alloc caught: " << ba.what() << std::endl;
 			}
 
-			for (i=k=0; i < depth[j]; ++i)
+			for (i = k = 0; i < depth[j]; ++i)
 			{
 				tmp_baseQ = bam1_qual(p[j][i]->b)[p[j][i]->qpos];
 

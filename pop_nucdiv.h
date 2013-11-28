@@ -27,31 +27,28 @@ class nucdivData: public popbamData
 {
 	public:
 		// constructor
-		nucdivData();
+		nucdivData(const popbamOptions&);
 
 		// destructor
-		~nucdivData() {}
+		~nucdivData(void);
 
 		// member public variables
-		unsigned int win_size;                  //!< Size of sliding window in kilobases
 		unsigned int *pop_cov;                  //!< Boolean for population coverage
 		unsigned int **ncov;                    //!< Sample size per population per segregating site
 		unsigned long *ns_within;               //!< Number of aligned sites with each population
 		unsigned long *ns_between;              //!< Number of aligned sites between each pair of populations
 		int *num_snps;                          //!< Number of SNPs in a given window
-		double min_pop;                         //!< Minimum proportion of samples present
+		double minPop;                          //!< Minimum proportion of samples present
 
 		// member public functions
 		int calcNucdiv(void);
-		std::string parseCommandLine(int, char**);
-		int initNucdiv(void);
-		int destroyNucdiv(void);
-		int printNucdiv(int);
-		void printUsage(std::string);
+		int allocNucdiv(void);
+		int printNucdiv(const std::string);
+		void printUsage(const std::string);
 
 	private:
 		// member private variables
-		double min_sites;                       //!< User-specified minimum proportion of aligned sites to perform analysis
+		double minSites;                        //!< User-specified minimum proportion of aligned sites to perform analysis
 		double *piw;                            //!< Array of within-population nucleotide diversity
 		double *pib;                            //!< Array of between-population Dxy values
 };

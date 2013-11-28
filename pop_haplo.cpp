@@ -8,73 +8,73 @@
 
 int mainHaplo(int argc, char *argv[])
 {
-	int k = 0;
 	int chr = 0;                  //! chromosome identifier
 	int beg = 0;                  //! beginning coordinate for analysis
 	int end = 0;                  //! end coordinate for analysis
 	int ref = 0;                  //! ref
-	long num_windows = 0;         //! number of windows
-	long cw = 0;                  //! window counter
+	long nWindows = 0;            //! number of windows
 	std::string msg;              //! string for error message
-	std::string region;           //! the scaffold/chromosome region string
+	bam_sample_t *sm = nullptr;   //!< Pointer to the sample information for the input BAM file
 	bam_plbuf_t *buf = nullptr;   //! pileup buffer
-	haploData *t = nullptr;       //! pointer to the function data structure
 
-	// allocate memory for nucdiv data structre
-	t = new haploData;
-
-	// parse the command line options
-	region = t->parseCommandLine(argc, argv);
+	// initialize user command line options
+	popbamOptions p(argc, argv);
 
 	// check input BAM file for errors
-	t->checkBAM();
+	p.checkBAM();
 
 	// initialize the sample data structure
-	t->bam_smpl_init();
+	sm = bam_smpl_init();
 
 	// add samples
-	t->bam_smpl_add();
+	bam_smpl_add(sm, &p);
+
+	// initialize the haplo data structure
+	haploData t(p);
+	t.sm = sm;
 
 	// initialize error model
-	t->em = errmod_init(0.17);
+	t.em = errmod_init(0.17);
 
 	// parse genomic region
-	k = bam_parse_region(t->h, region, &chr, &beg, &end);
+	int k = bam_parse_region(p.h, p.region, &chr, &beg, &end);
 	if (k < 0)
 	{
-		msg = "Bad genome coordinates: " + region;
+		msg = "Bad genome coordinates: " + p.region;
 		fatalError(msg);
 	}
 
 	// fetch reference sequence
-	t->ref_base = faidx_fetch_seq(t->fai_file, t->h->target_name[chr], 0, 0x7fffffff, &(t->len));
+	t.ref_base = faidx_fetch_seq(p.fai_file, p.h->target_name[chr], 0, 0x7fffffff, &(t.len));
 
 	// calculate the number of windows
-	if (t->flag & BAM_WINDOW)
-		num_windows = ((end - beg) - 1) / t->win_size;
+	if (p.flag & BAM_WINDOW)
+		nWindows = ((end - beg) - 1) / p.winSize;
 	else
 	{
-		t->win_size = end - beg;
-		num_windows = 1;
+		p.winSize = end - beg;
+		nWindows = 1;
 	}
 
 	// iterate through all windows along specified genomic region
-	for (cw = 0; cw < num_windows; cw++)
+	for (long i = 0; i < nWindows; ++i)
 	{
 		// construct genome coordinate string
-		std::string scaffold_name(t->h->target_name[chr]);
+		std::string scaffold_name(p.h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
+
 		winc.seekp(0, std::ios::end);
-		winc << ':' << beg + (cw * t->win_size) + 1 << '-' << ((cw + 1) * t->win_size) + (beg - 1);
+		winc << ':' << beg + (i * p.winSize) + 1 << '-' << ((i + 1) * p.winSize) + (beg - 1);
+
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
-		t->num_sites = 0;
+		t.num_sites = 0;
 
 		// parse the BAM file and check if region is retrieved from the reference
-		if (t->flag & BAM_WINDOW)
+		if (p.flag & BAM_WINDOW)
 		{
-			k = bam_parse_region(t->h, winCoord, &ref, &(t->beg), &(t->end));
+			k = bam_parse_region(p.h, winCoord, &ref, &(t.beg), &(t.end));
 			if (k < 0)
 			{
 				msg = "Bad window coordinates " + winCoord;
@@ -84,28 +84,28 @@ int mainHaplo(int argc, char *argv[])
 		else
 		{
 			ref = chr;
-			t->beg = beg;
-			t->end = end;
+			t.beg = beg;
+			t.end = end;
 			if (ref < 0)
 			{
-				msg = "Bad scaffold name: " + region;
+				msg = "Bad scaffold name: " + p.region;
 				fatalError(msg);
 			}
 		}
 
 		// initialize diverge specific variables
-		t->init_haplo();
+		t.allocHaplo();
 
 		// create population assignments
-		t->assign_pops();
+		t.assignPops(&p);
 
 		// initialize pileup
-		buf = bam_plbuf_init(makeHaplo, t);
+		buf = bam_plbuf_init(makeHaplo, &t);
 
 		// fetch region from bam file
-		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
+		if ((bam_fetch(p.bam_in->x.bam, p.idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
 		{
-			msg = "Failed to retrieve region " + region + " due to corrupted BAM index file";
+			msg = "Failed to retrieve region " + p.region + " due to corrupted BAM index file";
 			fatalError(msg);
 		}
 
@@ -113,23 +113,21 @@ int mainHaplo(int argc, char *argv[])
 		bam_plbuf_push(0, buf);
 
 		// calculate haplotype-based statistics
-		t->calcHaplo();
+		t.calcHaplo();
 
 		// print results to stdout
-		t->printHaplo(chr);
+		t.printHaplo(std::string(p.h->target_name[chr]));
 
 		// take out the garbage
-		t->destroy_haplo();
 		bam_plbuf_destroy(buf);
 	}
 	// end of window interation
 
-	errmod_destroy(t->em);
-	samclose(t->bam_in);
-	bam_index_destroy(t->idx);
-	t->bam_smpl_destroy();
-	free(t->ref_base);
-	delete t;
+	errmod_destroy(t.em);
+	samclose(p.bam_in);
+	bam_index_destroy(p.idx);
+	bam_smpl_destroy(sm);
+	free(t.ref_base);
 
 	return 0;
 }
@@ -154,13 +152,13 @@ int makeHaplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl
 
 		// resolve heterozygous sites
 		if (!(t->flag & BAM_HETEROZYGOTE))
-			cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->min_snpQ);
+			cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->minSNPQ);
 
 		// determine if site is segregating
-		fq = segBase(t->sm->n, cb, t->ref_base[pos], t->min_snpQ);
+		fq = segBase(t->sm->n, cb, t->ref_base[pos], t->minSNPQ);
 
 		// determine how many samples pass the quality filters
-		sample_cov = qualFilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
+		sample_cov = qualFilter(t->sm->n, cb, t->minRMSQ, t->minDepth, t->maxDepth);
 
 		// determine population coverage
 		for (i = 0; i < t->sm->npops; ++i)
@@ -168,7 +166,7 @@ int makeHaplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl
 			unsigned long long pc = 0;
 			pc = sample_cov & t->pop_mask[i];
 			unsigned int ncov = bitcount64(pc);
-			unsigned int req = (unsigned int)((t->min_pop * t->pop_nsmpl[i]) + 0.4999);
+			unsigned int req = (unsigned int)((t->minPop * t->pop_nsmpl[i]) + 0.4999);
 			unsigned long long type = calculateSiteType(t->sm->n, cb);
 			unsigned short segi = bitcount64(type & t->pop_mask[i]);
 			int k = 0;
@@ -355,21 +353,21 @@ int haploData::calcGmin(void)
 	return 0;
 }
 
-int haploData::printHaplo(int chr)
+int haploData::printHaplo(const std::string scaffold)
 {
 	int i = 0;
 	int j = 0;
 	std::stringstream out;
 
 	//print coordinate information and number of aligned sites
-	out << h->target_name[chr] << '\t' << beg + 1 << '\t' << end+1 << '\t' << num_sites;
+	out << scaffold << '\t' << beg + 1 << '\t' << end+1 << '\t' << num_sites;
 
 	switch(output)
 	{
 	case 0:
 		for (i = 0; i < sm->npops; i++)
 		{
-			if (num_sites >= min_sites)
+			if (num_sites >= minSites)
 			{
 				out << "\tK[" << sm->popul[i] << "]:\t" << nhaps[i];
 				out << "\tKdiv[" << sm->popul[i] << "]:";
@@ -385,7 +383,7 @@ int haploData::printHaplo(int chr)
 	case 1:
 		for (i = 0; i < sm->npops; i++)
 		{
-			if (num_sites >= min_sites)
+			if (num_sites >= minSites)
 			{
 				if (isnan(ehhs[i]))
 					out << "\tEHHS[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
@@ -402,7 +400,7 @@ int haploData::printHaplo(int chr)
 	case 2:
 		for (i = 0; i < sm->npops; i++)
 		{
-			if (num_sites >= min_sites)
+			if (num_sites >= minSites)
 			{
 				out << "\tpi[" << sm->popul[i] << "]:";
 				out << '\t' << std::fixed << std::setprecision(5) << piw[i];
@@ -415,7 +413,7 @@ int haploData::printHaplo(int chr)
 		{
 			for (j = i + 1; j < sm->npops; j++)
 			{
-				if (num_sites >= min_sites)
+				if (num_sites >= minSites)
 				{
 					out << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
 					out << '\t' << std::fixed << std::setprecision(5) << pib[UTIDX(sm->npops,i,j)];
@@ -433,94 +431,33 @@ int haploData::printHaplo(int chr)
 	default:
 		break;
 	}
+
+	// print final output stream
 	std::cout << out.str() << std::endl;
 
 	return 0;
 }
 
-std::string haploData::parseCommandLine(int argc, char *argv[])
+haploData::haploData(const popbamOptions &p)
 {
-	std::vector<std::string> glob_opts;
-	std::string msg;
+	// inherit values from popbamOptions
+	flag = p.flag;
+	minDepth = p.minDepth;
+	maxDepth = p.maxDepth;
+	minRMSQ = p.minRMSQ;
+	minSNPQ = p.minSNPQ;
+	minMapQ = p.minMapQ;
+	minBaseQ = p.minBaseQ;
+	hetPrior = p.hetPrior;
+	minSites = p.minSites;
+	minPop = p.minPop;
+	output = p.output;
 
-	GetOpt::GetOpt_pp args(argc, argv);
-	args >> GetOpt::Option('f', reffile);
-	args >> GetOpt::Option('h', headfile);
-	args >> GetOpt::Option('o', output);
-	args >> GetOpt::Option('m', min_depth);
-	args >> GetOpt::Option('x', max_depth);
-	args >> GetOpt::Option('q', min_rmsQ);
-	args >> GetOpt::Option('s', min_snpQ);
-	args >> GetOpt::Option('a', min_mapQ);
-	args >> GetOpt::Option('b', min_baseQ);
-	args >> GetOpt::Option('k', min_sites);
-	args >> GetOpt::Option('n', min_pop);
-	args >> GetOpt::Option('w', win_size);
-	if (args >> GetOpt::OptionPresent('w'))
-	{
-		win_size *= KB;
-		flag |= BAM_WINDOW;
-	}
-	if (args >> GetOpt::OptionPresent('h'))
-		flag |= BAM_HEADERIN;
-	if (args >> GetOpt::OptionPresent('i'))
-		flag |= BAM_ILLUMINA;
-	args >> GetOpt::GlobalOption(glob_opts);
-
-	// run some checks on the command line
-
-	// check if output option is valid
-	if ((output < 0) || (output > 2))
-		printUsage("Not a valid output option");
-
-	// if no input BAM file is specified -- print usage and exit
-	if (glob_opts.size() < 2)
-		printUsage("Need to specify BAM file name and region");
-	else
-		bamfile = glob_opts[0];
-
-	// check if specified BAM file exists on disk
-	if (!(is_file_exist(bamfile.c_str())))
-	{
-		msg = "Specified input file: " + bamfile + " does not exist";
-		fatalError(msg);
-	}
-
-	// check if fastA reference file is specified
-	if (reffile.empty())
-		printUsage("Need to specify fastA reference file");
-
-	// check is fastA reference file exists on disk
-	if (!(is_file_exist(reffile.c_str())))
-	{
-		msg = "Specified reference file: " + reffile + " does not exist";
-		fatalError(msg);
-	}
-
-	//check if BAM header input file exists on disk
-	if (flag & BAM_HEADERIN)
-	{
-		if (!(is_file_exist(headfile.c_str())))
-		{
-			msg = "Specified header file: " + headfile + " does not exist";
-			fatalError(msg);
-		}
-	}
-
-	// return the index of first non-optioned argument
-	return glob_opts[1];
-}
-
-haploData::haploData(void)
-{
+	// initialize native variables
 	derived_type = HAPLO;
-	output = 0;
-	min_sites = 0.5;
-	min_pop = 1.0;
-	win_size = 0;
 }
 
-void haploData::init_haplo(void)
+int haploData::allocHaplo(void)
 {
 	const int length = end - beg;
 	const int npairs = BINOM(sm->n);
@@ -542,10 +479,10 @@ void haploData::init_haplo(void)
 		diff_matrix = new unsigned int [npairs];
 		nsite_matrix = new unsigned int [npairs];
 		hap.resize(npops);
-		for (int i=0; i < npops; ++i)
+		for (int i = 0; i < npops; ++i)
 		{
 			hap[i].resize(pop_nsmpl[i]);
-			for (int j=0; j < pop_nsmpl[i]; ++j)
+			for (int j = 0; j < pop_nsmpl[i]; ++j)
 				hap[i][j] = "";
 		}
 	}
@@ -553,9 +490,11 @@ void haploData::init_haplo(void)
 	{
 		std::cerr << "bad_alloc caught: " << ba.what() << std::endl;
 	}
+
+	return 0;
 }
 
-void haploData::destroy_haplo(void)
+haploData::~haploData(void)
 {
 	delete [] pop_mask;
 	delete [] types;
@@ -570,7 +509,7 @@ void haploData::destroy_haplo(void)
 	delete [] nsite_matrix;
 }
 
-void haploData::printUsage(std::string msg)
+void haploData::printUsage(const std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam haplo [options] <in.bam> [region]" << std::endl;

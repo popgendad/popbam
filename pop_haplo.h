@@ -1,7 +1,7 @@
 /** \file pop_haplo.h
  *  \brief Header for the pop_haplo.cpp file
  *  \author Daniel Garrigan
- *  \version 0.3
+ *  \version 0.4
 */
 
 #include "pop_base.h"
@@ -31,27 +31,24 @@ class haploData: public popbamData
 {
 	public:
 		// constructor
-		haploData();
+		haploData(const popbamOptions&);
 
 		// destructor
-		~haploData() {}
+		~haploData(void);
 
 		// member public variables
-		unsigned int win_size;                      //!< User-specified window size in kilobases
-		double min_sites;                           //!< User-specified minimum number of aligned sites to perform analysis
-		double min_pop;                             //!< Minimum proportion of samples present
+		double minSites;                            //!< User-specified minimum number of aligned sites to perform analysis
+		double minPop;                              //!< Minimum proportion of samples present
 		unsigned int *nsite_matrix;                 //!< Matrix of pairwise aligned sites
 		unsigned int *diff_matrix;                  //!< Matrix of pairwise sequence difference
 		unsigned int *minDxy;                       //!< Array of minimum between-population Dxy
 		std::vector<std::vector<std::string>> hap;  //!< Vector of strings to hold the haplotypes
 
 		// member public functions
-		std::string parseCommandLine(int, char**);
-		void init_haplo(void);
+		int allocHaplo(void);
 		int calcHaplo(void);
-		int printHaplo(int);
-		void destroy_haplo(void);
-		void printUsage(std::string);
+		int printHaplo(const std::string);
+		void printUsage(const std::string);
 
 	private:
 		// member private variables

@@ -12,7 +12,7 @@ KHASH_MAP_INIT_STR(sm, int);
 static void add_sample_pair(bam_sample_t*, khash_t(sm)*, const char*, const char*);
 static void add_pop_pair(bam_sample_t*, khash_t(sm)*, const char*, const char*);
 
-int popbamData::bam_smpl_add(void)
+int bam_smpl_add(bam_sample_t *sm, const popbamOptions *op)
 {
 	int n = 0;
 	const char *p = nullptr;
@@ -24,7 +24,7 @@ int popbamData::bam_smpl_add(void)
 	khash_t(sm) *sm2id = (khash_t(sm)*)sm->sm2id;
 	khash_t(sm) *pop2sm = (khash_t(sm)*)sm->pop2sm;
 
-	p = h->text;
+	p = op->h->text;
 	n = 0;
 
 	memset(&buf, 0, sizeof(kstring_t));
@@ -53,7 +53,7 @@ int popbamData::bam_smpl_add(void)
 			or1 = *v;
 			*u = *v = '\0';
 			buf.l = 0;
-			kputs(bamfile.c_str(), &buf);
+			kputs(op->bamfile.c_str(), &buf);
 			kputc('/', &buf);
 			kputs(q, &buf);
 			add_sample_pair(sm, sm2id, buf.s, r);
@@ -78,8 +78,8 @@ int popbamData::bam_smpl_add(void)
 			*u = *v = *w = '\0';
 			buf.l = 0;
 			bug.l = 0;
-			kputs(bamfile.c_str(), &buf);
-			kputs(bamfile.c_str(), &bug);
+			kputs(op->bamfile.c_str(), &buf);
+			kputs(op->bamfile.c_str(), &bug);
 			kputc('/', &buf);
 			kputc('/', &bug);
 			kputs(q, &buf);
@@ -100,8 +100,8 @@ int popbamData::bam_smpl_add(void)
 
 	if (n == 0)
 	{
-		add_sample_pair(sm, sm2id, bamfile.c_str(), bamfile.c_str());
-		add_pop_pair(sm, sm2id, bamfile.c_str(), bamfile.c_str());
+		add_sample_pair(sm, sm2id, op->bamfile.c_str(), op->bamfile.c_str());
+		add_pop_pair(sm, sm2id, op->bamfile.c_str(), op->bamfile.c_str());
 	}
 
 	free(buf.s);
@@ -110,16 +110,20 @@ int popbamData::bam_smpl_add(void)
 	return 0;
 }
 
-void popbamData::bam_smpl_init(void)
+bam_sample_t* bam_smpl_init(void)
 {
+	bam_sample_t *sm;
+
 	sm = (bam_sample_t*)calloc(1, sizeof(bam_sample_t));
 	sm->sm2popid = kh_init(sm);
 	sm->rg2smid = kh_init(sm);
 	sm->sm2id = kh_init(sm);
 	sm->pop2sm = kh_init(sm);
+
+	return sm;
 }
 
-void popbamData::bam_smpl_destroy(void)
+void bam_smpl_destroy(bam_sample_t *sm)
 {
 	int i = 0;
 	khint_t k;
@@ -129,20 +133,20 @@ void popbamData::bam_smpl_destroy(void)
 	if (sm == 0)
 		return;
 
-	for (i=0; i < sm->n; i++)
+	for (i = 0; i < sm->n; i++)
 		free(sm->smpl[i]);
 	free(sm->smpl);
 
-	for (i=0; i < sm->npops; i++)
+	for (i = 0; i < sm->npops; i++)
 		free(sm->popul[i]);
 	free(sm->popul);
 
 	//dealloc strdups
-	for (k=kh_begin(rg2smid); k != kh_end(rg2smid); ++k)
+	for (k = kh_begin(rg2smid); k != kh_end(rg2smid); ++k)
 		if (kh_exist(rg2smid, k))
 			free((char*)kh_key(rg2smid, k));
 
-	for (k=kh_begin(sm2popid); k != kh_end(sm2popid); ++k)
+	for (k = kh_begin(sm2popid); k != kh_end(sm2popid); ++k)
 		if (kh_exist(sm2popid, k))
 			free((char*)kh_key(sm2popid, k));
 

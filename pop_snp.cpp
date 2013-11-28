@@ -8,93 +8,92 @@
 int mainSNP(int argc, char *argv[])
 {
 	bool found = false;           //! is the outgroup found?
-	int i = 0;
-	int k = 0;
 	int chr = 0;                  //! chromosome identifier
 	int beg = 0;                  //! beginning coordinate for analysis
 	int end = 0;                  //! end coordinate for analysis
 	int ref = 0;                  //! reference allele
-	long num_windows = 0;         //! total number of windows
-	long cw = 0;                  //! window counter
+	long nWindows = 0;            //! total number of windows
 	std::string msg;              //! string for error message
-	std::string region;           //! the scaffold/chromosome region string
+	bam_sample_t *sm = nullptr;   //!< Pointer to the sample information for the input BAM file
 	bam_plbuf_t *buf = nullptr;   //! pileup buffer
-	snpData *t = nullptr;         //! data object for the snp function
 
-	// allocate memory for nucdiv data structre
-	t = new snpData;
-
-	// parse the command line options
-	region = t->parseCommandLine(argc, argv);
+	// initialize user command line options
+	popbamOptions p(argc, argv);
 
 	// check input BAM file for errors
-	t->checkBAM();
+	p.checkBAM();
 
 	// initialize the sample data structure
-	t->bam_smpl_init();
+	sm = bam_smpl_init();
 
 	// add samples
-	t->bam_smpl_add();
+	bam_smpl_add(sm, &p);
+
+	// initialize the snp data structre
+	snpData t(p);
+	t.sm = sm;
 
 	// initialize error model
-	t->em = errmod_init(0.17);
+	t.em = errmod_init(0.17);
 
 	// if outgroup option is used check to make sure it exists
-	if (t->flag & BAM_OUTGROUP)
+	if (p.flag & BAM_OUTGROUP)
 	{
-		for (i = 0; i < t->sm->n; i++)
+		for (int i = 0; i < t.sm->n; ++i)
 		{
-			if (strcmp(t->sm->smpl[i], t->outgroup.c_str()) == 0)
+			if (strcmp(t.sm->smpl[i], t.outgroup.c_str()) == 0)
 			{
-				t->outidx = i;
+				t.outidx = i;
 				found = true;
 			}
 		}
 
 		if (!found)
 		{
-			msg = "Specified outgroup " + t->outgroup + " not found";
+			msg = "Specified outgroup " + t.outgroup + " not found";
 			fatalError(msg);
 		}
 	}
 
 	// parse genomic region
-	k = bam_parse_region(t->h, region, &chr, &beg, &end);
+	int k = bam_parse_region(p.h, p.region, &chr, &beg, &end);
 	if (k < 0)
 	{
-		msg = "Bad genome coordinates: " + region;
+		msg = "Bad genome coordinates: " + p.region;
 		fatalError(msg);
 	}
 
 	// fetch reference sequence
-	t->ref_base = faidx_fetch_seq(t->fai_file, t->h->target_name[chr], 0, 0x7fffffff, &(t->len));
+	t.ref_base = faidx_fetch_seq(p.fai_file, p.h->target_name[chr], 0, 0x7fffffff, &(t.len));
 
 	// calculate the number of windows
-	if (t->flag & BAM_WINDOW)
-		num_windows = ((end - beg) - 1) / t->win_size;
+	if (p.flag & BAM_WINDOW)
+		nWindows = ((end - beg) - 1) / p.winSize;
 	else
 	{
-		t->win_size = end - beg;
-		num_windows = 1;
+		p.winSize = end - beg;
+		nWindows = 1;
 	}
 
 	// iterate through all windows along specified genomic region
-	for (cw = 0; cw < num_windows; cw++)
+	for (long j = 0; j < nWindows; ++j)
 	{
 		// construct genome coordinate string
-		std::string scaffold_name(t->h->target_name[chr]);
+		std::string scaffold_name(p.h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
+
 		winc.seekp(0, std::ios::end);
-		winc << ':' << beg + (cw * t->win_size) + 1 << '-' << ((cw + 1) * t->win_size) + (beg - 1);
+		winc << ':' << beg + (j * p.winSize) + 1 << '-' << ((j + 1) * p.winSize) + (beg - 1);
+
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
-		t->num_sites = 0;
+		t.num_sites = 0;
 
 		// parse the BAM file and check if region is retrieved from the reference
-		if (t->flag & BAM_WINDOW)
+		if (p.flag & BAM_WINDOW)
 		{
-			k = bam_parse_region(t->h, winCoord, &ref, &(t->beg), &(t->end));
+			k = bam_parse_region(p.h, winCoord, &ref, &(t.beg), &(t.end));
 
 			if (k < 0)
 			{
@@ -105,33 +104,33 @@ int mainSNP(int argc, char *argv[])
 		else
 		{
 			ref = chr;
-			t->beg = beg;
-			t->end = end;
+			t.beg = beg;
+			t.end = end;
 
 			if (ref < 0)
 			{
-				msg = "Bad scaffold name: " + region;
+				msg = "Bad scaffold name: " + p.region;
 				fatalError(msg);
 			}
 		}
 
 		// initialize diverge specific variables
-		t->init_snp();
+		t.allocSNP();
 
 		// create population assignments
-		t->assign_pops();
+		t.assignPops(&p);
 
 		// print ms header if first window iteration
-		if ((t->output == 2) && (cw == 0))
-			t->printMSHeader(num_windows);
+		if ((t.output == 2) && (j == 0))
+			t.printMSHeader(nWindows);
 
 		// initialize pileup
-		buf = bam_plbuf_init(makeSNP, t);
+		buf = bam_plbuf_init(makeSNP, &t);
 
 		// fetch region from bam file
-		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
+		if ((bam_fetch(p.bam_in->x.bam, p.idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
 		{
-			msg = "Failed to retrieve region " + region + " due to corrupted BAM index file";
+			msg = "Failed to retrieve region " + p.region + " due to corrupted BAM index file";
 			fatalError(msg);
 		}
 
@@ -139,20 +138,18 @@ int mainSNP(int argc, char *argv[])
 		bam_plbuf_push(0, buf);
 
 		// print results to stdout
-		t->print_snp(chr);
+		t.print_SNP(std::string(p.h->target_name[chr]));
 
 		// take out the garbage
-		t->destroy_snp();
 		bam_plbuf_destroy(buf);
 	}
 	// end of window interation
 
-	errmod_destroy(t->em);
-	samclose(t->bam_in);
-	bam_index_destroy(t->idx);
-	t->bam_smpl_destroy();
-	free(t->ref_base);
-	delete t;
+	errmod_destroy(t.em);
+	samclose(p.bam_in);
+	bam_index_destroy(p.idx);
+	bam_smpl_destroy(sm);
+	free(t.ref_base);
 
 	return 0;
 }
@@ -176,13 +173,13 @@ int makeSNP(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, 
 
 		// resolve heterozygous sites
 		if (!(t->flag & BAM_HETEROZYGOTE))
-			cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->min_snpQ);
+			cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->minSNPQ);
 
 		// determine if site is segregating
-		fq = segBase(t->sm->n, cb, t->ref_base[pos], t->min_snpQ);
+		fq = segBase(t->sm->n, cb, t->ref_base[pos], t->minSNPQ);
 
 		// determine how many samples pass the quality filters
-		sample_cov = qualFilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
+		sample_cov = qualFilter(t->sm->n, cb, t->minRMSQ, t->minDepth, t->maxDepth);
 		
 		unsigned int *ncov = nullptr;
 		ncov = new unsigned int [t->sm->npops]();
@@ -195,7 +192,7 @@ int makeSNP(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, 
 			pc = sample_cov & t->pop_mask[i];
 			ncov[i] = bitcount64(pc);
 
-			unsigned int req = (unsigned int)((t->min_pop * t->pop_nsmpl[i]) + 0.4999);
+			unsigned int req = (unsigned int)((t->minPop * t->pop_nsmpl[i]) + 0.4999);
 
 			if (ncov[i] >= req)
 				t->pop_cov[t->num_sites] |= 0x1U << i;
@@ -238,13 +235,13 @@ int makeSNP(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, 
 	return 0;
 }
 
-void snpData::print_snp(int chr)
+int snpData::print_SNP(const std::string scaffold)
 {
 	snp_func fp[3] = {&snpData::printSNP, &snpData::printSweep, &snpData::printMS};
-	(this->*fp[output])(chr);
+	(this->*fp[output])(scaffold);
 }
 
-int snpData::printSNP(int chr)
+int snpData::printSNP(const std::string scaffold)
 {
 	int i = 0;
 	int j = 0;
@@ -252,7 +249,7 @@ int snpData::printSNP(int chr)
 	for (i = 0; i < segsites; i++)
 	{
 		std::stringstream out;
-		out << h->target_name[chr] << '\t' << hap.pos[i] + 1 << '\t';
+		out << scaffold << '\t' << hap.pos[i] + 1 << '\t';
 		out << bam_nt16_rev_table[hap.ref[i]];
 
 		for (j = 0; j < sm->n; j++)
@@ -269,7 +266,7 @@ int snpData::printSNP(int chr)
 	return 0;
 }
 
-int snpData::printSweep(int chr)
+int snpData::printSweep(const std::string scaffold)
 {
 	int i = 0;
 	int j = 0;
@@ -280,7 +277,7 @@ int snpData::printSweep(int chr)
 	for (i = 0; i < segsites; i++)
 	{
 		std::stringstream out;
-		out << h->target_name[chr] << '\t' << hap.pos[i] + 1;
+		out << scaffold << '\t' << hap.pos[i] + 1;
 
 		for (j = 0; j < sm->npops; j++)
 		{
@@ -302,7 +299,7 @@ int snpData::printSweep(int chr)
 	return 0;
 }
 
-int snpData::printMS(int chr)
+int snpData::printMS(const std::string scaffold)
 {
 	int i = 0;
 	int j = 0;
@@ -361,96 +358,27 @@ int snpData::printMSHeader(long nwindows)
 	std::cout << out.str() << std::endl << std::endl;
 }
 
-std::string snpData::parseCommandLine(int argc, char *argv[])
+
+snpData::snpData(const popbamOptions &p)
 {
-	std::vector<std::string> glob_opts;
-	std::string msg;
+	// inherit values from popbamOptions
+	flag = p.flag;
+	minDepth = p.minDepth;
+	maxDepth = p.maxDepth;
+	minRMSQ = p.minRMSQ;
+	minSNPQ = p.minSNPQ;
+	minMapQ = p.minMapQ;
+	minBaseQ = p.minBaseQ;
+	hetPrior = p.hetPrior;
+	minPop = p.minPop;
+	output = p.output;
 
-	GetOpt::GetOpt_pp args(argc, argv);
-	args >> GetOpt::Option('f', reffile);
-	args >> GetOpt::Option('h', headfile);
-	args >> GetOpt::Option('m', min_depth);
-	args >> GetOpt::Option('x', max_depth);
-	args >> GetOpt::Option('q', min_rmsQ);
-	args >> GetOpt::Option('s', min_snpQ);
-	args >> GetOpt::Option('a', min_mapQ);
-	args >> GetOpt::Option('b', min_baseQ);
-	args >> GetOpt::Option('o', output);
-	args >> GetOpt::Option('z', het_prior);
-	args >> GetOpt::Option('p', outgroup);
-	args >> GetOpt::Option('n', min_pop);
-	args >> GetOpt::Option('w', win_size);
-	if (args >> GetOpt::OptionPresent('w'))
-	{
-		win_size *= KB;
-		flag |= BAM_WINDOW;
-	}
-	if (args >> GetOpt::OptionPresent('h'))
-		flag |= BAM_HEADERIN;
-	if (args >> GetOpt::OptionPresent('v'))
-		flag |= BAM_VARIANT;
-	if (args >> GetOpt::OptionPresent('i'))
-		flag |= BAM_ILLUMINA;
-	if (args >> GetOpt::OptionPresent('z'))
-		flag |= BAM_HETEROZYGOTE;
-	if (args >> GetOpt::OptionPresent('p'))
-		flag |= BAM_OUTGROUP;
-
-	args >> GetOpt::GlobalOption(glob_opts);
-
-	// run some checks on the command line
-	// check if output option is valid
-	if ((output < 0) || (output > 2))
-		printUsage("Not a valid output option");
-
-	// if no input BAM file is specified -- print usage and exit
-	if (glob_opts.size() < 2)
-		printUsage("Need to specify BAM file name and region");
-	else
-		bamfile = glob_opts[0];
-
-	// check if specified BAM file exists on disk
-	if (!(is_file_exist(bamfile.c_str())))
-	{
-		msg = "Specified input file: " + bamfile + " does not exist";
-		fatalError(msg);
-	}
-
-	// check if fastA reference file is specified
-	if (reffile.empty())
-		printUsage("Need to specify fastA reference file");
-
-	// check is fastA reference file exists on disk
-	if (!(is_file_exist(reffile.c_str())))
-	{
-		msg = "Specified reference file: " + reffile + " does not exist";
-		fatalError(msg);
-	}
-
-	//check if BAM header input file exists on disk
-	if (flag & BAM_HEADERIN)
-	{
-		if (!(is_file_exist(headfile.c_str())))
-		{
-			msg = "Specified header file: " + headfile + " does not exist";
-			fatalError(msg);
-		}
-	}
-
-	// return the index of first non-optioned argument
-	return glob_opts[1];
-}
-
-snpData::snpData(void)
-{
+	// initialize native variables
 	derived_type = SNP;
-	output = 0;
 	outidx = 0;
-	win_size = 0;
-	min_pop = 1.0;
 }
 
-void snpData::init_snp(void)
+int snpData::allocSNP(void)
 {
 	int i = 0;
 	const int length = end - beg;
@@ -493,7 +421,7 @@ void snpData::init_snp(void)
 	}
 }
 
-void snpData::destroy_snp(void)
+snpData::~snpData(void)
 {
 	int i = 0;
 	int npops = sm->npops;
@@ -523,7 +451,7 @@ void snpData::destroy_snp(void)
 	delete [] hap.num_reads;
 }
 
-void snpData::printUsage(std::string msg)
+void snpData::printUsage(const std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam snp [options] <in.bam> [region]" << std::endl << std::endl;

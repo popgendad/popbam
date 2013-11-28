@@ -525,7 +525,7 @@ int fetch_func(const bam1_t *b, void *data)
 	return 0;
 }
 
-void fatalError(std::string msg)
+void fatalError(const std::string msg)
 {
 	std::cerr << "popbam runtime error:" << std::endl;
 	std::cerr << msg << std::endl;

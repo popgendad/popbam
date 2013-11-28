@@ -16,35 +16,32 @@ class snpData: public popbamData
 {
 	public:
 		// constructor
-		snpData();
+		snpData(const popbamOptions&);
 
 		// destructor
-		~snpData() {}
+		~snpData(void);
 
 		// member public variables
 		hData_t hap;                            //!< Structure to hold haplotype data
-		unsigned int win_size;                  //!< User-specified window size in kilobases
 		unsigned int *pop_cov;                  //!< Boolean for population coverage
 		unsigned int **ncov;                    //!< Sample size per population per segregating site
 		unsigned long long **pop_sample_mask;   //!< Bit mask for samples covered from a specific population
 		int output;                             //!< User-specified output mode
 		std::string outgroup;                   //!< Sample name of outgroup to use
 		int outidx;                             //!< Index of outgroup sequence
-		double min_pop;                         //!< Minimum proportion of samples present
+		double minPop;                         //!< Minimum proportion of samples present
 
 		// member public functions
-		std::string parseCommandLine(int, char**);
-		void init_snp(void);
+		int allocSNP(void);
 		int printMSHeader(long);
-		void print_snp(int);
-		void destroy_snp(void);
+		int print_SNP(const std::string);
 
 	private:
 		// member private functions
-		int printSNP(int);
-		int printSweep(int);
-		int printMS(int);
-		void printUsage(std::string);
+		int printSNP(const std::string);
+		int printSweep(const std::string);
+		int printMS(const std::string);
+		void printUsage(const std::string);
 };
 
 ///
@@ -73,4 +70,4 @@ template unsigned long long* callBase<snpData>(snpData *t, int n, const bam_pile
  */
 int makeSNP(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
 
-typedef int(snpData::*snp_func)(int);
+typedef int(snpData::*snp_func)(const std::string);

@@ -52,27 +52,29 @@ const unsigned char iupac_rev[256] =
 
 int main(int argc, char *argv[])
 {
+	std::string userFunc(argv[1]);
+
 	if (argc < 2)
 		return popbam_usage();
-	if (!strcmp(argv[1], "snp"))
-		return mainSNP(argc-1, argv+1);
-	else if (!strcmp(argv[1], "haplo"))
-		return mainHaplo(argc-1, argv+1);
-	else if (!strcmp(argv[1], "diverge"))
-		return mainDiverge(argc-1, argv+1);
-	else if (!strcmp(argv[1], "tree"))
-		return mainTree(argc-1, argv+1);
-	else if (!strcmp(argv[1], "nucdiv"))
-		return mainNucdiv(argc-1, argv+1);
-	else if (!strcmp(argv[1], "ld"))
-		return mainLD(argc-1, argv+1);
-	else if (!strcmp(argv[1], "sfs"))
-		return mainSFS(argc - 1, argv + 1);
-	else if (!strcmp(argv[1], "fasta"))
+	if (userFunc.compare(std::string("snp")) == 0)
+		return mainSNP(argc, argv);
+	else if (userFunc.compare(std::string("haplo")) == 0)
+		return mainHaplo(argc, argv);
+	else if (userFunc.compare(std::string("diverge")) == 0)
+		return mainDiverge(argc, argv);
+	else if (userFunc.compare(std::string("tree")) == 0)
+		return mainTree(argc, argv);
+	else if (userFunc.compare(std::string("nucdiv")) == 0)
+		return mainNucdiv(argc, argv);
+	else if (userFunc.compare(std::string("ld")) == 0)
+		return mainLD(argc, argv);
+	else if (userFunc.compare(std::string("sfs")) == 0)
+		return mainSFS(argc, argv);
+	else if (userFunc.compare(std::string("fasta")) == 0)
 		return 0;
 	else
 	{
-		std::cerr << "Error: unrecognized command: " << argv[1] << std::endl;
+		std::cerr << "Error: unrecognized command: " << userFunc << std::endl;
 		return 1;
 	}
 	return 0;
@@ -85,66 +87,16 @@ popbamData::popbamData(void)
 	tid = -1;
 	beg = 0;
 	end = 0x7fffffff;
-	min_rmsQ = 25;
-	min_snpQ = 25;
-	min_depth = 3;
-	max_depth = 255;
-	min_mapQ = 13;
-	min_baseQ = 13;
-	het_prior = 0.0001;
+	minRMSQ = 25;
+	minSNPQ = 25;
+	minDepth = 3;
+	maxDepth = 255;
+	minMapQ = 13;
+	minBaseQ = 13;
+	hetPrior = 0.0001;
 }
 
-void popbamData::checkBAM(void)
-{
-	std::string msg;
-
-	bam_in = samopen(bamfile.c_str(), "rb", 0);
-
-	// check if BAM file is readable
-	if (!bam_in)
-	{
-		msg = "Cannot read BAM file " + bamfile;
-		fatalError(msg);
-	}
-
-	// check if BAM header is returned
-	if (!bam_in->header)
-	{
-		msg = "Cannot read BAM header from file " + bamfile;
-		fatalError(msg);
-	}
-	else
-		h = bam_in->header;
-
-	//read in new header text
-	if (flag & BAM_HEADERIN)
-	{
-		std::ifstream headin(headfile);
-		headin.seekg(0, std::ios::end);
-		h->l_text = headin.tellg();
-		headin.seekg(0, std::ios::beg);
-		h->text = (char*)realloc(h->text, (size_t)h->l_text);
-		headin.read(h->text, h->l_text);
-		headin.close();
-	}
-
-	// check for bam index file
-	if (!(idx = bam_index_load(bamfile.c_str())))
-	{
-		msg = "Index file not available for BAM file " + bamfile;
-		fatalError(msg);
-	}
-
-	// check if fastA reference index is available
-	fai_file = fai_load(reffile.c_str());
-	if (!fai_file)
-	{
-		msg = "Failed to load index for fastA reference file: " + reffile;
-		fatalError(msg);
-	}
-}
-
-void popbamData::assign_pops(void)
+int popbamData::assignPops(const popbamOptions *p)
 {
 	int si = -1;
 	kstring_t buf;
@@ -154,10 +106,10 @@ void popbamData::assign_pops(void)
 	for (int i = 0; i < sm->n; i++)
 	{
 		if (sm->smpl[i])
-			si = bam_smpl_sm2popid(sm, bamfile.c_str(), sm->smpl[i], &buf);
+			si = bam_smpl_sm2popid(sm, p->bamfile.c_str(), sm->smpl[i], &buf);
 
 		if (si < 0)
-			si = bam_smpl_sm2popid(sm, bamfile.c_str(), 0, &buf);
+			si = bam_smpl_sm2popid(sm, p->bamfile.c_str(), 0, &buf);
 
 		if (si < 0)
 		{
@@ -170,6 +122,8 @@ void popbamData::assign_pops(void)
 		pop_mask[si] |= 0x1ULL << i;
 		pop_nsmpl[si]++;
 	}
+
+	return 0;
 }
 
 int popbam_usage(void)

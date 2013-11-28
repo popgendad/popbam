@@ -7,74 +7,74 @@
 
 int mainLD(int argc, char *argv[])
 {
-	int k = 0;
 	int chr = 0;                  //! chromosome identifier
 	int beg = 0;                  //! beginning coordinate for analysis
 	int end = 0;                  //! end coordinate for analysis
 	int ref = 0;                  //! ref
 	long num_windows = 0;         //! number of windows
-	long cw = 0;                  //! counter for windows
 	std::string msg;              //! string for error message
-	std::string region;           //! the scaffold/chromosome region string
+	bam_sample_t *sm = nullptr;   //!< Pointer to the sample information for the input BAM file
 	bam_plbuf_t *buf = nullptr;   //! pileup buffer
-	ldData *t = nullptr;          //! pointer to the function data structure
 
-	// allocate memory for nucdiv data structre
-	t = new ldData;
-
-	// parse the command line options
-	region = t->parseCommandLine(argc, argv);
+	// initialize user command line options
+	popbamOptions p(argc, argv);
 
 	// check input BAM file for errors
-	t->checkBAM();
+	p.checkBAM();
 
 	// initialize the sample data structure
-	t->bam_smpl_init();
+	sm = bam_smpl_init();
 
 	// add samples
-	t->bam_smpl_add();
+	bam_smpl_add(sm, &p);
+
+	// initialize the ld data structre
+	ldData t(p);
+	t.sm = sm;
 
 	// initialize error model
-	t->em = errmod_init(0.17);
+	t.em = errmod_init(0.17);
 
 	// parse genomic region
-	k = bam_parse_region(t->h, region, &chr, &beg, &end);
+	int k = bam_parse_region(p.h, p.region, &chr, &beg, &end);
 	if (k < 0)
 	{
-		msg = "Bad genome coordinates: " + region;
+		msg = "Bad genome coordinates: " + p.region;
 		fatalError(msg);
 	}
 
 	// fetch reference sequence
-	t->ref_base = faidx_fetch_seq(t->fai_file, t->h->target_name[chr], 0, 0x7fffffff, &(t->len));
+	t.ref_base = faidx_fetch_seq(p.fai_file, p.h->target_name[chr], 0, 0x7fffffff, &(t.len));
 
 	// calculate the number of windows
-	if (t->flag & BAM_WINDOW)
-		num_windows = ((end - beg) - 1) / t->win_size;
+	if (p.flag & BAM_WINDOW)
+		num_windows = ((end - beg) - 1) / p.winSize;
 	else
 	{
-		t->win_size = end - beg;
+		p.winSize = end - beg;
 		num_windows = 1;
 	}
 
 	// iterate through all windows along specified genomic region
-	for (cw = 0; cw < num_windows; cw++)
+	for (long i = 0; i < num_windows; ++i)
 	{
 
 		// construct genome coordinate string
-		std::string scaffold_name(t->h->target_name[chr]);
+		std::string scaffold_name(p.h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
+
 		winc.seekp(0, std::ios::end);
-		winc << ':' << beg + (cw * t->win_size) + 1 << '-' << ((cw + 1) * t->win_size) + (beg - 1);
+		winc << ':' << beg + (i * p.winSize) + 1 << '-' << ((i + 1) * p.winSize) + (beg - 1);
+
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
-		t->num_sites = 0;
+		t.num_sites = 0;
 
 		// parse the BAM file and check if region is retrieved from the reference
-		if (t->flag & BAM_WINDOW)
+		if (p.flag & BAM_WINDOW)
 		{
-			k = bam_parse_region(t->h, winCoord, &ref, &(t->beg), &(t->end));
+			k = bam_parse_region(p.h, winCoord, &ref, &(t.beg), &(t.end));
 			if (k < 0)
 			{
 				msg = "Bad window coordinates " + winCoord;
@@ -84,28 +84,28 @@ int mainLD(int argc, char *argv[])
 		else
 		{
 			ref = chr;
-			t->beg = beg;
-			t->end = end;
+			t.beg = beg;
+			t.end = end;
 			if (ref < 0)
 			{
-				msg = "Bad scaffold name: " + region;
+				msg = "Bad scaffold name: " + p.region;
 				fatalError(msg);
 			}
 		}
 
 		// initialize nucdiv variables
-		t->init_ld();
+		t.allocLD();
 
 		// create population assignments
-		t->assign_pops();
+		t.assignPops(&p);
 
 		// initialize pileup
-		buf = bam_plbuf_init(makeLD, t);
+		buf = bam_plbuf_init(makeLD, &t);
 
 		// fetch region from bam file
-		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
+		if ((bam_fetch(p.bam_in->x.bam, p.idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
 		{
-			msg = "Failed to retrieve region " + region + " due to corrupted BAM index file";
+			msg = "Failed to retrieve region " + p.region + " due to corrupted BAM index file";
 			fatalError(msg);
 		}
 
@@ -114,23 +114,21 @@ int mainLD(int argc, char *argv[])
 
 		// calculate linkage disequilibrium statistics
 		ld_func fp[3] = {&ldData::calcZns, &ldData::calcOmegamax, &ldData::calcWall};
-		(t->*fp[t->output])();
+		(t.*fp[p.output])();
 
 		// print results to stdout
-		t->print_ld(chr);
+		t.printLD(std::string(p.h->target_name[chr]));
 
 		// take out the garbage
-		t->destroy_ld();
 		bam_plbuf_destroy(buf);
 	}
 	// end of window interation
 
-	errmod_destroy(t->em);
-	samclose(t->bam_in);
-	bam_index_destroy(t->idx);
-	t->bam_smpl_destroy();
-	free(t->ref_base);
-	delete t;
+	errmod_destroy(t.em);
+	samclose(p.bam_in);
+	bam_index_destroy(p.idx);
+	bam_smpl_destroy(sm);
+	free(t.ref_base);
 
 	return 0;
 }
@@ -154,13 +152,13 @@ int makeLD(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, v
 
 		// resolve heterozygous sites
 		if (!(t->flag & BAM_HETEROZYGOTE))
-			cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->min_snpQ);
+			cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->minSNPQ);
 
 		// determine if site is segregating
-		fq = segBase(t->sm->n, cb, t->ref_base[pos], t->min_snpQ);
+		fq = segBase(t->sm->n, cb, t->ref_base[pos], t->minSNPQ);
 
 		// determine how many samples pass the quality filters
-		sample_cov = qualFilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
+		sample_cov = qualFilter(t->sm->n, cb, t->minRMSQ, t->minDepth, t->maxDepth);
 
 		// determine population coverage
 		for (i = 0; i < t->sm->npops; ++i)
@@ -216,7 +214,7 @@ int ldData::calcZns(void)
 			x0 = bitcount64(type0);
 
 			// if site 1 is variable within the population of interest
-			if ((x0 >= min_freq) && (x0 <= (n - min_freq)))
+			if ((x0 >= minFreq) && (x0 <= (n - minFreq)))
 			{
 				// iterate SNP counter
 				++num_snps[i];
@@ -229,7 +227,7 @@ int ldData::calcZns(void)
 					x1 = bitcount64(type1);
 
 					// if site 2 is variable within the population of interest -> calculate r2
-					if ((x1 >= min_freq) && (x1 <= (n - min_freq)))
+					if ((x1 >= minFreq) && (x1 <= (n - minFreq)))
 					{
 						x11 = bitcount64(type0 & type1);
 						zns[i] += SQ(x0 * x1 - n * x11) / (double)((n - x0) * x0 * (n - x1) * x1);
@@ -249,7 +247,7 @@ int ldData::calcZns(void)
 
 int ldData::calcOmegamax(void)
 {
-	int i;
+	int i = 0;
 	int j = 0;
 	int k = 0;
 	int m = 0;
@@ -297,7 +295,7 @@ int ldData::calcOmegamax(void)
 			x0 = bitcount64(type0);
 
 			// if site 1 is variable within the population of interest
-			if ((x0 >= min_freq) && (x0 <= (n - min_freq)))
+			if ((x0 >= minFreq) && (x0 <= (n - minFreq)))
 			{
 				++num_snps[j];
 				count2 = count1;
@@ -307,7 +305,7 @@ int ldData::calcOmegamax(void)
 					x1 = bitcount64(type1);
 
 					// if site 2 is variable within the population of interest
-					if ((x1 >= min_freq) && (x1 <= (n - min_freq)))
+					if ((x1 >= minFreq) && (x1 <= (n - minFreq)))
 					{
 						++count2;
 
@@ -462,92 +460,99 @@ int ldData::calcWall(void)
 	return 0;
 }
 
-std::string ldData::parseCommandLine(int argc, char *argv[])
+int ldData::printLD(const std::string scaffold)
 {
-	std::vector<std::string> glob_opts;
-	std::string msg;
+	int i = 0;
+	std::stringstream out;
 
-	GetOpt::GetOpt_pp args(argc, argv);
-	args >> GetOpt::Option('f', reffile);
-	args >> GetOpt::Option('h', headfile);
-	args >> GetOpt::Option('m', min_depth);
-	args >> GetOpt::Option('x', max_depth);
-	args >> GetOpt::Option('q', min_rmsQ);
-	args >> GetOpt::Option('s', min_snpQ);
-	args >> GetOpt::Option('a', min_mapQ);
-	args >> GetOpt::Option('b', min_baseQ);
-	args >> GetOpt::Option('o', output);
-	args >> GetOpt::Option('z', het_prior);
-	args >> GetOpt::Option('n', min_snps);
-	args >> GetOpt::Option('w', win_size);
-	args >> GetOpt::Option('k', min_sites);
-	if (args >> GetOpt::OptionPresent('w'))
+	//print coordinate information and number of aligned sites
+	out << scaffold << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites;
+
+	//print results for each population
+	for (i = 0; i < sm->npops; i++)
 	{
-		win_size *= KB;
-		flag |= BAM_WINDOW;
-	}
-	if (args >> GetOpt::OptionPresent('h'))
-		flag |= BAM_HEADERIN;
-	if (args >> GetOpt::OptionPresent('i'))
-		flag |= BAM_ILLUMINA;
-	if (args >> GetOpt::OptionPresent('e'))
-		min_freq = 2;
-	args >> GetOpt::GlobalOption(glob_opts);
+		out << "\tS[" << sm->popul[i] << "]:\t" << num_snps[i];
 
-	// run some checks on the command line
-	// check if output option is valid
-	if ((output < 0) || (output > 2))
-		printUsage("Not a valid output option");
-
-	// if no input BAM file is specified -- print usage and exit
-	if (glob_opts.size() < 2)
-		printUsage("Need to specify BAM file name and region");
-	else
-		bamfile = glob_opts[0];
-
-	// check if specified BAM file exists on disk
-	if (!(is_file_exist(bamfile.c_str())))
-	{
-		msg = "Specified input file: " + bamfile + " does not exist";
-		fatalError(msg);
-	}
-
-	// check if fastA reference file is specified
-	if (reffile.empty())
-		printUsage("Need to specify fastA reference file");
-
-	// check is fastA reference file exists on disk
-	if (!(is_file_exist(reffile.c_str())))
-	{
-		msg = "Specified reference file: " + reffile + " does not exist";
-		fatalError(msg);
-	}
-
-	//check if BAM header input file exists on disk
-	if (flag & BAM_HEADERIN)
-	{
-		if (!(is_file_exist(headfile.c_str())))
+		//If window passes the minimum number of SNPs filter
+		if (num_snps[i] >= minSNPs)
 		{
-			msg = "Specified header file: " + headfile + " does not exist";
-			fatalError(msg);
+			switch (output)
+			{
+			case 0:
+				out << "\tZns[" << sm->popul[i] << "]:";
+				out << '\t' << std::fixed << std::setprecision(5) << zns[i];
+				break;
+			case 1:
+				out << "\tomax[" << sm->popul[i] << "]:";
+				out << '\t' << std::fixed << std::setprecision(5) << omegamax[i];
+				break;
+			case 2:
+				out << "\tB[" << sm->popul[i] << "]:";
+				out << '\t' << std::fixed << std::setprecision(5) << wallb[i];
+				out << "\tQ[" << sm->popul[i] << "]:";
+				out << "\t" << std::fixed << std::setprecision(5) << wallq[i];
+				wallb[i] = 0.0;
+				wallq[i] = 0.0;
+				break;
+			default:
+				out << "\tZns[" << sm->popul[i] << "]:";
+				out << '\t' << std::fixed << std::setprecision(5) << zns[i];
+				break;
+			}
+		}
+		else
+		{
+			switch (output)
+			{
+			case 0:
+				out << "\tZns[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+				break;
+			case 1:
+				out << "\tomax[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+				break;
+			case 2:
+				out << "\tB[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+				out << "\tQ[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+				wallb[i] = 0.0;
+				wallq[i] = 0.0;
+				break;
+			default:
+				out << "\tZns[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+				break;
+			}
 		}
 	}
 
-	// return the index of first non-optioned argument
-	return glob_opts[1];
+	std::cout << out.str() << std::endl;
+
+	return 0;
 }
 
-ldData::ldData(void)
+
+ldData::ldData(const popbamOptions &p)
 {
+	// inherit values from popbamOptions
+	flag = p.flag;
+	minDepth = p.minDepth;
+	maxDepth = p.maxDepth;
+	minRMSQ = p.minRMSQ;
+	minSNPQ = p.minSNPQ;
+	minMapQ = p.minMapQ;
+	minBaseQ = p.minBaseQ;
+	hetPrior = p.hetPrior;
+	output = p.output;
+	minSites = p.minSites;
+
+	// initialize native variables
 	derived_type = LD;
-	output = 0;
-	min_snps = 10;
-	min_freq = 1;
-	win_size = 0;
-	min_sites = 0.5;
+	minSNPs = 10;
+	if (flag & BAM_NOSINGLETONS)
+		minFreq = 2;
+	else
+		minFreq = 1;
 }
 
-void ldData::init_ld(void)
+int ldData::allocLD(void)
 {
 	int length = end - beg;
 	int npops = sm->npops;
@@ -582,74 +587,11 @@ void ldData::init_ld(void)
 	{
 		std::cerr << "bad_alloc caught: " << ba.what() << std::endl;
 	}
+
+	return 0;
 }
 
-void ldData::print_ld(int chr)
-{
-	int i = 0;
-	std::stringstream out;
-
-	//print coordinate information and number of aligned sites
-	out << h->target_name[chr] << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites;
-
-	//print results for each population
-	for (i = 0; i < sm->npops; i++)
-	{
-		out << "\tS[" << sm->popul[i] << "]:\t" << num_snps[i];
-
-		//If window passes the minimum number of SNPs filter
-		if (num_snps[i] >= min_snps)
-		{
-			switch (output)
-			{
-			case 0:
-				out << "\tZns[" << sm->popul[i] << "]:";
-				out << '\t' << std::fixed << std::setprecision(5) << zns[i];
-				break;
-			case 1:
-				out << "\tomax[" << sm->popul[i] << "]:";
-				out << '\t' << std::fixed << std::setprecision(5) << omegamax[i];
-				break;
-			case 2:
-				out << "\tB[" << sm->popul[i] << "]:";
-				out << '\t' << std::fixed << std::setprecision(5) << wallb[i];
-				out << "\tQ[" << sm->popul[i] << "]:";
-				out << "\t" << std::fixed << std::setprecision(5) << wallq[i];
-				wallb[i] = 0.0;
-				wallq[i] = 0.0;
-				break;
-			default:
-				out << "\tZns[" << sm->popul[i] << "]:";
-				out << '\t' << std::fixed << std::setprecision(5) << zns[i];
-				break;
-			}
-		}
-		else
-		{
-			switch(output)
-			{
-			case 0:
-				out << "\tZns[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
-				break;
-			case 1:
-				out << "\tomax[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
-				break;
-			case 2:
-				out << "\tB[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
-				out << "\tQ[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
-				wallb[i] = 0.0;
-				wallq[i] = 0.0;
-				break;
-			default:
-				out << "\tZns[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
-				break;
-			}
-		}
-	}
-	std::cout << out.str() << std::endl;
-}
-
-void ldData::destroy_ld(void)
+ldData::~ldData(void)
 {
 	delete [] pop_mask;
 	delete [] types;
@@ -674,7 +616,7 @@ void ldData::destroy_ld(void)
 	}
 }
 
-void ldData::printUsage(std::string msg)
+void ldData::printUsage(const std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam ld [options] <in.bam> [region]" << std::endl;

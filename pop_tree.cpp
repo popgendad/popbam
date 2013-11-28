@@ -8,75 +8,76 @@
 
 int mainTree(int argc, char *argv[])
 {
-	int k = 0;
 	int chr = 0;                  //! chromosome identifier
 	int beg = 0;                  //! beginning coordinate for analysis
 	int end = 0;                  //! end coordinate for analysis
 	int ref = 0;                  //! ref
-	long num_windows = 1;         //! number of windows
-	long cw = 0;
-	std::string region;
+	long nWindows = 1;            //! number of windows
 	std::string msg;              //! string for error message
-	bam_plbuf_t *buf;             //! pileup buffer
-	treeData *t = nullptr;
+	bam_sample_t *sm = nullptr;   //!< Pointer to the sample information for the input BAM file
+	bam_plbuf_t *buf = nullptr;   //! pileup buffer
 
-	t = new treeData;
-
-	// parse the command line options
-	region = t->parseCommandLine(argc, argv);
+	// initialize user command line options
+	popbamOptions p(argc, argv);
 
 	// check input BAM file for errors
-	t->checkBAM();
+	p.checkBAM();
 
 	// initialize the sample data structure
-	t->bam_smpl_init();
+	sm = bam_smpl_init();
 
 	// add samples
-	t->bam_smpl_add();
+	bam_smpl_add(sm, &p);
+
+	// initialize the tree data structure
+	treeData t(p);
+	t.sm = sm;
 
 	// initialize error model
-	t->em = errmod_init(0.17);
+	t.em = errmod_init(0.17);
 
 	// extract name of reference sequence
-	t->refid = get_refid(t->h->text);
+	t.refid = get_refid(p.h->text);
 
 	// parse genomic region
-	k = bam_parse_region(t->h, region, &chr, &beg, &end);
+	int k = bam_parse_region(p.h, p.region, &chr, &beg, &end);
 	if (k < 0)
 	{
-		msg = "Bad genome coordinates: " + region;
+		msg = "Bad genome coordinates: " + p.region;
 		fatalError(msg);
 	}
 
 	// fetch reference sequence
-	t->ref_base = faidx_fetch_seq(t->fai_file, t->h->target_name[chr], 0, 0x7fffffff, &(t->len));
+	t.ref_base = faidx_fetch_seq(p.fai_file, p.h->target_name[chr], 0, 0x7fffffff, &(t.len));
 
 	// calculate the number of windows
-	if (t->flag & BAM_WINDOW)
-		num_windows = ((end - beg) - 1) / t->win_size;
+	if (p.flag & BAM_WINDOW)
+		nWindows = ((end - beg) - 1) / p.winSize;
 	else
 	{
-		t->win_size = end - beg;
-		num_windows = 1;
+		p.winSize = end - beg;
+		nWindows = 1;
 	}
 
 	// iterate through all windows along specified genomic region
-	for (cw = 0; cw < num_windows; cw++)
+	for (long j = 0; j < nWindows; ++j)
 	{
 		// construct genome coordinate string
-		std::string scaffold_name(t->h->target_name[chr]);
+		std::string scaffold_name(p.h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
+
 		winc.seekp(0, std::ios::end);
-		winc << ':' << beg + (cw * t->win_size) + 1 << '-' << ((cw + 1) * t->win_size) + (beg - 1);
+		winc << ':' << beg + (j * p.winSize) + 1 << '-' << ((j + 1) * p.winSize) + (beg - 1);
+
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
-		t->num_sites = 0;
+		t.num_sites = 0;
 
 		// parse the BAM file and check if region is retrieved from the reference
-		if (t->flag & BAM_WINDOW)
+		if (p.flag & BAM_WINDOW)
 		{
-			k = bam_parse_region(t->h, winCoord, &ref, &(t->beg), &(t->end));
+			k = bam_parse_region(p.h, winCoord, &ref, &(t.beg), &(t.end));
 			if (k < 0)
 			{
 				msg = "Bad window coordinates " + winCoord;
@@ -86,28 +87,28 @@ int mainTree(int argc, char *argv[])
 		else
 		{
 			ref = chr;
-			t->beg = beg;
-			t->end = end;
+			t.beg = beg;
+			t.end = end;
 			if (ref < 0)
 			{
-				msg = "Bad scaffold name: " + region;
+				msg = "Bad scaffold name: " + p.region;
 				fatalError(msg);
 			}
 		}
 
 		// initialize tree-specific variables
-		t->init_tree();
+		t.allocTree();
 
 		// create population assignments
-		t->assign_pops();
+		t.assignPops(&p);
 
 		// initialize pileup
-		buf = bam_plbuf_init(makeTree, t);
+		buf = bam_plbuf_init(makeTree, &t);
 
 		// fetch region from bam file
-		if ((bam_fetch(t->bam_in->x.bam, t->idx, ref, t->beg, t->end, buf, fetch_func)) < 0)
+		if ((bam_fetch(p.bam_in->x.bam, p.idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
 		{
-			msg = "Failed to retrieve region " + region + " due to corrupted BAM index file";
+			msg = "Failed to retrieve region " + p.region + " due to corrupted BAM index file";
 			fatalError(msg);
 		}
 
@@ -115,27 +116,25 @@ int mainTree(int argc, char *argv[])
 		bam_plbuf_push(0, buf);
 
 		// count pairwise differences
-		calc_diff_matrix(t);
+		calc_diff_matrix(&t);
 
 		// construct distance matrix
-		t->calc_dist_matrix();
+		t.calc_dist_matrix();
 
 		// construct nj tree
-		t->makeNJ(chr);
+		t.makeNJ(std::string(p.h->target_name[chr]));
 
 		// take out the garbage
-		t->destroy_tree();
 		bam_plbuf_destroy(buf);
 	}
 	// end of window interation
 
-	errmod_destroy(t->em);
-	samclose(t->bam_in);
-	bam_index_destroy(t->idx);
-	t->bam_smpl_destroy();
-	delete [] t->refid;
-	free(t->ref_base);
-	delete t;
+	errmod_destroy(t.em);
+	samclose(p.bam_in);
+	bam_index_destroy(p.idx);
+	bam_smpl_destroy(sm);
+	delete [] t.refid;
+	free(t.ref_base);
 
 	return 0;
 }
@@ -159,13 +158,13 @@ int makeTree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 
 		// resolve heterozygous sites
 		if (!(t->flag & BAM_HETEROZYGOTE))
-			cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->min_snpQ);
+			cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->minSNPQ);
 
 		// determine if site is segregating
-		fq = segBase(t->sm->n, cb, t->ref_base[pos], t->min_snpQ);
+		fq = segBase(t->sm->n, cb, t->ref_base[pos], t->minSNPQ);
 
 		// determine how many samples pass the quality filters
-		sample_cov = qualFilter(t->sm->n, cb, t->min_rmsQ, t->min_depth, t->max_depth);
+		sample_cov = qualFilter(t->sm->n, cb, t->minRMSQ, t->minDepth, t->maxDepth);
 
 		for (i = 0; i < t->sm->npops; i++)
 			t->pop_sample_mask[i] = sample_cov & t->pop_mask[i];
@@ -201,15 +200,15 @@ int makeTree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl,
 	return 0;
 }
 
-int treeData::makeNJ(int chr)
+int treeData::makeNJ(const std::string scaffold)
 {
 	int i = 0;
 	tree curtree;
 	node **cluster = nullptr;
 
-	if ((num_sites < min_sites) || (segsites < 1))
+	if ((num_sites < minSites) || (segsites < 1))
 	{
-		std::cout << h->target_name[chr] << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites;
+		std::cout << scaffold << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites;
 		std::cout << "\tNA" << std::endl;
 		return 0;
 	}
@@ -242,7 +241,7 @@ int treeData::makeNJ(int chr)
 
 	join_tree(curtree, cluster);
 	curtree.start = curtree.nodep[0]->back;
-	std::cout << h->target_name[chr] << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites << '\t';
+	std::cout << scaffold << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites << '\t';
 	print_tree(curtree.start, curtree.start);
 
 	free_tree(&curtree.nodep);
@@ -504,7 +503,7 @@ void calc_diff_matrix(treeData *t)
 	}
 
 	// calculate number of pairwise differences
-	for (i = 0; i < n-1; i++)
+	for (i = 0; i < n - 1; i++)
 		for (j = i + 1; j < n; j++)
 		{
 			for (k = 0; k <= SEG_IDX(segs); k++)
@@ -513,7 +512,7 @@ void calc_diff_matrix(treeData *t)
 		}
 }
 
-void treeData::calc_dist_matrix(void)
+int treeData::calc_dist_matrix(void)
 {
 	int i = 0;
 	int j = 0;
@@ -611,92 +610,26 @@ void treeData::free_tree(ptarray *treenode)
 	free(*treenode);
 }
 
-std::string treeData::parseCommandLine(int argc, char *argv[])
+treeData::treeData(const popbamOptions &p)
 {
-	std::vector<std::string> glob_opts;
-	std::string msg;
+	// inherit values from popbamOptions
+	flag = p.flag;
+	minDepth = p.minDepth;
+	maxDepth = p.maxDepth;
+	minRMSQ = p.minRMSQ;
+	minSNPQ = p.minSNPQ;
+	minMapQ = p.minMapQ;
+	minBaseQ = p.minBaseQ;
+	hetPrior = p.hetPrior;
+	minSites = p.minSites;
+	dist = p.dist;
 
-	GetOpt::GetOpt_pp args(argc, argv);
-	args >> GetOpt::Option('f', reffile);
-	args >> GetOpt::Option('h', headfile);
-	args >> GetOpt::Option('m', min_depth);
-	args >> GetOpt::Option('x', max_depth);
-	args >> GetOpt::Option('q', min_rmsQ);
-	args >> GetOpt::Option('s', min_snpQ);
-	args >> GetOpt::Option('a', min_mapQ);
-	args >> GetOpt::Option('b', min_baseQ);
-	args >> GetOpt::Option('k', min_sites);
-	args >> GetOpt::Option('w', win_size);
-	args >> GetOpt::Option('d', dist);
-	if (args >> GetOpt::OptionPresent('w'))
-	{
-		win_size *= KB;
-		flag |= BAM_WINDOW;
-	}
-	if (args >> GetOpt::OptionPresent('h'))
-		flag |= BAM_HEADERIN;
-	if (args >> GetOpt::OptionPresent('i'))
-		flag |= BAM_ILLUMINA;
-	if ((dist != "pdist") && (dist != "jc"))
-	{
-		msg = dist + " is not a valid distance option";
-		printUsage(msg);
-	}
-	args >> GetOpt::GlobalOption(glob_opts);
-
-	// run some checks on the command line
-	// check to see if distance was specified, else use p-distance
-	if (dist.empty())
-		dist = "pdist";
-
-	// if no input BAM file is specified -- print usage and exit
-	if (glob_opts.size() < 2)
-		printUsage("Need to specify BAM file name and region");
-	else
-		bamfile = glob_opts[0];
-
-	// check if specified BAM file exists on disk
-	if (!(is_file_exist(bamfile.c_str())))
-	{
-		msg = "Specified input file: " + bamfile + " does not exist";
-		fatalError(msg);
-	}
-
-	// check if fastA reference file is specified
-	if (reffile.empty())
-		printUsage("Need to specify fastA reference file");
-
-	// check is fastA reference file exists on disk
-	if (!(is_file_exist(reffile.c_str())))
-	{
-		msg = "Specified reference file: " + reffile + " does not exist";
-		fatalError(msg);
-	}
-
-	//check if BAM header input file exists on disk
-	if (flag & BAM_HEADERIN)
-	{
-		if (!(is_file_exist(headfile.c_str())))
-		{
-			msg = "Specified header file: " + headfile + " does not exist";
-			fatalError(msg);
-		}
-	}
-
-	// return the index of first non-optioned argument
-	return glob_opts[1];
-}
-
-treeData::treeData(void)
-{
+	// initialize native variables
 	derived_type = TREE;
 	refid = NULL;
-	dist = "pdist";
-	min_sites = 10;
-	win_size = 0;
 }
 
-void treeData::init_tree(void)
+int treeData::allocTree(void)
 {
 	int i = 0;
 	int length = end - beg;
@@ -740,9 +673,11 @@ void treeData::init_tree(void)
 	{
 		std::cerr << "bad_alloc caught: " << ba.what() << std::endl;
 	}
+
+	return 0;
 }
 
-void treeData::destroy_tree(void)
+treeData::~treeData(void)
 {
 	int i = 0;
 
@@ -753,7 +688,7 @@ void treeData::destroy_tree(void)
 	delete [] hap.pos;
 	delete [] hap.idx;
 	delete [] hap.ref;
-	for (i=0; i < sm->n; i++)
+	for (i = 0; i < sm->n; i++)
 	{
 		delete [] hap.seq[i];
 		delete [] hap.base[i];
@@ -775,7 +710,7 @@ void treeData::destroy_tree(void)
 	delete [] dist_matrix;
 }
 
-void treeData::printUsage(std::string msg)
+void treeData::printUsage(const std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam tree [options] <in.bam> [region]" << std::endl;

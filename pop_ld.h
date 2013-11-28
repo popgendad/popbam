@@ -28,19 +28,18 @@ class ldData: public popbamData
 {
 	public:
 		// constructor
-		ldData();
+		ldData(const popbamOptions&);
 
 		// destructor
-		~ldData() {}
+		~ldData(void);
 
 		// member variables
 		int output;                             //!< Analysis output option
-		unsigned int win_size;                  //!< Size of sliding window in kilobases
 		unsigned int *pop_cov;                  //!< Boolean for population coverage
-		int min_snps;                           //!< Minimum number of snps for a window to be considered
-		unsigned short min_freq;                //!< Minimum allele count in LD calculation
+		int minSNPs;                            //!< Minimum number of snps for a window to be considered
+		unsigned short minFreq;                 //!< Minimum allele count in LD calculation
 		int *num_snps;                          //!< Number of SNPs in a given window
-		double min_sites;                       //!< Minimum proportion of aligned sites for a window to be considered
+		double minSites;                        //!< Minimum proportion of aligned sites for a window to be considered
 		double *omegamax;                       //!< Pointer to array of omega_max values
 		double *wallb;                          //!< Pointer to array of Wall's B statistic
 		double *wallq;                          //!< Pointer to array of Wall's Q statistic
@@ -49,12 +48,10 @@ class ldData: public popbamData
 		// member functions
 		int calcZns(void);
 		int calcOmegamax(void);
-		int calcWall(void );
-		std::string parseCommandLine(int, char**);
-		void init_ld(void);
-		void destroy_ld(void);
-		void print_ld(int);
-		void printUsage(std::string);
+		int calcWall(void);
+		int allocLD(void);
+		int printLD(const std::string);
+		void printUsage(const std::string);
 };
 
 ///

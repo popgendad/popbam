@@ -41,7 +41,6 @@
 #include "faidx.h"
 #include "sam.h"
 #include "kstring.h"
-#include "getopt_pp.h"
 
 #ifdef _MSC_VER
 #define isnan(x) _isnan(x)
@@ -225,6 +224,44 @@ enum popbam_func_t {SNP, FASTA, DIVERGE, HAPLO, TREE, NUCDIV, LD, SFS};
 /// Define classes
 ///
 
+class popbamOptions
+{
+public:
+	// constructor
+	popbamOptions(int, char**);
+
+	// destructor
+	~popbamOptions() {}
+
+	// member variables
+	samfile_t *bam_in;                      //!< BAM input file stream
+	faidx_t *fai_file;                      //!< Fasta reference file index
+	bam_index_t *idx;                       //!< Pointer to the BAM input file index
+	bam_header_t *h;                        //!< Pointer to the header text for the input BAM file
+	unsigned short flag;                    //!< Bit flag to hold user options
+	int output;                             //!< Analysis output option
+	int errorCount;                         //!< Flag to indicate error in reading user options
+	int minDepth;                           //!< User-specified minimumm read depth
+	int maxDepth;                           //!< User-specified maximum read depth
+	int minRMSQ;                            //!< User-specified minimum rms mapping quality
+	int minSNPQ;                            //!< User-specified minimum SNP quality score
+	unsigned int winSize;                   //!< User-specified window size in kilobases
+	unsigned char minMapQ;                  //!< User-specified minimum individual read mapping quality
+	unsigned char minBaseQ;                 //!< User-specified minimum inidividual base quality
+	double minSites;                        //!< User-specified minimum number of aligned sites to perform analysis
+	double minPop;                          //!< Minimum proportion of samples present
+	double hetPrior;                        //!< Prior probability for calling heterozygous genotypes
+	std::string dist;                       //!< Pointer to the name of the desired distance metric	(-d switch)
+	std::string bamfile;                    //!< File name for the input BAM file
+	std::string reffile;                    //!< File name for the input reference Fasta file
+	std::string headfile;                   //!< File name for optional BAM header input file
+	std::string region;                     //!< Region on which to perform the analysis
+	std::string errorMsg;                   //!< String to hold any error messages
+	std::string popFunc;                    //!< The popbam function being invoked
+
+	// member functions
+	int checkBAM(void);
+};
 /*!
  * \class popbamData
  * \brief The abstract base class for passing parameters and data
@@ -239,25 +276,13 @@ class popbamData
 		~popbamData() {}
 
 		// member functions
-		int bam_smpl_add(void);
-		void bam_smpl_init(void);
-		void bam_smpl_destroy(void);
-		void assign_pops(void);
-		void checkBAM(void);
+		int assignPops(const popbamOptions *p);
 
 		// virtual functions
 		virtual void printUsage(std::string) = 0;
-		virtual std::string parseCommandLine(int, char**) = 0;
 
 		// member variables
-		std::string bamfile;                    //!< File name for the input BAM file
-		std::string reffile;                    //!< File name for the input reference Fasta file
-		std::string headfile;                   //!< File name for optional BAM header input file
-		samfile_t *bam_in;                      //!< BAM input file stream
-		faidx_t *fai_file;                      //!< Fasta reference file index
-		bam_header_t *h;                        //!< Pointer to the header text for the input BAM file
 		bam_sample_t *sm;                       //!< Pointer to the sample information for the input BAM file
-		bam_index_t *idx;                       //!< Pointer to the BAM input file index
 		char *ref_base;                         //!< Reference sequence string for specified region
 		int tid;                                //!< Reference chromosome/scaffold identifier
 		int beg;                                //!< Reference coordinate of the beginning of the current region
@@ -269,13 +294,13 @@ class popbamData
 		unsigned char *pop_nsmpl;               //!< Sample size per population
 		unsigned long long *types;              //!< The site type for each aligned site
 		unsigned long long *pop_mask;           //!< Bit mask for which individuals are in which population
-		int min_depth;                          //!< User-specified minimumm read depth
-		int max_depth;                          //!< User-specified maximum read depth
-		int min_rmsQ;                           //!< User-specified minimum rms mapping quality
-		int min_snpQ;                           //!< User-specified minimum SNP quality score
-		unsigned char min_mapQ;                 //!< User-specified minimum individual read mapping quality
-		unsigned char min_baseQ;                //!< User-specified minimum inidividual base quality
-		long double het_prior;                  //!< Prior probability of heterozygous genotype
+		int minDepth;                           //!< User-specified minimumm read depth
+		int maxDepth;                           //!< User-specified maximum read depth
+		int minRMSQ;                            //!< User-specified minimum rms mapping quality
+		int minSNPQ;                            //!< User-specified minimum SNP quality score
+		unsigned char minMapQ;                  //!< User-specified minimum individual read mapping quality
+		unsigned char minBaseQ;                 //!< User-specified minimum inidividual base quality
+		double hetPrior;                        //!< Prior probability of heterozygous genotype
 		errmod_t *em;                           //!< Error model data structure
 		popbam_func_t derived_type;             //!< Type of the derived class
 };
@@ -391,13 +416,13 @@ extern bool is_file_exist(const char *fileName);
 extern bam_sample_t *bam_smpl_init(void);
 
 /*!
- * \fn int bam_smpl_add(bam_sample_t *sm, const char *abs, const char *txt)
+ * \fn int bam_smpl_add(bam_sample_t *sm, const popbamOptions *p)
  * \brief Add a sample data structure
  * \param sm Pointer to sample data structure
  * \param abs Pointer to name of input BAM file
  * \param txt Pointer to unformatted BAM header txt
  */
-extern int bam_smpl_add(bam_sample_t *sm, const char *abs, const char *txt);
+extern int bam_smpl_add(bam_sample_t *sm, const popbamOptions *op);
 
 /*!
  * \fn int bam_smpl_rg2smid(const bam_sample_t *sm, const char *fn, const char *rg, kstring_t *str)
@@ -509,7 +534,7 @@ extern int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned shor
  * \brief Prints error message and exits program
  * \param msg Pointer to string containing error message
  */
-extern void fatalError(std::string msg);
+extern void fatalError(const std::string msg);
 
 /*!
  * \fn int bam_parse_region(bam_header_t *header, std::string region, int *ref_id, int *begin, int *end)
