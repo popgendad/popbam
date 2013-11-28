@@ -1,4 +1,3 @@
-
 #include "popbam.h"
 #include "tables.h"
 
@@ -30,7 +29,7 @@ template <class T> unsigned long long* callBase(T *t, int n, const bam_pileup1_t
 		cb = new unsigned long long [n_smpl]();
 		p = new bam_pileup1_t** [n_smpl];
 		for (i = 0; i < n_smpl; i++)
-			p[i] = new bam_pileup1_t* [t->max_depth];
+			p[i] = new bam_pileup1_t* [t->maxDepth];
 	}
 	catch (std::bad_alloc& ba)
 	{
@@ -62,7 +61,7 @@ template <class T> unsigned long long* callBase(T *t, int n, const bam_pileup1_t
 			fatalError(msg);
 		}
 
-		if (depth[si] < t->max_depth)
+		if (depth[si] < t->maxDepth)
 		{
 			p[si][depth[si]] = const_cast<bam_pileup1_t*>(pl+i);
 			depth[si]++;
@@ -97,7 +96,7 @@ template <class T> unsigned long long* callBase(T *t, int n, const bam_pileup1_t
 
 				assert(baseQ >= 0);
 
-				if ((baseQ < t->min_baseQ) || (p[j][i]->b->core.qual < t->min_mapQ))
+				if ((baseQ < t->minBaseQ) || (p[j][i]->b->core.qual < t->minMapQ))
 					continue;
 
 				b = bam_nt16_nt4_table[bam1_seqi(bam1_seq(p[j][i]->b), p[j][i]->qpos)];

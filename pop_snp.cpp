@@ -20,6 +20,9 @@ int mainSNP(int argc, char *argv[])
 	// initialize user command line options
 	popbamOptions p(argc, argv);
 
+	if (p.errorCount > 0)
+		
+
 	// check input BAM file for errors
 	p.checkBAM();
 
@@ -180,7 +183,7 @@ int makeSNP(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, 
 
 		// determine how many samples pass the quality filters
 		sample_cov = qualFilter(t->sm->n, cb, t->minRMSQ, t->minDepth, t->maxDepth);
-		
+
 		unsigned int *ncov = nullptr;
 		ncov = new unsigned int [t->sm->npops]();
 
@@ -196,7 +199,7 @@ int makeSNP(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, 
 
 			if (ncov[i] >= req)
 				t->pop_cov[t->num_sites] |= 0x1U << i;
-		}	
+		}
 
 		if (t->pop_cov[t->num_sites] > 0)
 		{
@@ -362,6 +365,7 @@ int snpData::printMSHeader(long nwindows)
 snpData::snpData(const popbamOptions &p)
 {
 	// inherit values from popbamOptions
+	bamfile = p.bamfile;
 	flag = p.flag;
 	minDepth = p.minDepth;
 	maxDepth = p.maxDepth;
@@ -451,7 +455,7 @@ snpData::~snpData(void)
 	delete [] hap.num_reads;
 }
 
-void snpData::printUsage(const std::string msg)
+void printUsage(const std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam snp [options] <in.bam> [region]" << std::endl << std::endl;

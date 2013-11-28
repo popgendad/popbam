@@ -335,6 +335,7 @@ int sfsData::printSFS(const std::string scaffold)
 sfsData::sfsData(const popbamOptions &p)
 {
 	// inherit values from popbamOptions
+	bamfile = p.bamfile;
 	flag = p.flag;
 	minDepth = p.minDepth;
 	maxDepth = p.maxDepth;

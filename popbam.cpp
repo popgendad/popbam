@@ -52,10 +52,11 @@ const unsigned char iupac_rev[256] =
 
 int main(int argc, char *argv[])
 {
-	std::string userFunc(argv[1]);
-
 	if (argc < 2)
 		return popbam_usage();
+
+	std::string userFunc(argv[1]);
+
 	if (userFunc.compare(std::string("snp")) == 0)
 		return mainSNP(argc, argv);
 	else if (userFunc.compare(std::string("haplo")) == 0)
