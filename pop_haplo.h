@@ -48,7 +48,6 @@ class haploData: public popbamData
 		int allocHaplo(void);
 		int calcHaplo(void);
 		int printHaplo(const std::string);
-		void printUsage(const std::string);
 
 	private:
 		// member private variables
@@ -90,5 +89,7 @@ template unsigned long long* callBase<haploData>(haploData *t, int n, const bam_
  * \param data A pointer to the user-passed data
  */
 int makeHaplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
+
+void usageHaplo(const std::string);
 
 typedef int(haploData::*haplo_func)(void);

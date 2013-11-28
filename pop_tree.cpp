@@ -20,6 +20,9 @@ int mainTree(int argc, char *argv[])
 	// initialize user command line options
 	popbamOptions p(argc, argv);
 
+	if (p.errorCount > 0)
+		usageTree(p.errorMsg);
+
 	// check input BAM file for errors
 	p.checkBAM();
 
@@ -119,7 +122,7 @@ int mainTree(int argc, char *argv[])
 		calc_diff_matrix(&t);
 
 		// construct distance matrix
-		t.calc_dist_matrix();
+		t.calcDistMatrix();
 
 		// construct nj tree
 		t.makeNJ(std::string(p.h->target_name[chr]));
@@ -226,7 +229,7 @@ int treeData::makeNJ(const std::string scaffold)
 	for (i = 0; i < ntaxa; i++)
 		enterorder[i] = i + 1;
 
-	tree_init(&curtree.nodep);
+	initTree(&curtree.nodep);
 	node *p = nullptr;
 	p = curtree.nodep[2*ntaxa-2]->next;
 	curtree.nodep[2*ntaxa-2]->next = curtree.nodep[2*ntaxa-2];
@@ -234,22 +237,22 @@ int treeData::makeNJ(const std::string scaffold)
 	free(p->next);
 	free(p);
 
-	setup_tree(&curtree);
+	setupTree(&curtree);
 
 	for (i = 0; i < ntaxa; i++)
 		cluster[i] = curtree.nodep[i];
 
-	join_tree(curtree, cluster);
+	joinTree(curtree, cluster);
 	curtree.start = curtree.nodep[0]->back;
 	std::cout << scaffold << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites << '\t';
-	print_tree(curtree.start, curtree.start);
+	printTree(curtree.start, curtree.start);
 
-	free_tree(&curtree.nodep);
+	freeTree(&curtree.nodep);
 	delete [] cluster;
 	delete [] enterorder;
 }
 
-void treeData::join_tree(tree curtree, node **cluster)
+void treeData::joinTree(tree curtree, node **cluster)
 {
 	int nc = 0;
 	int nextnode = 0;
@@ -453,7 +456,7 @@ void treeData::hookup(node *p, node *q)
 	q->back = p;
 }
 
-void treeData::print_tree(node *p, node *start)
+void treeData::printTree(node *p, node *start)
 {
 	if (p->tip)
 	{
@@ -465,13 +468,13 @@ void treeData::print_tree(node *p, node *start)
 	else
 	{
 		std::cout << '(';
-		print_tree(p->next->back, start);
+		printTree(p->next->back, start);
 		std::cout << ',';
-		print_tree(p->next->next->back, start);
+		printTree(p->next->next->back, start);
 		if (p == start)
 		{
 			std::cout << ',';
-			print_tree(p->back, start);
+			printTree(p->back, start);
 		}
 		std::cout << ')';
 	}
@@ -512,7 +515,7 @@ void calc_diff_matrix(treeData *t)
 		}
 }
 
-int treeData::calc_dist_matrix(void)
+int treeData::calcDistMatrix(void)
 {
 	int i = 0;
 	int j = 0;
@@ -534,7 +537,7 @@ int treeData::calc_dist_matrix(void)
 	}
 }
 
-void treeData::tree_init(ptarray *treenode)
+void treeData::initTree(ptarray *treenode)
 {
 	int i = 0;
 	int j = 0;
@@ -560,7 +563,7 @@ void treeData::tree_init(ptarray *treenode)
 	}
 }
 
-void treeData::setup_tree(tree *curtree)
+void treeData::setupTree(tree *curtree)
 {
 	int i = 0;
 	int nnodes = 2 * ntaxa - 1;
@@ -587,7 +590,7 @@ void treeData::setup_tree(tree *curtree)
 	curtree->start = curtree->nodep[0];
 }
 
-void treeData::free_tree(ptarray *treenode)
+void treeData::freeTree(ptarray *treenode)
 {
 	int i = 0;
 	node *p = nullptr;
@@ -710,7 +713,7 @@ treeData::~treeData(void)
 	delete [] dist_matrix;
 }
 
-void treeData::printUsage(const std::string msg)
+void usageTree(const std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam tree [options] <in.bam> [region]" << std::endl;

@@ -37,7 +37,6 @@ class divergeData: public popbamData
 		int allocDiverge(void);
 		int setMinPop_n(void);
 		int printDiverge(const std::string);
-		void printUsage(const std::string);
 
 	private:
 		// member private variables
@@ -71,3 +70,5 @@ template unsigned long long* callBase<divergeData>(divergeData *t, int n, const 
  * \param data A pointer to the user-passed data
  */
 int makeDiverge(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
+
+void usageDiverge(const std::string);

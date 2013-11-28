@@ -21,6 +21,9 @@ int mainDiverge(int argc, char *argv[])
 	// initialize user command line options
 	popbamOptions p(argc, argv);
 
+	if (p.errorCount > 0)
+		usageDiverge(p.errorMsg);
+
 	// check input BAM file for errors
 	p.checkBAM();
 
@@ -457,7 +460,7 @@ int divergeData::setMinPop_n(void)
 	return 0;
 }
 
-void divergeData::printUsage(const std::string msg)
+void usageDiverge(const std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam diverge [options] <in.bam> [region]" << std::endl;

@@ -20,6 +20,9 @@ int mainSNP(int argc, char *argv[])
 	// initialize user command line options
 	popbamOptions p(argc, argv);
 
+	if (p.errorCount > 0)
+		usageSNP(p.errorMsg);
+
 	// check input BAM file for errors
 	p.checkBAM();
 
@@ -451,7 +454,7 @@ snpData::~snpData(void)
 	delete [] hap.num_reads;
 }
 
-void snpData::printUsage(const std::string msg)
+void usageSNP(const std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam snp [options] <in.bam> [region]" << std::endl << std::endl;

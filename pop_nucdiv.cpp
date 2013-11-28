@@ -20,6 +20,9 @@ int mainNucdiv(int argc, char *argv[])
 	// initialize user command line options
 	popbamOptions p(argc, argv);
 
+	if (p.errorCount > 0)
+		usageNucdiv(p.errorMsg);
+
 	// check input BAM file for errors
 	p.checkBAM();
 
@@ -369,7 +372,7 @@ nucdivData::~nucdivData(void)
 	delete [] ncov;
 }
 
-void nucdivData::printUsage(const std::string msg)
+void usageNucdiv(const std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam nucdiv [options] <in.bam> [region]" << std::endl;

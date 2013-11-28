@@ -278,9 +278,6 @@ class popbamData
 		// member functions
 		int assignPops(const popbamOptions *p);
 
-		// virtual functions
-		virtual void printUsage(std::string) = 0;
-
 		// member variables
 		bam_sample_t *sm;                       //!< Pointer to the sample information for the input BAM file
 		char *ref_base;                         //!< Reference sequence string for specified region

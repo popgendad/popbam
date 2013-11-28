@@ -41,7 +41,6 @@ class snpData: public popbamData
 		int printSNP(const std::string);
 		int printSweep(const std::string);
 		int printMS(const std::string);
-		void printUsage(const std::string);
 };
 
 ///
@@ -69,5 +68,7 @@ template unsigned long long* callBase<snpData>(snpData *t, int n, const bam_pile
  * \param data A pointer to the user-passed data
  */
 int makeSNP(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
+
+void usageSNP(const std::string);
 
 typedef int(snpData::*snp_func)(const std::string);

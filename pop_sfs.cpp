@@ -20,6 +20,9 @@ int mainSFS(int argc, char *argv[])
 	// initialize user command line options
 	popbamOptions p(argc, argv);
 
+	if (p.errorCount > 0)
+		usageSFS(p.errorMsg);
+
 	// check input BAM file for errors
 	p.checkBAM();
 
@@ -496,7 +499,7 @@ int sfsData::calc_e2(void)
 	}
 }
 
-void sfsData::printUsage(const std::string msg)
+void usageSFS(const std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam sfs [options] <in.bam> [region]" << std::endl;

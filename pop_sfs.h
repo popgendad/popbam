@@ -61,7 +61,6 @@ class sfsData: public popbamData
 		int calc_a2(void);
 		int calc_e1(void);
 		int calc_e2(void);
-		void printUsage(const std::string);
 };
 
 ///
@@ -89,3 +88,5 @@ template unsigned long long* callBase<sfsData>(sfsData *t, int n, const bam_pile
  * \param data A pointer to the user-passed data
  */
 int makeSFS(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
+
+void usageSFS(const std::string);

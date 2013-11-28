@@ -68,15 +68,14 @@ class treeData: public popbamData
 
 		// member public functions
 		int makeNJ(const std::string);
-		int calc_dist_matrix(void);
+		int calcDistMatrix(void);
 		int allocTree(void);
-		void printUsage(const std::string);
-		void join_tree(tree, node**);
-		void print_tree(node*, node*);
+		void joinTree(tree, node**);
+		void printTree(node*, node*);
 		void hookup(node*, node*);
-		void setup_tree(tree*);
-		void tree_init(ptarray *);
-		void free_tree(ptarray *);
+		void setupTree(tree*);
+		void initTree(ptarray *);
+		void freeTree(ptarray *);
 };
 
 ///
@@ -105,4 +104,6 @@ template unsigned long long* callBase<treeData>(treeData *t, int n, const bam_pi
  */
 int makeTree(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
 
-void calc_diff_matrix(treeData*);
+void usageTree(const std::string);
+
+void calcDiffMatrix(treeData*);

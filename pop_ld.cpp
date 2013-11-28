@@ -19,6 +19,9 @@ int mainLD(int argc, char *argv[])
 	// initialize user command line options
 	popbamOptions p(argc, argv);
 
+	if (p.errorCount > 0)
+		usageLD(p.errorMsg);
+
 	// check input BAM file for errors
 	p.checkBAM();
 
@@ -616,7 +619,7 @@ ldData::~ldData(void)
 	}
 }
 
-void ldData::printUsage(const std::string msg)
+void usageLD(const std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam ld [options] <in.bam> [region]" << std::endl;

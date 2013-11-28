@@ -20,6 +20,9 @@ int mainHaplo(int argc, char *argv[])
 	// initialize user command line options
 	popbamOptions p(argc, argv);
 
+	if (p.errorCount > 0)
+		usageHaplo(p.errorMsg);
+
 	// check input BAM file for errors
 	p.checkBAM();
 
@@ -509,7 +512,7 @@ haploData::~haploData(void)
 	delete [] nsite_matrix;
 }
 
-void haploData::printUsage(const std::string msg)
+void usageHaplo(const std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam haplo [options] <in.bam> [region]" << std::endl;

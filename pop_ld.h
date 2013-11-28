@@ -51,7 +51,6 @@ class ldData: public popbamData
 		int calcWall(void);
 		int allocLD(void);
 		int printLD(const std::string);
-		void printUsage(const std::string);
 };
 
 ///
@@ -79,5 +78,7 @@ template unsigned long long* callBase<ldData>(ldData *t, int n, const bam_pileup
  * \param data A pointer to the user-passed data
  */
 int makeLD(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
+
+void usageLD(const std::string);
 
 typedef int(ldData::*ld_func)(void);

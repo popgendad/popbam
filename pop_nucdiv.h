@@ -44,7 +44,6 @@ class nucdivData: public popbamData
 		int calcNucdiv(void);
 		int allocNucdiv(void);
 		int printNucdiv(const std::string);
-		void printUsage(const std::string);
 
 	private:
 		// member private variables
@@ -78,3 +77,5 @@ template unsigned long long* callBase<nucdivData>(nucdivData *t, int n, const ba
  * \param data A pointer to the user-passed data
  */
 int makeNucdiv(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data);
+
+void usageNucdiv(const std::string);
