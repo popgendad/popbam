@@ -308,6 +308,7 @@ int nucdivData::printNucdiv(const std::string scaffold)
 nucdivData::nucdivData(const popbamOptions &p)
 {
 	// inherit values from popbamOptions
+	bamfile = p.bamfile;
 	flag = p.flag;
 	minDepth = p.minDepth;
 	maxDepth = p.maxDepth;

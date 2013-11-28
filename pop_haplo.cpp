@@ -444,6 +444,7 @@ int haploData::printHaplo(const std::string scaffold)
 haploData::haploData(const popbamOptions &p)
 {
 	// inherit values from popbamOptions
+	bamfile = p.bamfile;
 	flag = p.flag;
 	minDepth = p.minDepth;
 	maxDepth = p.maxDepth;

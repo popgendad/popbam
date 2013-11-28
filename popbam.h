@@ -207,7 +207,7 @@ typedef struct __errmod_t
 typedef struct __call_aux_t
 {
 	double fsum[16];                  //!< Array of
-	double bsum[16];                  //!< Array of 
+	double bsum[16];                  //!< Array of
 	unsigned int c[16];               //!< Array of
 } call_aux_t;
 
@@ -262,6 +262,7 @@ public:
 	// member functions
 	int checkBAM(void);
 };
+
 /*!
  * \class popbamData
  * \brief The abstract base class for passing parameters and data
@@ -279,6 +280,7 @@ class popbamData
 		int assignPops(const popbamOptions *p);
 
 		// member variables
+		std::string bamfile;                    //!< Name of bamfile used for indexing purposes
 		bam_sample_t *sm;                       //!< Pointer to the sample information for the input BAM file
 		char *ref_base;                         //!< Reference sequence string for specified region
 		int tid;                                //!< Reference chromosome/scaffold identifier
