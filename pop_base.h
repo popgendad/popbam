@@ -1,3 +1,4 @@
+#include <vector>
 #include "popbam.h"
 #include "tables.h"
 
