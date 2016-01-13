@@ -15,9 +15,9 @@ GNU C++ or clang compilers with three compilation modes: release (default), debu
 OBTAINING THE SOURCE CODE
 -------------------------
 
-The POPBAM source code is available to download freely from GitHub at
+The POPBAM source code is available to download freely from GitLab at
 
-[http://dgarriga.github.io/POPBAM/]
+[https://gitlab.com/lummei/POPBAM]
 
 as either a gzipped tar file or a zipped file with the prefix
 
