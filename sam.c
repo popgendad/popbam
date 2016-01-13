@@ -25,7 +25,7 @@ bam_header_t *bam_header_dup(const bam_header_t *h0)
     h->target_len = (unsigned int*)calloc(h->n_targets, 4);
     h->target_name = (char**)calloc(h->n_targets, sizeof(void*));
 
-    for (i=0; i < h->n_targets; ++i)
+    for (i = 0; i < h->n_targets; ++i)
     {
         h->target_len[i] = h0->target_len[i];
         h->target_name[i] = strdup(h0->target_name[i]);
@@ -118,7 +118,7 @@ samfile_t *samopen(const char *fn, const char *mode, const void *aux)
             int i;
             int compress_level = -1;
 
-            for (i=0; mode[i]; ++i)
+            for (i = 0; mode[i]; ++i)
                 if ((mode[i] >= '0') && (mode[i] <= '9'))
                     break;
 

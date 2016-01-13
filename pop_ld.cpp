@@ -13,7 +13,7 @@ int mainLD(int argc, char *argv[])
 	int ref = 0;                  //! ref
 	long num_windows = 0;         //! number of windows
 	std::string msg;              //! string for error message
-	bam_sample_t *sm = nullptr;   //!< Pointer to the sample information for the input BAM file
+	bam_sample_t *sm = nullptr;   //! Pointer to the sample information for the input BAM file
 	bam_plbuf_t *buf = nullptr;   //! pileup buffer
 
 	// initialize user command line options
