@@ -23,14 +23,13 @@
  * Bytes 7-8:  unsigned short-- the root-mean quality score (rmsQ) (cb[i]>>48)&0xffff
  *
 **/
+#include <math.h>
 #include "popbam.h"
 #include "tables.h"
 #include "ksort.h"
 #include "khash.h"
-#include "gamma.h"
 
-#define M_LN2 0.69314718055994530942
-#define M_LN10 2.30258509299404568402
+#define lfact(n) lgamma(n+1)
 
 typedef char *str_p;
 typedef unsigned short uint16_t;
@@ -131,7 +130,9 @@ int segBase(int num_samples, unsigned long long *cb, char ref, int min_snpq)
 			cb[i] -= (genotype-iupac_rev[(int)ref]) << (CHAR_BIT+2);
 		}
 		else
+		{
 			continue;
+		}
 	}
 
 	// check for infinite sites model
@@ -145,9 +146,13 @@ int segBase(int num_samples, unsigned long long *cb, char ref, int min_snpq)
 	}
 
 	if (j > 1)
+	{
 		return -1;
+	}
 	else
+	{
 		return baseCount[k];
+	}
 }
 
 void cleanHeterozygotes(int num_samples, unsigned long long *cb, int ref, int min_snpq)
@@ -169,19 +174,45 @@ void cleanHeterozygotes(int num_samples, unsigned long long *cb, int ref, int mi
 		if ((allele1 != allele2) && (snp_quality >= min_snpq))
 		{
 			if (allele1 == iupac_rev[ref])
+			{
 				cb[i] += (allele2 - allele1) << (CHAR_BIT+2);
+			}
 			if (allele2 == iupac_rev[ref])
+			{
 				cb[i] -= (allele2 - allele1) << CHAR_BIT;
+			}
 		}
 		// if heterozygous but poor quality--make homozygous ancestral
 		if ((allele1 != allele2) && (snp_quality < min_snpq))
 		{
 			if (allele1 != iupac_rev[ref])
+			{
 				cb[i] += (allele2 - allele1) << (CHAR_BIT+2);
+			}
 			if (allele2 != iupac_rev[ref])
+			{
 				cb[i] -= (allele2 - allele1) << CHAR_BIT;
+			}
 		}
 	}
+}
+
+static double* logbinomial_table(const int n_size)
+{
+    int k =0;
+    int n = 0;
+    double *logbinom = nullptr;
+
+    logbinom = (double*)calloc(SQ(n_size), sizeof(double));
+    for (n = 1; n < n_size; ++n)
+    {
+        double lfn = lfact(n);
+        for (k = 1; k <= n; ++k)
+        {
+            logbinom[n<<8|k] = lfn - lfact(k) - lfact(n-k);
+		}
+    }
+    return logbinom;
 }
 
 static errmod_coef_t *cal_coef(double depcorr, double eta)
@@ -199,31 +230,25 @@ static errmod_coef_t *cal_coef(double depcorr, double eta)
 	// initialize ->fk
 	ec->fk = (double*)calloc(256, sizeof(double));
 	ec->fk[0] = 1.0;
-	for (n = 1; n != 256; ++n)
+	for (n = 1; n < 256; ++n)
+	{
 		ec->fk[n] = pow(1.0 - depcorr, n) * (1.0 - eta) + eta;
+	}
 
 	// initialize ->coef
 	ec->beta = (double*)calloc(SQ(256) * 64, sizeof(double));
-	lC = (double*)calloc(SQ(256), sizeof(double));
 
-	for (n = 1; n != 256; ++n)
-	{
-		double lgn = LogGamma(n + 1);
-		for (k = 1; k <= n; ++k)
-			lC[n << 8 | k] = lgn - LogGamma(k + 1) - LogGamma(n - k + 1);
-	}
+	lC = logbinomial_table(256);
 
-	for (q = 1; q != 64; ++q)
+	for (q = 1; q < 64; ++q)
 	{
-		double e = pow(10.0, -q / 10.0);
+		double e = pow(10.0, -q/10.0);
 		double le = log(e);
 		double le1 = log(1.0 - e);
-
 		for (n = 1; n <= 255; ++n)
 		{
 			double *beta = ec->beta + (q << 16 | n << 8);
 			sum1 = sum = 0.0;
-
 			for (k = n; k >= 0; --k, sum1 = sum)
 			{
 				sum = sum1 + expl(lC[n << 8 | k] + k * le + (n - k) * le1);
@@ -236,11 +261,13 @@ static errmod_coef_t *cal_coef(double depcorr, double eta)
 	ec->lhet = (double*)calloc(SQ(256), sizeof(double));
 
 	for (n = 0; n < 256; ++n)
+	{
 		for (k = 0; k < 256; ++k)
+		{
 			ec->lhet[n << 8 | k] = lC[n << 8 | k] - M_LN2 * n;
-
+		}
+	}
 	free(lC);
-
 	return ec;
 }
 
@@ -258,8 +285,9 @@ errmod_t *errmod_init(float depcorr)
 void errmod_destroy(errmod_t *em)
 {
 	if (em == 0)
+	{
 		return;
-
+	}
 	free(em->coef->lhet);
 	free(em->coef->fk);
 	free(em->coef->beta);
@@ -276,12 +304,11 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 	int k = 0;
 	int w[32];
 
-	if (m > m)
-		return -1;
-
 	memset(q, 0, SQ(m) * sizeof(float));
 	if (n == 0)
+	{
 		return 0;
+	}
 
 	// calculate aux.esum and aux.fsum
 	// then sample 255 bases
@@ -299,75 +326,72 @@ int errmod_cal(const errmod_t *em, unsigned short n, int m, unsigned short *base
 	for (j = n - 1; j >= 0; --j)
 	{
 		unsigned short b = bases[j];
-		int q = b >> 5 < NBASES ? NBASES : b >> 5;
-
-		if (q > 63)
-			q = 63;
-		k = b & 0x1f;
-		aux.fsum[k & 0xf] += em->coef->fk[w[k]];
-		aux.bsum[k & 0xf] += em->coef->fk[w[k]] * em->coef->beta[q << 16 | n << 8 | aux.c[k & 0xf]];
-		++aux.c[k & 0xf];
-		++w[k];
+		int qlty = b >> 5 < NBASES ? NBASES : b >> 5;
+		if (qlty > 63)
+		{
+			qlty = 63;
+		}
+	    int basestrand = b & 0x1f;
+		int base = b & 0xf;
+		aux.fsum[base] += em->coef->fk[w[basestrand]];
+		aux.bsum[base] += em->coef->fk[w[basestrand]] * em->coef->beta[qlty << 16 | n << 8 | aux.c[base]];
+		++aux.c[base];
+		++w[basestrand];
 	}
 
 	// generate likelihood
-	for (j = 0; j != m; ++j)
+	for (j = 0; j < m; ++j)
 	{
 		float tmp1 = 0.0;
 		float tmp3 = 0.0;
 		int tmp2 = 0;
-		int bar_e = 0;
 
 		// homozygous
-		for (k = 0, tmp1 = tmp3 = 0.0, tmp2 = 0; k != m; ++k)
+		for (k = 0, tmp1 = tmp3 = 0.0, tmp2 = 0; k < m; ++k)
 		{
 			if (k == j)
+			{
 				continue;
+			}
 			tmp1 += aux.bsum[k];
 			tmp2 += aux.c[k];
 			tmp3 += aux.fsum[k];
 		}
 		if (tmp2)
 		{
-			bar_e = (int)(tmp1 / tmp3 + 0.499);
-			if (bar_e > 63)
-				bar_e = 63;
-			q[j * m + j] = tmp1;
+			q[j*m+j] = tmp1;
 		}
 		// heterozygous
 		for (k = j + 1; k < m; ++k)
 		{
 			int cjk = aux.c[j] + aux.c[k];
-
 			for (i = 0, tmp2 = 0, tmp1 = tmp3 = 0.0; i < m; ++i)
 			{
 				if ((i == j) || (i == k))
 					continue;
-
 				tmp1 += aux.bsum[i];
 				tmp2 += aux.c[i];
 				tmp3 += aux.fsum[i];
 			}
-
 			if (tmp2)
 			{
-				bar_e = (int)(tmp1 / tmp3 + 0.499);
-
-				if (bar_e > 63)
-					bar_e = 63;
-
 				q[j*m+k] = q[k*m+j] = -4.343 * em->coef->lhet[cjk << 8 | aux.c[k]] + tmp1;
 			}
 			// all the bases are either j or k
 			else
+			{
 				q[j*m+k] = q[k*m+j] = -4.343 * em->coef->lhet[cjk << 8 | aux.c[k]];
+			}
 		}
 
-		for (k = 0; k != m; ++k)
+		for (k = 0; k < m; ++k)
+		{
 			if (q[j*m+k] < 0.0)
+			{
 				q[j*m+k] = 0.0;
+			}
+		}
 	}
-
 	return 0;
 }
 
@@ -380,9 +404,7 @@ void bam_init_header_hash(bam_header_t *header)
 		int ret = 0;
 		khiter_t iter;
 		khash_t(s) *h;
-
 		header->hash = h = kh_init(s);
-
 		for (i = 0; i < header->n_targets; ++i)
 		{
 			iter = kh_put(s, h, header->target_name[i], &ret);
