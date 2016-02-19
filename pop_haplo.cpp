@@ -4,9 +4,33 @@
  *  \version 0.4
 */
 
+#include <cstdlib>
+#include <cstdint>
+#include <iostream>
+#include <string>
+#include <limits>
+#include <algorithm>
+#include <vector>
+#include <list>
+#include <set>
+#include "bam.h"
+#include "faidx.h"
+#include "sam.h"
+#include "kstring.h"
+#include "khash.h"
+#include "pop_utils.h"
+#include "pop_sample.h"
+#include "popbam.h"
 #include "pop_haplo.h"
+#include "tables.h"
 
-int mainHaplo(int argc, char *argv[])
+template uint64_t* callBase<haploData>(haploData *t, int n, const bam_pileup1_t *pl);
+int makeHaplo(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data);
+void usageHaplo(const std::string);
+typedef int(haploData::*haplo_func)(void);
+
+int
+mainHaplo(int argc, char *argv[])
 {
 	int chr = 0;                  //! chromosome identifier
 	int beg = 0;                  //! beginning coordinate for analysis
@@ -21,7 +45,9 @@ int mainHaplo(int argc, char *argv[])
 	popbamOptions p(argc, argv);
 
 	if (p.errorCount > 0)
+  {
 		usageHaplo(p.errorMsg);
+  }
 
 	// check input BAM file for errors
 	p.checkBAM();
@@ -35,6 +61,7 @@ int mainHaplo(int argc, char *argv[])
 	// initialize the haplo data structure
 	haploData t(p);
 	t.sm = sm;
+  t.npops = sm->npops;
 
 	// initialize error model
 	t.em = errmod_init(0.17);
@@ -52,7 +79,9 @@ int mainHaplo(int argc, char *argv[])
 
 	// calculate the number of windows
 	if (p.flag & BAM_WINDOW)
+  {
 		nWindows = ((end - beg) - 1) / p.winSize;
+  }
 	else
 	{
 		p.winSize = end - beg;
@@ -65,10 +94,8 @@ int mainHaplo(int argc, char *argv[])
 		// construct genome coordinate string
 		std::string scaffold_name(p.h->target_name[chr]);
 		std::ostringstream winc(scaffold_name);
-
 		winc.seekp(0, std::ios::end);
 		winc << ':' << beg + (i * p.winSize) + 1 << '-' << ((i + 1) * p.winSize) + (beg - 1);
-
 		std::string winCoord = winc.str();
 
 		// initialize number of sites to zero
@@ -123,25 +150,24 @@ int mainHaplo(int argc, char *argv[])
 
 		// take out the garbage
 		bam_plbuf_destroy(buf);
-	}
-	// end of window interation
+	}  // end of window interation
 
 	errmod_destroy(t.em);
 	samclose(p.bam_in);
 	bam_index_destroy(p.idx);
 	bam_smpl_destroy(sm);
 	free(t.ref_base);
-
 	return 0;
 }
 
-int makeHaplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl, void *data)
+int
+makeHaplo(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data)
 {
 	int i = 0;
 	int j = 0;
 	int fq = 0;
-	unsigned long long sample_cov = 0;
-	unsigned long long *cb = nullptr;
+	uint64_t sample_cov = 0;
+	uint64_t *cb = nullptr;
 	haploData *t = nullptr;
 
 	// get control data structure
@@ -155,7 +181,9 @@ int makeHaplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl
 
 		// resolve heterozygous sites
 		if (!(t->flag & BAM_HETEROZYGOTE))
+    {
 			cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->minSNPQ);
+    }
 
 		// determine if site is segregating
 		fq = segBase(t->sm->n, cb, t->ref_base[pos], t->minSNPQ);
@@ -164,14 +192,14 @@ int makeHaplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl
 		sample_cov = qualFilter(t->sm->n, cb, t->minRMSQ, t->minDepth, t->maxDepth);
 
 		// determine population coverage
-		for (i = 0; i < t->sm->npops; ++i)
+		for (i = 0; i < t->npops; ++i)
 		{
-			unsigned long long pc = 0;
+			uint64_t pc = 0;
 			pc = sample_cov & t->pop_mask[i];
-			unsigned int ncov = bitcount64(pc);
-			unsigned int req = (unsigned int)((t->minPop * t->pop_nsmpl[i]) + 0.4999);
-			unsigned long long type = calculateSiteType(t->sm->n, cb);
-			unsigned short segi = bitcount64(type & t->pop_mask[i]);
+			uint32_t ncov = bitcount64(pc);
+			uint32_t req = (uint32_t)((t->minPop * t->pop_nsmpl[i]) + 0.4999);
+			uint64_t type = calculateSiteType(t->sm->n, cb);
+			uint16_t segi = bitcount64(type & t->pop_mask[i]);
 			int k = 0;
 			if ((ncov == t->pop_nsmpl[i]) && (segi > 0) && (segi < t->pop_nsmpl[i]))
 			{
@@ -203,7 +231,9 @@ int makeHaplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl
 				{
 					t->nsite_matrix[UTIDX(t->sm->n,i,j)]++;
 					if ((CHECK_BIT(t->types[t->segsites],i) && !(CHECK_BIT(t->types[t->segsites],j))) || (!(CHECK_BIT(t->types[t->segsites],i)) && CHECK_BIT(t->types[t->segsites],j)))
+          {
 						t->diff_matrix[UTIDX(t->sm->n,i,j)]++;
+          }
 				}
 			}
 		}
@@ -215,23 +245,27 @@ int makeHaplo(unsigned int tid, unsigned int pos, int n, const bam_pileup1_t *pl
 	return 0;
 }
 
-int haploData::calcHaplo(void)
+int
+haploData::calcHaplo(void)
 {
 	haplo_func do_haplo[3] = {&haploData::calcNhaps, &haploData::calcEHHS, &haploData::calcGmin};
 	(this->*do_haplo[output])();
-
 	return 0;
 }
 
-int haploData::calcNhaps(void)
+int
+haploData::calcNhaps(void)
 {
+  int i = 0;
+  uint32_t j = 0;
+
 	// iterate over populations
-	for (int i = 0; i < sm->npops; i++)
+	for (i = 0; i < npops; i++)
 	{
 		std::set<std::string> hapcount;
 		std::multiset<std::string> hapfreq;
 		double hom = 0.0;
-		for (unsigned int j = 0; j < pop_nsmpl[i]; j++)
+		for (j = 0; j < pop_nsmpl[i]; j++)
 		{
 			hapcount.insert(hap[i][j]);
 			hapfreq.insert(hap[i][j]);
@@ -244,35 +278,40 @@ int haploData::calcNhaps(void)
 			hom += (double)(SQ(k)) / SQ(pop_nsmpl[i]);
 		}
 		if ((nhaps[i] > 1) || (pop_nsmpl[i] > 1))
+    {
 			hdiv[i] = 1.0 - ((1.0 - hom) * (double)(pop_nsmpl[i] / (pop_nsmpl[i] - 1)));
+    }
 		else
+    {
 			hdiv[i] = 0.0;
+    }
 	}
-
 	return 0;
 }
 
-int haploData::calcEHHS(void)
+int
+haploData::calcEHHS(void)
 {
 	int i = 0;
 	int j = 0;
-	unsigned short popf = 0;
-	unsigned long long pop_type = 0;
+	uint16_t popf = 0;
+	uint64_t pop_type = 0;
 	int before = 0;
 	int after = 0;
 	int part_count = 0;
 	int part_max_count = 0;
-	unsigned long long part_type = 0;
-	unsigned long long part_type_comp = 0;
-	unsigned long long max_site = 0;
+	uint64_t part_type = 0;
+	uint64_t part_type_comp = 0;
+	uint64_t max_site = 0;
 	double sh = 0.0;
 
 	calcNhaps();
-
-	for (i = 0; i < sm->npops; i++)
+	for (i = 0; i < npops; i++)
 	{
 		if (pop_nsmpl[i] < 4)
+    {
 			ehhs[i] = std::numeric_limits<double>::quiet_NaN();
+    }
 		else
 		{
 			std::list<unsigned long long> pop_site;
@@ -283,7 +322,9 @@ int haploData::calcEHHS(void)
 				pop_type = types[j] & pop_mask[i];
 				popf = bitcount64(pop_type);
 				if ((popf > 1) && (popf < (pop_nsmpl[i] - 1)))
+        {
 					pop_site.push_back(pop_type);
+        }
 			}
 
 			// count unique partitions
@@ -298,8 +339,12 @@ int haploData::calcEHHS(void)
 
 				// find the complement of part_type
 				for (j = 0; j < sm->n; j++)
+        {
 					if (~CHECK_BIT(part_type,j) && CHECK_BIT(pop_mask[i],j))
+          {
 						part_type_comp |= 0x1ULL << j;
+          }
+        }
 				before = static_cast<int>(pop_site.size());
 				pop_site.remove(part_type);
 				pop_site.remove(part_type_comp);
@@ -320,17 +365,16 @@ int haploData::calcEHHS(void)
 			ehhs[i] = hdiv[i] / (1.0 - sh);
 		}
 	}
-
 	return 0;
 }
 
-int haploData::calcGmin(void)
+int
+haploData::calcGmin(void)
 {
 	int i = 0;
 	int j = 0;
 	int v = 0;
 	int w = 0;
-	const int npops = sm->npops;
 	const int n = sm->n;
 
 	for (i = 0; i < npops; i++)
@@ -352,11 +396,11 @@ int haploData::calcGmin(void)
 			pib[UTIDX(npops,i,j)] *= 1.0 / (double)(pop_nsmpl[i] * pop_nsmpl[j]);
 		}
 	}
-
 	return 0;
 }
 
-int haploData::printHaplo(const std::string scaffold)
+int
+haploData::printHaplo(const std::string scaffold)
 {
 	int i = 0;
 	int j = 0;
@@ -368,7 +412,7 @@ int haploData::printHaplo(const std::string scaffold)
 	switch(output)
 	{
 	case 0:
-		for (i = 0; i < sm->npops; i++)
+		for (i = 0; i < npops; i++)
 		{
 			if (num_sites >= minSites)
 			{
@@ -384,7 +428,7 @@ int haploData::printHaplo(const std::string scaffold)
 		}
 		break;
 	case 1:
-		for (i = 0; i < sm->npops; i++)
+		for (i = 0; i < npops; i++)
 		{
 			if (num_sites >= minSites)
 			{
@@ -397,11 +441,13 @@ int haploData::printHaplo(const std::string scaffold)
 				}
 			}
 			else
+      {
 				out << "\tEHHS[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+      }
 		}
 		break;
 	case 2:
-		for (i = 0; i < sm->npops; i++)
+		for (i = 0; i < npops; i++)
 		{
 			if (num_sites >= minSites)
 			{
@@ -409,19 +455,21 @@ int haploData::printHaplo(const std::string scaffold)
 				out << '\t' << std::fixed << std::setprecision(5) << piw[i];
 			}
 			else
+      {
 				out << "\tpi[" << sm->popul[i] << "]:\t" << std::setw(7) << "NA";
+      }
 		}
 
-		for (i = 0; i < sm->npops-1; i++)
+		for (i = 0; i < npops-1; i++)
 		{
-			for (j = i + 1; j < sm->npops; j++)
+			for (j = i + 1; j < npops; j++)
 			{
 				if (num_sites >= minSites)
 				{
 					out << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
-					out << '\t' << std::fixed << std::setprecision(5) << pib[UTIDX(sm->npops,i,j)];
+					out << '\t' << std::fixed << std::setprecision(5) << pib[UTIDX(npops,i,j)];
 					out << "\tmin[" << sm->popul[i] << "-" << sm->popul[j] << "]:";
-					out << '\t' << minDxy[UTIDX(sm->npops,i,j)];
+					out << '\t' << minDxy[UTIDX(npops,i,j)];
 				}
 				else
 				{
@@ -461,14 +509,13 @@ haploData::haploData(const popbamOptions &p)
 	derived_type = HAPLO;
 }
 
-int haploData::allocHaplo(void)
+int
+haploData::allocHaplo(void)
 {
 	const int length = end - beg;
 	const int npairs = BINOM(sm->n);
-	const int npops = sm->npops;
 
 	segsites = 0;
-
 	try
 	{
 		types = new unsigned long long [length]();
@@ -513,7 +560,8 @@ haploData::~haploData(void)
 	delete [] nsite_matrix;
 }
 
-void usageHaplo(const std::string msg)
+void
+usageHaplo(const std::string msg)
 {
 	std::cerr << msg << std::endl << std::endl;
 	std::cerr << "Usage:   popbam haplo [options] <in.bam> [region]" << std::endl;
