@@ -14,33 +14,33 @@ char bam_nt16_rev_table[16] = {'=','A','C','M','G','R','S','V','T','W','Y','H','
  */
 class snpData: public popbamData
 {
-	public:
-		// constructor
-		snpData(const popbamOptions&);
+    public:
+        // constructor
+        snpData(const popbamOptions&);
 
-		// destructor
-		~snpData(void);
+        // destructor
+        ~snpData(void);
 
-		// member public variables
-		hData_t hap;                            //!< Structure to hold haplotype data
-		unsigned int *pop_cov;                  //!< Boolean for population coverage
-		unsigned int **ncov;                    //!< Sample size per population per segregating site
-		unsigned long long **pop_sample_mask;   //!< Bit mask for samples covered from a specific population
-		int output;                             //!< User-specified output mode
-		std::string outgroup;                   //!< Sample name of outgroup to use
-		int outidx;                             //!< Index of outgroup sequence
-		double minPop;                         //!< Minimum proportion of samples present
+        // member public variables
+        hData_t hap;                            //!< Structure to hold haplotype data
+        unsigned int *pop_cov;                  //!< Boolean for population coverage
+        unsigned int **ncov;                    //!< Sample size per population per segregating site
+        unsigned long long **pop_sample_mask;   //!< Bit mask for samples covered from a specific population
+        int output;                             //!< User-specified output mode
+        std::string outgroup;                   //!< Sample name of outgroup to use
+        int outidx;                             //!< Index of outgroup sequence
+        double minPop;                          //!< Minimum proportion of samples present
 
-		// member public functions
-		int allocSNP(void);
-		int printMSHeader(long);
-		int print_SNP(const std::string);
+        // member public functions
+        int allocSNP(void);
+        int printMSHeader(long);
+        int print_SNP(const std::string);
 
-	private:
-		// member private functions
-		int printSNP(const std::string);
-		int printSweep(const std::string);
-		int printMS(const std::string);
+    private:
+        // member private functions
+        int printSNP(const std::string);
+        int printSweep(const std::string);
+        int printMS(const std::string);
 };
 
 ///

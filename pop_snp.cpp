@@ -151,7 +151,7 @@ int mainSNP(int argc, char *argv[])
     errmod_destroy(t.em);
     samclose(p.bam_in);
     bam_index_destroy(p.idx);
-    bam_smpl_destroy(sm);
+    bam_smpl_destroy(t.sm);
     free(t.ref_base);
 
     return 0;
