@@ -25,6 +25,7 @@ class snpData: public popbamData
         hData_t hap;                            //!< Structure to hold haplotype data
         unsigned int *pop_cov;                  //!< Boolean for population coverage
         unsigned int **ncov;                    //!< Sample size per population per segregating site
+        int npops;
         unsigned long long **pop_sample_mask;   //!< Bit mask for samples covered from a specific population
         int output;                             //!< User-specified output mode
         std::string outgroup;                   //!< Sample name of outgroup to use

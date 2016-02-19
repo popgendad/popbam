@@ -35,7 +35,8 @@ int mainSNP(int argc, char *argv[])
     // initialize the snp data structre
     snpData t(p);
     t.sm = sm;
-
+    t.npops = sm->npops;
+    
     // initialize error model
     t.em = errmod_init(0.17);
 
@@ -151,7 +152,7 @@ int mainSNP(int argc, char *argv[])
     errmod_destroy(t.em);
     samclose(p.bam_in);
     bam_index_destroy(p.idx);
-    bam_smpl_destroy(t.sm);
+    bam_smpl_destroy(sm);
     free(t.ref_base);
 
     return 0;
@@ -428,7 +429,6 @@ int snpData::allocSNP(void)
 snpData::~snpData(void)
 {
     int i = 0;
-    int npops = sm->npops;
 
     delete [] pop_mask;
     delete [] pop_nsmpl;
