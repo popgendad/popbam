@@ -31,7 +31,7 @@ class divergeData: public popbamData
 		hData_t hap;                    //!< Structure to hold haplotype data
 		uint64_t *pop_sample_mask;      //!< Bit mask for samples covered from a specific population
 		std::string dist;               //!< Pointer to the name of the desired distance metric	(-d switch)
-		uint8_t *min_pop_n;             //!< Minimum sample size per population
+		uint16_t *min_pop_n;            //!< Minimum sample size per population
 		int *num_snps;                  //!< Number of SNPs in a given window
     int npops;
 

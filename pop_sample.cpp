@@ -6,18 +6,14 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <string>
 #include <vector>
-#include "bam.h"
-#include "faidx.h"
-#include "sam.h"
-#include "khash.h"
-#include "kstring.h"
+#include "pop_global.h"
+#include "pop_options.h"
 #include "pop_sample.h"
 #include "pop_utils.h"
 #include "popbam.h"
-
-KHASH_MAP_INIT_STR(sm, int);
 
 int
 bam_smpl_add(bam_sample_t *sm, const popbamOptions *op)

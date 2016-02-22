@@ -8,14 +8,10 @@
 #include <string>
 #include <iostream>
 #include <vector>
-#include "tables.h"
-#include "bam.h"
-#include "faidx.h"
-#include "sam.h"
-#include "kstring.h"
-#include "khash.h"
-#include "pop_utils.h"
+#include "pop_global.h"
+#include "pop_options.h"
 #include "pop_sample.h"
+#include "pop_utils.h"
 #include "popbam.h"
 #include "pop_snp.h"
 #include "pop_diverge.h"

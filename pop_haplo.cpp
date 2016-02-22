@@ -7,22 +7,20 @@
 #include <cstdlib>
 #include <cstdint>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <string>
 #include <limits>
 #include <algorithm>
 #include <vector>
 #include <list>
 #include <set>
-#include "bam.h"
-#include "faidx.h"
-#include "sam.h"
-#include "kstring.h"
-#include "khash.h"
-#include "pop_utils.h"
+#include "pop_global.h"
+#include "pop_options.h"
 #include "pop_sample.h"
+#include "pop_utils.h"
 #include "popbam.h"
 #include "pop_haplo.h"
-#include "tables.h"
 
 template uint64_t* callBase<haploData>(haploData *t, int n, const bam_pileup1_t *pl);
 int makeHaplo(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data);
@@ -314,7 +312,7 @@ haploData::calcEHHS(void)
     }
 		else
 		{
-			std::list<unsigned long long> pop_site;
+			std::list<uint64_t> pop_site;
 
 			// make list container of all non-singleton partitions present in population i
 			for (j = 0; j < segsites; j++)
@@ -328,8 +326,8 @@ haploData::calcEHHS(void)
 			}
 
 			// count unique partitions
-			std::list<unsigned long long> uniq(pop_site);
-			std::list<unsigned long long>::iterator it;
+			std::list<uint64_t> uniq(pop_site);
+			std::list<uint64_t>::iterator it;
 			uniq.sort();
 			uniq.unique();
 
@@ -381,7 +379,7 @@ haploData::calcGmin(void)
 	{
 		for (j = i + 1; j < npops; j++)
 		{
-			minDxy[UTIDX(npops,i,j)] = std::numeric_limits<unsigned int>::max();
+			minDxy[UTIDX(npops,i,j)] = std::numeric_limits<uint32_t>::max();
 			for (v = 0; v < n - 1; v++)
 			{
 				for (w = v + 1; w < n; w++)
@@ -518,9 +516,9 @@ haploData::allocHaplo(void)
 	segsites = 0;
 	try
 	{
-		types = new unsigned long long [length]();
-		pop_mask = new unsigned long long [npops]();
-		pop_nsmpl = new unsigned char [npops]();
+		types = new uint64_t [length]();
+		pop_mask = new uint64_t [npops]();
+		pop_nsmpl = new uint8_t[npops]();
 		nhaps = new int [npops]();
 		hdiv = new double [npops]();
 		piw = new double [npops]();

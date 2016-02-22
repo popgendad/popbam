@@ -9,18 +9,16 @@
 #include <cstring>
 #include <new>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <string>
 #include <vector>
-#include "bam.h"
-#include "faidx.h"
-#include "sam.h"
-#include "kstring.h"
-#include "khash.h"
-#include "pop_utils.h"
+#include "pop_global.h"
+#include "pop_options.h"
 #include "pop_sample.h"
+#include "pop_utils.h"
 #include "popbam.h"
 #include "pop_diverge.h"
-#include "tables.h"
 
 int makeDiverge(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data);
 void usageDiverge(const std::string);
@@ -344,7 +342,7 @@ divergeData::allocDiverge(void)
             hap.base = new uint8_t* [n];
             hap.rms = new uint16_t* [n];
             hap.snpq = new uint16_t* [n];
-            hap.num_reads = uint16_t* [n];
+            hap.num_reads = new uint16_t* [n];
             switch (output)
                 {
                 case 0:

@@ -9,17 +9,15 @@
 #include <new>
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <vector>
-#include "bam.h"
-#include "faidx.h"
-#include "sam.h"
-#include "kstring.h"
-#include "khash.h"
-#include "pop_utils.h"
+#include "pop_global.h"
+#include "pop_options.h"
 #include "pop_sample.h"
+#include "pop_utils.h"
 #include "popbam.h"
 #include "pop_snp.h"
-#include "tables.h"
 
 int makeSNP(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data);
 void usageSNP(const std::string);

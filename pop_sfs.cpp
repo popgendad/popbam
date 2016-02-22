@@ -9,12 +9,12 @@
 #include <string>
 #include <limits>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <new>
 #include <vector>
-#include "bam.h"
-#include "faidx.h"
-#include "sam.h"
-#include "kstring.h"
+#include "pop_global.h"
+#include "pop_options.h"
 #include "pop_sample.h"
 #include "pop_utils.h"
 #include "popbam.h"

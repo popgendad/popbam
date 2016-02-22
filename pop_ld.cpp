@@ -8,19 +8,17 @@
 #include <cstdint>
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <vector>
 #include <new>
 #include <algorithm>
-#include "bam.h"
-#include "faidx.h"
-#include "sam.h"
-#include "kstring.h"
-#include "khash.h"
+#include "pop_global.h"
+#include "pop_options.h"
 #include "pop_sample.h"
 #include "pop_utils.h"
 #include "popbam.h"
 #include "pop_ld.h"
-#include "tables.h"
 
 template uint64_t* callBase<ldData>(ldData *t, int n, const bam_pileup1_t *pl);
 int makeLD(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data);

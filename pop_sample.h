@@ -24,6 +24,9 @@ typedef struct __bam_sample_t
 	void *pop2sm;       //!< Pointer to hash for population to sample lookup
 } bam_sample_t;
 
+
+KHASH_MAP_INIT_STR(sm, int)
+
 ///
 /// Function prototypes
 ///

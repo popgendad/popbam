@@ -36,8 +36,8 @@ class nucdivData: public popbamData
 		// member public variables
 		uint32_t *pop_cov;                  //!< Boolean for population coverage
 		uint32_t **ncov;                    //!< Sample size per population per segregating site
-		uint32_t *ns_within;                //!< Number of aligned sites with each population
-		uint32_t *ns_between;               //!< Number of aligned sites between each pair of populations
+		uint64_t *ns_within;                //!< Number of aligned sites with each population
+		uint64_t *ns_between;               //!< Number of aligned sites between each pair of populations
     int npops;
 		int *num_snps;                      //!< Number of SNPs in a given window
 		double minPop;                      //!< Minimum proportion of samples present
