@@ -34,7 +34,7 @@ public:
     int minSNPs;                 //!< Minimum number of snps for a window to be considered
     uint16_t minFreq;            //!< Minimum allele count in LD calculation
     int *num_snps;               //!< Number of SNPs in a given window
-    int npops;
+    int npops;                   //!< Number of populations represented in BAM
     double minSites;             //!< Minimum proportion of aligned sites for a window to be considered
     double *omegamax;            //!< Pointer to array of omega_max values
     double *wallb;               //!< Pointer to array of Wall's B statistic

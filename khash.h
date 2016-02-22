@@ -114,10 +114,6 @@ typedef unsigned long khlong;
 typedef unsigned long long khlong;
 #endif
 
-#ifdef _MSC_VER
-#define inline __inline
-#endif
-
 typedef khint khint_t;
 typedef khint_t khiter_t;
 

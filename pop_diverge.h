@@ -17,35 +17,35 @@
  */
 class divergeData: public popbamData
 {
-	public:
-		// constructor
-		divergeData(const popbamOptions&);
+public:
+    // constructor
+    divergeData(const popbamOptions&);
 
-		// destructor
-		~divergeData(void);
+    // destructor
+    ~divergeData(void);
 
-		// member public variables
-		int output;                     //!< Analysis output option
-		std::string outgroup;           //!< Sample name of outgroup to use
-		int outidx;                     //!< Index of outgroup sequence
-		hData_t hap;                    //!< Structure to hold haplotype data
-		uint64_t *pop_sample_mask;      //!< Bit mask for samples covered from a specific population
-		std::string dist;               //!< Pointer to the name of the desired distance metric	(-d switch)
-		uint16_t *min_pop_n;            //!< Minimum sample size per population
-		int *num_snps;                  //!< Number of SNPs in a given window
-    int npops;
+    // member public variables
+    int output;                     //!< Analysis output option
+    std::string outgroup;           //!< Sample name of outgroup to use
+    int outidx;                     //!< Index of outgroup sequence
+    hData_t hap;                    //!< Structure to hold haplotype data
+    uint64_t *pop_sample_mask;      //!< Bit mask for samples covered from a specific population
+    std::string dist;               //!< Pointer to the name of the desired distance metric	(-d switch)
+    uint16_t *min_pop_n;            //!< Minimum sample size per population
+    int *num_snps;                  //!< Number of SNPs in a given window
+    int npops;                      //!< Number of populations represented in BAM
 
-		// member public functions
-		int calcDiverge(void);
-		int allocDiverge(void);
-		int setMinPop_n(void);
-		int printDiverge(const std::string);
+    // member public functions
+    int calcDiverge(void);
+    int allocDiverge(void);
+    int setMinPop_n(void);
+    int printDiverge(const std::string);
 
-	private:
-		// member private variables
-		int minSites;                           //!< User-specified minimum number of aligned sites to perform analysis
-		unsigned short *pop_div;                //!< Array of mean population divergence calculations
-		unsigned short *ind_div;                //!< Array of individual divergence calculations
+private:
+    // member private variables
+    int minSites;              //!< User-specified minimum number of aligned sites to perform analysis
+    uint16_t *pop_div;         //!< Array of mean population divergence calculations
+    uint16_t *ind_div;         //!< Array of individual divergence calculations
 };
 
 ///

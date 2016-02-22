@@ -25,24 +25,24 @@ public:
     ~sfsData(void);
 
     // member variables
-    double minSites;               //!< User-specified minimum proportion of aligned sites to perform analysis
-    uint32_t *ns;                  //!< Number of aligned sites within each population
-    uint32_t **ncov;               //!< Sample size per population per segregating site
-    int *num_snps;                 //!< Number of SNPs in a given window
-    uint32_t *pop_cov;             //!< Boolean for population coverage
-    double minPop;                 //!< Minimum proportion of samples present
-    std::string outgroup;          //!< Sample name of outgroup to use
-    int npops;
-    int outidx;                    //!< Index of outgroup sequence
-    int outpop;                    //!< Population of outgroup sequence
-    double **dw;                   //!< Matrix of weights for Tajima's D calculation
-    double **hw;                   //!< Matrix of weights for Fay and Wu's H calculation
-    double *a1;                    //!< Constants for Tajima's D calculation
-    double *a2;                    //!< Constants for Tajima's D calculation
-    double *e1;                    //!< Constants for Tajima's D calculation
-    double *e2;                    //!< Constants for Tajima's D calculation
-    double *td;                    //!< Pointer to the array of Tajima's D statistics
-    double *fwh;                   //!< Pointer to the array of standardized Fay and Wu's H statistics
+    double minSites;          //!< User-specified minimum proportion of aligned sites to perform analysis
+    uint32_t *ns;             //!< Number of aligned sites within each population
+    uint32_t **ncov;          //!< Sample size per population per segregating site
+    int *num_snps;            //!< Number of SNPs in a given window
+    uint32_t *pop_cov;        //!< Boolean for population coverage
+    double minPop;            //!< Minimum proportion of samples present
+    std::string outgroup;     //!< Sample name of outgroup to use
+    int npops;                //!< Number of populations represented in BAM
+    int outidx;               //!< Index of outgroup sequence
+    int outpop;               //!< Population of outgroup sequence
+    double **dw;              //!< Matrix of weights for Tajima's D calculation
+    double **hw;              //!< Matrix of weights for Fay and Wu's H calculation
+    double *a1;               //!< Constants for Tajima's D calculation
+    double *a2;               //!< Constants for Tajima's D calculation
+    double *e1;               //!< Constants for Tajima's D calculation
+    double *e2;               //!< Constants for Tajima's D calculation
+    double *td;               //!< Pointer to the array of Tajima's D statistics
+    double *fwh;              //!< Pointer to the array of standardized Fay and Wu's H statistics
 
     // member functions
     int allocSFS(void);

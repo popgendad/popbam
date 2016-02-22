@@ -138,4 +138,3 @@ popbam_usage(void)
     std::cerr << std::endl;
     return 1;
 }
-

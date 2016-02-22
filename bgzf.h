@@ -28,17 +28,8 @@
 #include <zlib.h>
 #include <zconf.h>
 
-#ifdef _MSC_VER
-#define inline __inline
-#endif
-
-#if defined(_WIN32) || defined(_MSC_VER)
-#define ftello(fp) ftell(fp)
-#define fseeko(fp, offset, whence) fseek(fp, offset, whence)
-#else
 extern off_t ftello(FILE *stream);
 extern int fseeko(FILE *stream, off_t offset, int whence);
-#endif
 
 typedef char bgzf_byte_t;
 
@@ -58,7 +49,7 @@ typedef struct
 	int block_offset;
 	int cache_size;
 	const char *error;
-	void *cache;                                     // a pointer to a hash table
+	void *cache;
 } BGZF;
 
 #ifdef __cplusplus
@@ -71,6 +62,7 @@ extern "C" {
  * A subsequent bgzf_close will not close the file descriptor.
  * Returns null on error.
  */
+
 BGZF *bgzf_fdopen(int fd, const char *__restrict mode);
 
 /*
@@ -78,6 +70,7 @@ BGZF *bgzf_fdopen(int fd, const char *__restrict mode);
  * Mode must be either "r" or "w".
  * Returns null on error.
  */
+ 
 BGZF *bgzf_open(const char *path, const char *__restrict mode);
 
 /*
@@ -85,6 +78,7 @@ BGZF *bgzf_open(const char *path, const char *__restrict mode);
  * Does not close the underlying file descriptor if created with bgzf_fdopen.
  * Returns zero on success, -1 on error.
  */
+
 int bgzf_close(BGZF *fp);
 
 /*
@@ -93,6 +87,7 @@ int bgzf_close(BGZF *fp);
  * Returns zero on end of file.
  * Returns -1 on error.
  */
+
 int bgzf_read(BGZF *fp, void *data, int length);
 
 /*
@@ -100,6 +95,7 @@ int bgzf_read(BGZF *fp, void *data, int length);
  * Returns the number of bytes written.
  * Returns -1 on error.
  */
+
 int bgzf_write(BGZF *fp, const void *data, int length);
 
 /*
@@ -109,6 +105,7 @@ int bgzf_write(BGZF *fp, const void *data, int length);
  * Return value is non-negative on success.
  * Returns -1 on error.
  */
+
 #define bgzf_tell(fp) ((fp->block_address << 16) | (fp->block_offset & 0xFFFF))
 
 /*
@@ -119,6 +116,7 @@ int bgzf_write(BGZF *fp, const void *data, int length);
  * Seeking on a file opened for write is not supported.
  * Returns zero on success, -1 on error.
  */
+
 long long bgzf_seek(BGZF *fp, long long pos, int wher);
 
 /*
@@ -126,6 +124,7 @@ long long bgzf_seek(BGZF *fp, long long pos, int wher);
  * disabled. The recommended cache size for frequent random access is
  * about 8M bytes.
  */
+
 void bgzf_set_cache_size(BGZF *fp, int cache_size);
 
 int bgzf_check_EOF(BGZF *fp);

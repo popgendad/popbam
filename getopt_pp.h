@@ -1,12 +1,12 @@
 /*
 GetOpt_pp: Yet another C++ version of getopt.
     This file is part of GetOpt_pp.
-    
+
     Copyright (C) Daniel Gutson, FuDePAN 2007-2010
     Distributed under the Boost Software License, Version 1.0.
-    (See accompanying file LICENSE_1_0.txt in the root directory or 
+    (See accompanying file LICENSE_1_0.txt in the root directory or
     copy at http://www.boost.org/LICENSE_1_0.txt)
-    
+
     GetOpt_pp IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
     FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
@@ -20,7 +20,7 @@ GetOpt_pp: Yet another C++ version of getopt.
 #define GETOPT_PP_H
 
 #include <string>
-#include <vector>   // candidate to be removed
+#include <vector>
 #include <map>
 #include <sstream>
 #include <list>
@@ -76,12 +76,12 @@ struct Token
         if (is_last())
             return NULL;
         else
-        {
-            if (next->type == UnknownYet || next->type == OptionArgument || next->type == PossibleNegativeArgument)
-                return next;
-            else
-                return NULL;
-        }
+            {
+                if (next->type == UnknownYet || next->type == OptionArgument || next->type == PossibleNegativeArgument)
+                    return next;
+                else
+                    return NULL;
+            }
     }
 };
 
@@ -177,19 +177,19 @@ public:
             it = short_ops.find(short_opt);
 
         if (it != short_ops.end())
-        {
-            it->second.flags = OptionData::CmdLine_Extracted;
-            ret = _assign(it->second.token, flags, short_ops);
-        }
-        else if (!long_opt.empty())
-        {
-            LongOptions::iterator it = long_ops.find(long_opt);
-            if (it != long_ops.end())
             {
                 it->second.flags = OptionData::CmdLine_Extracted;
                 ret = _assign(it->second.token, flags, short_ops);
             }
-        }
+        else if (!long_opt.empty())
+            {
+                LongOptions::iterator it = long_ops.find(long_opt);
+                if (it != long_ops.end())
+                    {
+                        it->second.flags = OptionData::CmdLine_Extracted;
+                        ret = _assign(it->second.token, flags, short_ops);
+                    }
+            }
 
         return ret;
     }
@@ -205,10 +205,10 @@ protected:
         if (option_token == NULL)
             return _Option::NoArgs;
         else
-        {
-            this->setTokenAsUsed(option_token, short_ops, Token::OptionArgument);
-            return convert<T>(option_token->value, this->target, flags);
-        }
+            {
+                this->setTokenAsUsed(option_token, short_ops, Token::OptionArgument);
+                return convert<T>(option_token->value, this->target, flags);
+            }
     }
 public:
     _OptionT(const _OptionT<T>& other)
@@ -228,24 +228,24 @@ protected:
     {
         Token* option_token = token->get_next_option_argument();
         if (option_token != NULL)
-        {
-            _Option::Result result;
-            //OptionArgs::const_iterator it = args.begin();
-            T temp;
-
-            do
             {
-                this->setTokenAsUsed(option_token, short_ops, Token::OptionArgument);
-                result = convert<T>(option_token->value, temp, flags);
-                if (result == _Option::OK)
-                    this->target.push_back(temp);
+                _Option::Result result;
+                //OptionArgs::const_iterator it = args.begin();
+                T temp;
 
-                option_token = option_token->get_next_option_argument();
+                do
+                    {
+                        this->setTokenAsUsed(option_token, short_ops, Token::OptionArgument);
+                        result = convert<T>(option_token->value, temp, flags);
+                        if (result == _Option::OK)
+                            this->target.push_back(temp);
+
+                        option_token = option_token->get_next_option_argument();
+                    }
+                while (option_token != NULL && result == _Option::OK);
+
+                return result;
             }
-            while (option_token != NULL && result == _Option::OK);
-
-            return result;
-        }
         else
             return _Option::NoArgs;
     }
@@ -280,10 +280,10 @@ public:
         _Option::Result ret = BaseOption::operator()(short_ops, long_ops, first, flags);
 
         if (ret == _Option::OptionNotFound)
-        {
-            this->target = default_value;
-            ret = _Option::OK;
-        }
+            {
+                this->target = default_value;
+                ret = _Option::OK;
+            }
 
         return ret;
     }
@@ -299,16 +299,16 @@ class _GlobalOption : public _Option
         Token* token(first);
         bool found(false);
         while (token != NULL && !found)
-        {
-            found = (token->type == Token::GlobalArgument || token->type == Token::UnknownYet || token->type == Token::PossibleNegativeArgument);
-            if (!found)
-                token = token->next;
-        }
+            {
+                found = (token->type == Token::GlobalArgument || token->type == Token::UnknownYet || token->type == Token::PossibleNegativeArgument);
+                if (!found)
+                    token = token->next;
+            }
         if (found)
-        {
-            this->setTokenAsUsed(token, short_ops, Token::GlobalArgumentUsed);
-            return convert<T>(token->value, target, flags);
-        }
+            {
+                this->setTokenAsUsed(token, short_ops, Token::GlobalArgumentUsed);
+                return convert<T>(token->value, target, flags);
+            }
         else
             return OptionNotFound;
     }
@@ -335,26 +335,26 @@ class _GlobalOption<std::vector<T> > : public _Option
         Result res(OK);
 
         while (token != NULL && res == OK)
-        {
-            if (token->type == Token::GlobalArgument || token->type == Token::UnknownYet || token->type == Token::PossibleNegativeArgument)
             {
-                res = convert<T>(token->value, tmp, flags);
-                if (res == OK)
-                {
-                    this->setTokenAsUsed(token, short_ops, Token::GlobalArgumentUsed);
-                    found_any = true;
-                    target.push_back(tmp);
-                }
+                if (token->type == Token::GlobalArgument || token->type == Token::UnknownYet || token->type == Token::PossibleNegativeArgument)
+                    {
+                        res = convert<T>(token->value, tmp, flags);
+                        if (res == OK)
+                            {
+                                this->setTokenAsUsed(token, short_ops, Token::GlobalArgumentUsed);
+                                found_any = true;
+                                target.push_back(tmp);
+                            }
+                    }
+                token = token->next;
             }
-            token = token->next;
-        }
         if (res == OK)
-        {
-            if (found_any)
-                return res;
-            else
-                return OptionNotFound;
-        }
+            {
+                if (found_any)
+                    return res;
+                else
+                    return OptionNotFound;
+            }
         else
             return res;
     }
@@ -477,28 +477,28 @@ protected:
 
         found = (it != short_ops.end());
         if (found)
-        {
-            it->second.flags = OptionData::CmdLine_Extracted;
-        }
-        else if (!long_opt.empty())
-        {
-            LongOptions::iterator it = long_ops.find(long_opt);
-            found = (it != long_ops.end());
-            if (found)
             {
                 it->second.flags = OptionData::CmdLine_Extracted;
             }
-        }
+        else if (!long_opt.empty())
+            {
+                LongOptions::iterator it = long_ops.find(long_opt);
+                found = (it != long_ops.end());
+                if (found)
+                    {
+                        it->second.flags = OptionData::CmdLine_Extracted;
+                    }
+            }
 
         if (present != NULL)
-        {
-            *present = found;
-            return OK;
-        }
+            {
+                *present = found;
+                return OK;
+            }
         else
-        {
-            return found ? OK : OptionNotFound_NoEx;
-        }
+            {
+                return found ? OK : OptionNotFound_NoEx;
+            }
     }
 };
 

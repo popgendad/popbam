@@ -3,6 +3,7 @@
  *  \author Daniel Garrigan
  *  \version 0.4
  */
+ 
 #ifndef POPBAM_H
 #define POPBAM_H
 

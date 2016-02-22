@@ -3,6 +3,7 @@
  *  \author Daniel Garrigan
  *  \version 0.4
  */
+ 
 #ifndef POP_SAMPLE_H
 #define POP_SAMPLE_H
 
@@ -23,7 +24,6 @@ typedef struct __bam_sample_t
 	void *sm2id;        //!< Pointer to hash for sample to identifier lookup
 	void *pop2sm;       //!< Pointer to hash for population to sample lookup
 } bam_sample_t;
-
 
 KHASH_MAP_INIT_STR(sm, int)
 

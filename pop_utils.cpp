@@ -460,7 +460,6 @@ bam_parse_region(bam_header_t *header, std::string region, int *ref_id, int *beg
     name_end = l = region.length();
 
     // remove spaces and commas
-    //std::string::iterator end_pos = std::remove(region.begin(), region.end(), ' ');
     std::string::iterator end_pos = std::remove(region.begin(), region.end(), ' ');
     region.erase(end_pos, region.end());
     end_pos = std::remove(region.begin(), region.end(), ',');

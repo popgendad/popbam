@@ -31,7 +31,7 @@ class haploData: public popbamData
 		// member public variables
 		double minSites;                            //!< User-specified minimum number of aligned sites to perform analysis
 		double minPop;                              //!< Minimum proportion of samples present
-    int npops;
+    int npops;                                  //!< Number of populations represented in BAM
 		uint32_t *nsite_matrix;                     //!< Matrix of pairwise aligned sites
 		uint32_t *diff_matrix;                      //!< Matrix of pairwise sequence difference
 		uint32_t *minDxy;                           //!< Array of minimum between-population Dxy

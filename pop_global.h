@@ -3,6 +3,7 @@
  *  \author Daniel Garrigan
  *  \version 0.4
  */
+
 #ifndef POP_GLOBAL_H
 #define POP_GLOBAL_H
 

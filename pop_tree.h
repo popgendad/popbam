@@ -57,16 +57,16 @@ class treeData: public popbamData
 		~treeData(void);
 
 		// member public variables
-		hData_t hap;                        //!< Structure to hold haplotype data (public)
-		uint64_t *pop_sample_mask;          //!< Bit mask for samples covered from a specific population
-		char *refid;                        //!< Pointer to string that holds the reference sequence name
-		std::string dist;                   //!< Pointer to the name of the desired distance metric	(-d switch)
-		uint16_t **diff_matrix;             //!< Array of pairwise sequence differences
-		double **dist_matrix;               //!< Array of divergence calculations
-    int npops;
-		int minSites;                       //!< User-specified minimum number of aligned sites to perform analysis
-		int ntaxa;                          //!< Total number of tips in the tree
-		int *enterorder;                    //!< Array containing the input order of OTUs for the NJ algorithm
+		hData_t hap;                   //!< Structure to hold haplotype data (public)
+		uint64_t *pop_sample_mask;     //!< Bit mask for samples covered from a specific population
+		char *refid;                   //!< Pointer to string that holds the reference sequence name
+		std::string dist;              //!< Pointer to the name of the desired distance metric	(-d switch)
+		uint16_t **diff_matrix;        //!< Array of pairwise sequence differences
+		double **dist_matrix;          //!< Array of divergence calculations
+    int npops;                     //!< Number of populations represented in BAM
+		int minSites;                  //!< User-specified minimum number of aligned sites to perform analysis
+		int ntaxa;                     //!< Total number of tips in the tree
+		int *enterorder;               //!< Array containing the input order of OTUs for the NJ algorithm
 
 		// member public functions
 		int makeNJ(const std::string);
