@@ -23,6 +23,7 @@
  * Bytes 7-8:  unsigned short-- the root-mean quality score (rmsQ) (cb[i]>>48)&0xffff
  *
 **/
+
 #include <cstdlib>
 #include <cmath>
 #include <cfloat>
@@ -42,8 +43,6 @@
 #include "pop_utils.h"
 #include "pop_sample.h"
 #include "popbam.h"
-#include "tables.h"
-
 
 #define lfact(n) lgamma(n+1)
 
@@ -238,7 +237,7 @@ logbinomial_table(const int n_size)
             double lfn = lfact(n);
             for (k = 1; k <= n; ++k)
                 {
-                    logbinom[n<<8|k] = lfn - lfact(k) - lfact(n-k);
+                    logbinom[n << 8 | k] = lfn - lfact(k) - lfact(n-k);
                 }
         }
     return logbinom;
