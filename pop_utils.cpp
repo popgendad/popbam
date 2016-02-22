@@ -148,6 +148,18 @@ segBase(int num_samples, uint64_t *cb, char ref, int min_snpq)
                             cb[i] -= (genotype-iupac_rev[(int)ref]) << (CHAR_BIT+2);
                         }
                 }
+            else if ((allele1 != allele2) && (snp_quality >= min_snpq))
+                {
+                    cb[i] |= 0x2ULL;
+                    if (iupac[allele1] != ref)
+                        {
+                            ++baseCount[allele1];
+                        }
+                    else
+                        {
+                            ++baseCount[allele2];
+                        }
+                }
         }
 
     // check for infinite sites model

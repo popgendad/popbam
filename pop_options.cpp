@@ -15,14 +15,6 @@
 #include "popbam.h"
 #include "getopt_pp.h"
 
-//#include "pop_global.h"
-//#include "pop_sample.h"
-//#include "pop_utils.h"
-//#include "popbam.h"
-//#include "pop_options.h"
-//#include "getopt_pp.h"
-
-
 popbamOptions::popbamOptions(int argc, char *argv[])
 {
     std::vector<std::string> glob_opts;
