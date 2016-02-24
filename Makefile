@@ -15,7 +15,7 @@ CSOURCES=          bam_aux.c bam.c bam_index.c faidx.c kstring.c bgzf.c \
 CXXSOURCES=        popbam.cpp pop_utils.cpp pop_sample.cpp pop_tree.cpp \
                    pop_snp.cpp pop_nucdiv.cpp pop_ld.cpp pop_sfs.cpp \
                    pop_diverge.cpp pop_haplo.cpp getopt.cpp pop_options.cpp
-OBJS=              popbam.o pop_utils.o pop_sample.o pop_tree.o \
+OBJS=              popbam.o pop_utils.o pop_sample.o pop_tree.o pop_fasta.cpp \
                    pop_snp.o pop_nucdiv.o pop_ld.o pop_sfs.o pop_diverge.o \
                    pop_haplo.o getopt_pp.o pop_options.o \
                    bam_aux.o bam.o bam_index.o faidx.o kstring.o bgzf.o \
