@@ -91,17 +91,17 @@ mp_free(mempool_t *mp, lbnode_t *p)
    s->x: the reference coordinate of the start of s->k
    s->y: the query coordiante of the start of s->k
  */
+ 
 static inline int
 resolve_cigar2(bam_pileup1_t *p, unsigned int pos, cstate_t *s)
 {
 #define _cop(c) ((c) & BAM_CIGAR_MASK)
 #define _cln(c) ((c) >> BAM_CIGAR_SHIFT)
-
     int k = 0;
     int is_head = 0;
-    unsigned int *cigar = bam1_cigar(b);
     bam1_t *b = p->b;
     bam1_core_t *c = &b->core;
+    unsigned int *cigar = bam1_cigar(b);
 
     // determine the current CIGAR operation
     // never processed
