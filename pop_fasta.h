@@ -11,6 +11,6 @@
 /// Function prototypes
 ///
 
-extern int mainFasta(argc, argv);
+extern int mainFasta(int argc, char *argv[]);
 
 #endif
