@@ -379,6 +379,7 @@ divergeData::allocDiverge(void)
 divergeData::~divergeData(void)
 {
     int i = 0;
+    int n = sm->n;
 
     delete [] pop_mask;
     delete [] types;
@@ -400,7 +401,7 @@ divergeData::~divergeData(void)
         default:
             break;
         }
-    for (i = 0; i < sm->n; i++)
+    for (i = 0; i < n; i++)
         {
             delete [] hap.seq[i];
             delete [] hap.base[i];
