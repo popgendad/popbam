@@ -24,6 +24,7 @@
  * \class nucdivData
  * \brief A derived class for passing parameters and data to the nucdiv function
  */
+
 class nucdivData: public popbamData
 {
 public:

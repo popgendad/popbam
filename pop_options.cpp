@@ -180,7 +180,7 @@ popbamOptions::checkBAM(void)
             h = bam_in->header;
         }
 
-    //read in new header text
+    // read in new header text
     if (flag & BAM_HEADERIN)
         {
             std::ifstream headin(headfile);

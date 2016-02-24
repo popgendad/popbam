@@ -7,10 +7,6 @@
 #ifndef POP_LD_H
 #define POP_LD_H
 
-///
-/// Definitions
-///
-
 //
 // Define data structures
 //
@@ -19,6 +15,7 @@
  * \class ldData
  * \brief A derived class for passing parameters and data to the ld function
  */
+
 class ldData: public popbamData
 {
 public:
@@ -56,4 +53,3 @@ public:
 extern int mainLD(int argc, char *argv[]);
 
 #endif
-

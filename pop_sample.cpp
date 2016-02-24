@@ -34,14 +34,20 @@ bam_smpl_add(bam_sample_t *sm, const popbamOptions *op)
     memset(&bug, 0, sizeof(kstring_t));
     while ((q = strstr(p, "@RG")) != 0)
         {
-            p = q+3;
+            p = q + 3;
             r = q = s = 0;
             if ((q = strstr(p, "\tID:")) != 0)
-                q += 4;
+                {
+                    q += 4;
+                }
             if ((r = strstr(p, "\tSM:")) != 0)
-                r += 4;
+                {
+                    r += 4;
+                }
             if ((s = strstr(p, "\tPO:")) != 0)
-                s += 4;
+                {
+                    s += 4;
+                }
             // if no PO tag is found in the header
             if (r && q && !s)
                 {
@@ -49,8 +55,8 @@ bam_smpl_add(bam_sample_t *sm, const popbamOptions *op)
                     char *v = nullptr;
                     int oq = 0;
                     int or1 = 0;
-                    for (u=(char*)q; *u && *u != '\t' && *u != '\n'; ++u);
-                    for (v=(char*)r; *v && *v != '\t' && *v != '\n'; ++v);
+                    for (u = (char*)q; *u && *u != '\t' && *u != '\n'; ++u);
+                    for (v = (char*)r; *v && *v != '\t' && *v != '\n'; ++v);
                     oq = *u;
                     or1 = *v;
                     *u = *v = '\0';
@@ -68,12 +74,12 @@ bam_smpl_add(bam_sample_t *sm, const popbamOptions *op)
                     char *u = nullptr;
                     char *v = nullptr;
                     char *w = nullptr;
-                    int oq= 0;
-                    int or1= 0;
+                    int oq = 0;
+                    int or1 = 0;
                     int os = 0;
-                    for (u=(char *)q; *u && *u != '\t' && *u != '\n'; ++u);
-                    for (v=(char *)r; *v && *v != '\t' && *v != '\n'; ++v);
-                    for (w=(char *)s; *w && *w != '\t' && *w != '\n'; ++w);
+                    for (u = (char *)q; *u && *u != '\t' && *u != '\n'; ++u);
+                    for (v = (char *)r; *v && *v != '\t' && *v != '\n'; ++v);
+                    for (w = (char *)s; *w && *w != '\t' && *w != '\n'; ++w);
                     oq = *u;
                     or1 = *v;
                     os = *w;
@@ -111,7 +117,7 @@ bam_smpl_add(bam_sample_t *sm, const popbamOptions *op)
     return 0;
 }
 
-bam_sample_t*
+bam_sample_t *
 bam_smpl_init(void)
 {
     bam_sample_t *sm;
@@ -147,7 +153,7 @@ bam_smpl_destroy(bam_sample_t *sm)
         }
     free(sm->popul);
 
-    //dealloc strdups
+    // deallocate strdups
     for (k = kh_begin(rg2smid); k != kh_end(rg2smid); ++k)
         {
             if (kh_exist(rg2smid, k))
@@ -170,7 +176,8 @@ bam_smpl_destroy(bam_sample_t *sm)
 }
 
 void
-add_sample_pair(bam_sample_t *sm, khash_t(sm) *sm2id, const char *key, const char *val)
+add_sample_pair(bam_sample_t *sm, khash_t(sm) *sm2id, const char *key,
+                const char *val)
 {
     int ret = 0;
     khint_t k_rg;
@@ -213,7 +220,8 @@ add_sample_pair(bam_sample_t *sm, khash_t(sm) *sm2id, const char *key, const cha
 }
 
 void
-add_pop_pair(bam_sample_t *sm, khash_t(sm) *pop2sm, const char *key, const char *val)
+add_pop_pair(bam_sample_t *sm, khash_t(sm) *pop2sm, const char *key,
+             const char *val)
 {
     int ret = 0;
     khint_t k_rg;
@@ -263,7 +271,8 @@ add_pop_pair(bam_sample_t *sm, khash_t(sm) *pop2sm, const char *key, const char 
 }
 
 int
-bam_smpl_rg2smid(const bam_sample_t *sm, const char *fn, const char *rg, kstring_t *str)
+bam_smpl_rg2smid(const bam_sample_t *sm, const char *fn, const char *rg,
+                 kstring_t *str)
 {
     khint_t k;
     khash_t(sm) *rg2smid = (khash_t(sm)*)sm->rg2smid;
@@ -284,7 +293,8 @@ bam_smpl_rg2smid(const bam_sample_t *sm, const char *fn, const char *rg, kstring
 }
 
 int
-bam_smpl_sm2popid(const bam_sample_t *sm, const char *fn, const char *smpl, kstring_t *str)
+bam_smpl_sm2popid(const bam_sample_t *sm, const char *fn, const char *smpl,
+                  kstring_t *str)
 {
     khint_t k;
     khash_t(sm) *sm2popid = (khash_t(sm)*)sm->sm2popid;

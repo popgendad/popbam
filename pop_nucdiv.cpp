@@ -69,7 +69,8 @@ mainNucdiv(int argc, char *argv[])
         }
 
     // fetch reference sequence
-    t.ref_base = faidx_fetch_seq(p.fai_file, p.h->target_name[chr], 0, 0x7fffffff, &(t.len));
+    t.ref_base = faidx_fetch_seq(p.fai_file, p.h->target_name[chr], 0, 0x7fffffff,
+                                 &(t.len));
 
     // calculate the number of windows
     if (p.flag & BAM_WINDOW)
@@ -89,7 +90,8 @@ mainNucdiv(int argc, char *argv[])
             std::string scaffold_name(p.h->target_name[chr]);
             std::ostringstream winc(scaffold_name);
             winc.seekp(0, std::ios::end);
-            winc << ':' << beg + (j * p.winSize) + 1 << '-' << ((j + 1) * p.winSize) + (beg - 1);
+            winc << ':' << beg + (j * p.winSize) + 1 << '-' << ((j + 1) * p.winSize) +
+                 (beg - 1);
             std::string winCoord = winc.str();
 
             // initialize number of sites to zero
@@ -129,7 +131,8 @@ mainNucdiv(int argc, char *argv[])
             // fetch region from bam file
             if ((bam_fetch(p.bam_in->x.bam, p.idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
                 {
-                    msg = "Failed to retrieve region " + p.region + " due to corrupted BAM index file";
+                    msg = "Failed to retrieve region " + p.region +
+                          " due to corrupted BAM index file";
                     fatalError(msg);
                 }
 
@@ -145,7 +148,6 @@ mainNucdiv(int argc, char *argv[])
             // take out the garbage
             bam_plbuf_destroy(buf);
         }  // end of window iteration
-
     errmod_destroy(t.em);
     samclose(p.bam_in);
     bam_index_destroy(p.idx);
@@ -271,7 +273,8 @@ nucdivData::calcNucdiv(void)
                     freq[i][j] = bitcount64(pop_type);
                     if (ncov[i][j] > 1)
                         {
-                            if (((flag & BAM_NOSINGLETONS) && (freq[i][j] > 1)) || !(flag & BAM_NOSINGLETONS))
+                            if (((flag & BAM_NOSINGLETONS) && (freq[i][j] > 1)) ||
+                                    !(flag & BAM_NOSINGLETONS))
                                 {
                                     sum += (2.0 * freq[i][j] * (ncov[i][j] - freq[i][j])) / SQ(ncov[i][j]-1);
                                 }
@@ -291,7 +294,8 @@ nucdivData::calcNucdiv(void)
                         {
                             if ((ncov[i][k] > 0) && (ncov[j][k] > 0))
                                 {
-                                    sum += (double)(freq[i][k] * (ncov[j][k] - freq[j][k]) + freq[j][k] * (ncov[i][k] - freq[i][k])) / (ncov[i][k] * ncov[j][k]);
+                                    sum += (double)(freq[i][k] * (ncov[j][k] - freq[j][k]) + freq[j][k] *
+                                                    (ncov[i][k] - freq[i][k])) / (ncov[i][k] * ncov[j][k]);
                                 }
                         }
                     pib[UTIDX(npops,i,j)] = sum / ns_between[UTIDX(npops,i,j)];
@@ -343,7 +347,8 @@ nucdivData::printNucdiv(const std::string scaffold)
                         }
                     else
                         {
-                            out << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:\t" << std::setw(7) << "NA";
+                            out << "\tdxy[" << sm->popul[i] << "-" << sm->popul[j] << "]:\t" << 
+                                    std::setw(7) << "NA";
                         }
                 }
         }
@@ -389,7 +394,7 @@ nucdivData::allocNucdiv(void)
             piw = new double [npops]();
             pib = new double [npops*(npops-1)]();
             num_snps = new int [npops]();
-            for (i=0; i < npops; ++i)
+            for (i = 0; i < npops; ++i)
                 {
                     ncov[i] = new uint32_t[length]();
                 }
@@ -425,20 +430,41 @@ usageNucdiv(const std::string msg)
     std::cerr << msg << std::endl << std::endl;
     std::cerr << "Usage:   popbam nucdiv [options] <in.bam> [region]" << std::endl;
     std::cerr << std::endl;
-    std::cerr << "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]" << std::endl;
-    std::cerr << "         -h  FILE    Input header file                              [ default: none ]" << std::endl;
-    std::cerr << "         -w  INT     use sliding window of size (kb)" << std::endl;
-    std::cerr << "         -k  FLT     minimum proportion of sites covered in window  [ default: 0.5 ]" << std::endl;
-    std::cerr << "         -n  FLT     minimum proportion of population covered       [ default: 1.0 ]" << std::endl;
-    std::cerr << "         -e          exclude singleton polymorphisms" << std::endl;
+    std::cerr <<
+              "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]"
+              << std::endl;
+    std::cerr <<
+              "         -h  FILE    Input header file                              [ default: none ]"
+              << std::endl;
+    std::cerr << "         -w  INT     use sliding window of size (kb)" <<
+              std::endl;
+    std::cerr <<
+              "         -k  FLT     minimum proportion of sites covered in window  [ default: 0.5 ]"
+              << std::endl;
+    std::cerr <<
+              "         -n  FLT     minimum proportion of population covered       [ default: 1.0 ]"
+              << std::endl;
+    std::cerr << "         -e          exclude singleton polymorphisms" <<
+              std::endl;
     std::cerr << "         -f  FILE    Reference fastA file" << std::endl;
-    std::cerr << "         -m  INT     minimum read coverage                          [ default: 3 ]" << std::endl;
-    std::cerr << "         -x  INT     maximum read coverage                          [ default: 255 ]" << std::endl;
-    std::cerr << "         -q  INT     minimum rms mapping quality                    [ default: 25 ]" << std::endl;
-    std::cerr << "         -s  INT     minimum snp quality                            [ default: 25 ]" << std::endl;
-    std::cerr << "         -a  INT     minimum map quality                            [ default: 13 ]" << std::endl;
-    std::cerr << "         -b  INT     minimum base quality                           [ default: 13 ]" << std::endl;
+    std::cerr <<
+              "         -m  INT     minimum read coverage                          [ default: 3 ]"
+              << std::endl;
+    std::cerr <<
+              "         -x  INT     maximum read coverage                          [ default: 255 ]"
+              << std::endl;
+    std::cerr <<
+              "         -q  INT     minimum rms mapping quality                    [ default: 25 ]"
+              << std::endl;
+    std::cerr <<
+              "         -s  INT     minimum snp quality                            [ default: 25 ]"
+              << std::endl;
+    std::cerr <<
+              "         -a  INT     minimum map quality                            [ default: 13 ]"
+              << std::endl;
+    std::cerr <<
+              "         -b  INT     minimum base quality                           [ default: 13 ]"
+              << std::endl;
     std::cerr << std::endl;
     exit(EXIT_FAILURE);
 }
-

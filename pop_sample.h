@@ -3,7 +3,7 @@
  *  \author Daniel Garrigan
  *  \version 0.4
  */
- 
+
 #ifndef POP_SAMPLE_H
 #define POP_SAMPLE_H
 
@@ -13,16 +13,16 @@
  */
 typedef struct __bam_sample_t
 {
-	int npops;          //!< Number of populations in the BAM file
-	int b;              //!< Counter for population configuration
-	int n;              //!< Number of samples in the BAM file
-	int m;              //!< Counter for sample configuration
-	char **smpl;        //!< Pointer to array of sample names
-	char **popul;       //!< Pointer to array of population names
-	void *rg2smid;      //!< Pointer to hash for read group to sample id lookup
-	void *sm2popid;     //!< Pointer to hash for sample to population id lookup
-	void *sm2id;        //!< Pointer to hash for sample to identifier lookup
-	void *pop2sm;       //!< Pointer to hash for population to sample lookup
+    int npops;          //!< Number of populations in the BAM file
+    int b;              //!< Counter for population configuration
+    int n;              //!< Number of samples in the BAM file
+    int m;              //!< Counter for sample configuration
+    char **smpl;        //!< Pointer to array of sample names
+    char **popul;       //!< Pointer to array of population names
+    void *rg2smid;      //!< Pointer to hash for read group to sample id lookup
+    void *sm2popid;     //!< Pointer to hash for sample to population id lookup
+    void *sm2id;        //!< Pointer to hash for sample to identifier lookup
+    void *pop2sm;       //!< Pointer to hash for population to sample lookup
 } bam_sample_t;
 
 KHASH_MAP_INIT_STR(sm, int)
@@ -57,7 +57,8 @@ extern int bam_smpl_add(bam_sample_t *sm, const popbamOptions *op);
  * \param str Pointer to the name of the sample
  */
 
-extern int bam_smpl_rg2smid(const bam_sample_t *sm, const char *fn, const char *rg, kstring_t *str);
+extern int bam_smpl_rg2smid(const bam_sample_t *sm, const char *fn,
+                            const char *rg, kstring_t *str);
 
 /*!
  * \fn int bam_smpl_sm2popid(const bam_sample_t *sm, const char *fn, const char *smpl, kstring_t *str)
@@ -67,8 +68,9 @@ extern int bam_smpl_rg2smid(const bam_sample_t *sm, const char *fn, const char *
  * \param smpl Pointer to the name of the sample
  * \param str Pointer to the name of the population
  */
- 
-extern int bam_smpl_sm2popid(const bam_sample_t *sm, const char *fn, const char *smpl, kstring_t *str);
+
+extern int bam_smpl_sm2popid(const bam_sample_t *sm, const char *fn,
+                             const char *smpl, kstring_t *str);
 
 /*!
  * \fn void bam_smpl_destroy(bam_sample_t *sm)
@@ -79,24 +81,26 @@ extern void bam_smpl_destroy(bam_sample_t *sm);
 
 /*!
  * \fn static void add_sample_pair(bam_sample_t *sm, khash_t(sm) *pop2sm, const char *key, const char *val)
- * \brief 
+ * \brief
  * \param sm Pointer to sample data structure
  * \param pop2sm
  * \param key
  * \param val
  */
- 
-extern void add_sample_pair(bam_sample_t *sm, khash_t(sm) *pop2sm, const char *key, const char *val);
+
+extern void add_sample_pair(bam_sample_t *sm, khash_t(sm) *pop2sm,
+                            const char *key, const char *val);
 
 /*!
  * \fn static void add_pop_pair(bam_sample_t *sm, khash_t(sm) *pop2sm, const char *key, const char *val)
- * \brief 
+ * \brief
  * \param sm Pointer to sample data structure
  * \param pop2sm
  * \param key
  * \param val
  */
- 
-extern void add_pop_pair(bam_sample_t *sm, khash_t(sm) *pop2sm, const char *key, const char *val);
+
+extern void add_pop_pair(bam_sample_t *sm, khash_t(sm) *pop2sm, const char *key,
+                         const char *val);
 
 #endif

@@ -61,7 +61,8 @@ extern uint64_t gl2cns(float q[16], uint16_t k);
  * \param max_depth  Maximum read depth per individual for site to be considered
  */
 
-extern uint64_t qualFilter(int num_samples, uint64_t *cb, int min_rmsQ, int min_depth, int max_depth);
+extern uint64_t qualFilter(int num_samples, uint64_t *cb, int min_rmsQ,
+                           int min_depth, int max_depth);
 
 /*!
  * \fn int segbase(int num_samples, uint64_t *cb, char ref, int min_snpq)
@@ -83,7 +84,8 @@ extern int segBase(int num_samples, uint64_t *cb, char ref, int min_snpq);
  * \param min_snpq  The minimum acceptable SNP score to consider a site a variant
  */
 
-extern void cleanHeterozygotes(int num_samples, uint64_t *cb, int ref, int min_snpq);
+extern void cleanHeterozygotes(int num_samples, uint64_t *cb, int ref,
+                               int min_snpq);
 
 /*!
  * \fn static double* logbinomial_table(const int n_size)
@@ -128,7 +130,8 @@ extern void errmod_destroy(errmod_t *em);
  * \param q[i*m+j] Phred-scaled likelihood of (i,j)
  */
 
-extern int errmod_cal(const errmod_t *em, uint16_t n, int m, uint16_t *bases, float *q);
+extern int errmod_cal(const errmod_t *em, uint16_t n, int m, uint16_t *bases,
+                      float *q);
 
 /*!
  * \fn void bam_init_header_hash(bam_header_t *header)
@@ -149,7 +152,8 @@ extern void bam_init_header_hash(bam_header_t *header);
   \return 0 on success; -1 on failure
  */
 
-extern int bam_parse_region(bam_header_t *header, std::string region, int *ref_id, int *beg, int *end);
+extern int bam_parse_region(bam_header_t *header, std::string region,
+                            int *ref_id, int *beg, int *end);
 
 /*!
  * \fn char *get_refid(char *htext)
@@ -247,7 +251,8 @@ template <class T> uint64_t* callBase(T *t, int n, const bam_pileup1_t *pl)
                 {
                     free(buf.s);
                     std::string rogue_rg(bam_aux2Z(s));
-                    msg = "Problem assigning read group " + rogue_rg + " to a sample.\nPlease check BAM header for correct SM and PO tags";
+                    msg = "Problem assigning read group " + rogue_rg +
+                          " to a sample.\nPlease check BAM header for correct SM and PO tags";
                     fatalError(msg);
                 }
             if (depth[si] < t->maxDepth)
@@ -289,9 +294,9 @@ template <class T> uint64_t* callBase(T *t, int n, const bam_pileup1_t *pl)
                                     baseQ = tmp_baseQ;
                                 }
                             if (baseQ < 0)
-                            {
-                              exit (EXIT_FAILURE);
-                            }
+                                {
+                                    exit (EXIT_FAILURE);
+                                }
                             if ((baseQ < t->minBaseQ) || (p[j][i]->b->core.qual < t->minMapQ))
                                 {
                                     continue;
@@ -353,7 +358,8 @@ template <class T> uint64_t* callBase(T *t, int n, const bam_pileup1_t *pl)
  * \param val The input value
  */
 
-extern __inline uint32_t log2int(const uint32_t va)
+extern __inline uint32_t
+log2int(const uint32_t va)
 {
     uint32_t re;
 
@@ -372,7 +378,8 @@ extern __inline uint32_t log2int(const uint32_t va)
  * Returns the number of bits set
  */
 
-inline uint16_t bitcount64(uint64_t x)
+inline uint16_t
+bitcount64(uint64_t x)
 {
     x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
     x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
@@ -389,7 +396,8 @@ inline uint16_t bitcount64(uint64_t x)
  * Returns the number of bits set
  */
 
-inline uint32_t hamming_distance(uint64_t x, uint64_t y)
+inline uint32_t
+hamming_distance(uint64_t x, uint64_t y)
 {
     uint32_t dist = 0;
     uint64_t val = x^y;
@@ -410,7 +418,8 @@ inline uint32_t hamming_distance(uint64_t x, uint64_t y)
  * \return encoded site type
  */
 
-inline uint64_t calculateSiteType(int n, uint64_t *cb)
+inline uint64_t
+calculateSiteType(int n, uint64_t *cb)
 {
     uint64_t site_type = 0;
 

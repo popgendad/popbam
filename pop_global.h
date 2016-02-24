@@ -120,14 +120,14 @@
  */
 typedef struct
 {
-	uint64_t **seq;             //!< binary encoding of haplotype data
-	uint32_t *pos;              //!< reference coordinate for each position
-	uint32_t *idx;              //!< position index of each segregating site
-	uint8_t *ref;               //!< reference allele at each position
-	uint8_t **base;             //!< consensus base at each position in each individual
-	uint16_t **rms;             //!< root mean square mapping score at each position
-	uint16_t **snpq;            //!< SNP quality score at each position
-	uint16_t **num_reads;       //!< number of reads at each position in each individual
+    uint64_t **seq;             //!< binary encoding of haplotype data
+    uint32_t *pos;              //!< reference coordinate for each position
+    uint32_t *idx;              //!< position index of each segregating site
+    uint8_t *ref;               //!< reference allele at each position
+    uint8_t **base;             //!< consensus base at each position in each individual
+    uint16_t **rms;             //!< root mean square mapping score at each position
+    uint16_t **snpq;            //!< SNP quality score at each position
+    uint16_t **num_reads;       //!< number of reads at each position in each individual
 } hData_t;
 
 //

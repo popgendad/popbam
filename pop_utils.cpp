@@ -87,12 +87,12 @@ gl2cns(float q[16], uint16_t k)
     snp_quality = (uint64_t)((min_next - min) + 0.499) << (CHAR_BIT * 4);
     num_reads = (uint64_t)(k) << (CHAR_BIT * 2);
     genotype = (uint64_t)(min_ij) << CHAR_BIT;
-
     return snp_quality + num_reads + genotype;
 }
 
 uint64_t
-qualFilter(int num_samples, uint64_t *cb, int min_rmsQ, int min_depth, int max_depth)
+qualFilter(int num_samples, uint64_t *cb, int min_rmsQ, int min_depth,
+           int max_depth)
 {
     int i = 0;
     uint16_t rms = 0;
@@ -224,7 +224,7 @@ cleanHeterozygotes(int num_samples, uint64_t *cb, int ref, int min_snpq)
         }
 }
 
-double*
+double *
 logbinomial_table(const int n_size)
 {
     int k = 0;
@@ -243,15 +243,15 @@ logbinomial_table(const int n_size)
     return logbinom;
 }
 
-errmod_coef_t*
+errmod_coef_t *
 cal_coef(double depcorr, double eta)
 {
     int k = 0;
     int n = 0;
     int q = 0;
+    double *lC = nullptr;
     long double sum = 0.0;
     long double sum1 = 0.0;
-    double *lC = nullptr;
     errmod_coef_t *ec;
 
     ec = (errmod_coef_t*)calloc(1, sizeof(errmod_coef_t));
@@ -270,7 +270,7 @@ cal_coef(double depcorr, double eta)
     lC = logbinomial_table(256);
     for (q = 1; q < 64; ++q)
         {
-            double e = pow(10.0, -q/10.0);
+            double e = pow(10.0, -q / 10.0);
             double le = log(e);
             double le1 = log(1.0 - e);
             for (n = 1; n <= 255; ++n)
@@ -299,7 +299,7 @@ cal_coef(double depcorr, double eta)
     return ec;
 }
 
-errmod_t*
+errmod_t *
 errmod_init(float depcorr)
 {
     errmod_t *em;
@@ -328,11 +328,11 @@ errmod_destroy(errmod_t *em)
 int
 errmod_cal(const errmod_t *em, uint16_t n, int m, uint16_t *bases, float *q)
 {
-    call_aux_t aux;
     int i = 0;
     int j = 0;
     int k = 0;
     int w[32];
+    call_aux_t aux;
 
     memset(q, 0, SQ(m) * sizeof(float));
     if (n == 0)
@@ -363,7 +363,8 @@ errmod_cal(const errmod_t *em, uint16_t n, int m, uint16_t *bases, float *q)
             int basestrand = b & 0x1f;
             int base = b & 0xf;
             aux.fsum[base] += em->coef->fk[w[basestrand]];
-            aux.bsum[base] += em->coef->fk[w[basestrand]] * em->coef->beta[qlty << 16 | n << 8 | aux.c[base]];
+            aux.bsum[base] += em->coef->fk[w[basestrand]] * em->coef->beta[qlty << 16 | 
+                              n << 8 | aux.c[base]];
             ++aux.c[base];
             ++w[basestrand];
         }
@@ -371,9 +372,9 @@ errmod_cal(const errmod_t *em, uint16_t n, int m, uint16_t *bases, float *q)
     // generate likelihood
     for (j = 0; j < m; ++j)
         {
+            int tmp2 = 0;
             float tmp1 = 0.0;
             float tmp3 = 0.0;
-            int tmp2 = 0;
 
             // homozygous
             for (k = 0, tmp1 = tmp3 = 0.0, tmp2 = 0; k < m; ++k)
@@ -388,7 +389,7 @@ errmod_cal(const errmod_t *em, uint16_t n, int m, uint16_t *bases, float *q)
                 }
             if (tmp2)
                 {
-                    q[j*m+j] = tmp1;
+                    q[j * m + j] = tmp1;
                 }
             // heterozygous
             for (k = j + 1; k < m; ++k)
@@ -406,20 +407,20 @@ errmod_cal(const errmod_t *em, uint16_t n, int m, uint16_t *bases, float *q)
                         }
                     if (tmp2)
                         {
-                            q[j*m+k] = q[k*m+j] = -4.343 * em->coef->lhet[cjk << 8 | aux.c[k]] + tmp1;
+                            q[j * m + k] = q[k * m + j] = -4.343 * em->coef->lhet[cjk << 8 | aux.c[k]] + tmp1;
                         }
                     // all the bases are either j or k
                     else
                         {
-                            q[j*m+k] = q[k*m+j] = -4.343 * em->coef->lhet[cjk << 8 | aux.c[k]];
+                            q[j * m + k] = q[k * m + j] = -4.343 * em->coef->lhet[cjk << 8 | aux.c[k]];
                         }
                 }
 
             for (k = 0; k < m; ++k)
                 {
-                    if (q[j*m+k] < 0.0)
+                    if (q[j * m + k] < 0.0)
                         {
-                            q[j*m+k] = 0.0;
+                            q[j * m + k] = 0.0;
                         }
                 }
         }
@@ -447,7 +448,8 @@ bam_init_header_hash(bam_header_t *header)
 }
 
 int
-bam_parse_region(bam_header_t *header, std::string region, int *ref_id, int *beg, int *end)
+bam_parse_region(bam_header_t *header, std::string region, int *ref_id,
+                 int *beg, int *end)
 {
     std::size_t l = 0;
     std::size_t name_end = 0;
@@ -498,7 +500,8 @@ bam_parse_region(bam_header_t *header, std::string region, int *ref_id, int *beg
                     iter = kh_get(s, h, region.c_str());
                     if (iter == kh_end(h))
                         {
-                            std::cerr << "Cannot find sequence name " << region << " in header" << std::endl;
+                            std::cerr << "Cannot find sequence name " << region << " in header" <<
+                                      std::endl;
                             return -1;
                         }
                 }
@@ -535,14 +538,14 @@ bam_parse_region(bam_header_t *header, std::string region, int *ref_id, int *beg
     return *beg <= *end ? 0 : -1;
 }
 
-char*
+char *
 get_refid(char *htext)
 {
+    int z = 0;
+    const int idblock = 200;
     char *u = nullptr;
     char *v = nullptr;
     char *w = nullptr;
-    const int idblock = 200;
-    int z = 0;
     char *refid = nullptr;
 
     u = htext;
@@ -591,4 +594,3 @@ fatalError(const std::string msg)
     std::cerr << msg << std::endl;
     exit(EXIT_FAILURE);
 }
-

@@ -89,7 +89,8 @@ mainDiverge(int argc, char *argv[])
         }
 
     // fetch reference sequence
-    t.ref_base = faidx_fetch_seq(p.fai_file, p.h->target_name[chr], 0, 0x7fffffff, &(t.len));
+    t.ref_base = faidx_fetch_seq(p.fai_file, p.h->target_name[chr], 0, 0x7fffffff,
+                                 &(t.len));
 
     // calculate the number of windows
     if (p.flag & BAM_WINDOW)
@@ -109,7 +110,8 @@ mainDiverge(int argc, char *argv[])
             std::string scaffold_name(p.h->target_name[chr]);
             std::ostringstream winc(scaffold_name);
             winc.seekp(0, std::ios::end);
-            winc << ':' << beg + (j * p.winSize) + 1 << '-' << ((j + 1) * p.winSize) + (beg - 1);
+            winc << ':' << beg + (j * p.winSize) + 1 << '-' << ((j + 1) * p.winSize) +
+                 (beg - 1);
             std::string winCoord = winc.str();
 
             // initialize number of sites to zero
@@ -153,7 +155,8 @@ mainDiverge(int argc, char *argv[])
             // fetch region from bam file
             if ((bam_fetch(p.bam_in->x.bam, p.idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
                 {
-                    msg = "Failed to retrieve region " + p.region + " due to corrupted BAM index file";
+                    msg = "Failed to retrieve region " + p.region +
+                          " due to corrupted BAM index file";
                     fatalError(msg);
                 }
 
@@ -177,7 +180,8 @@ mainDiverge(int argc, char *argv[])
 }
 
 int
-makeDiverge(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data)
+makeDiverge(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl,
+            void *data)
 {
     int i = 0;
     int fq = 0;
@@ -225,9 +229,12 @@ makeDiverge(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *da
                                     t->hap.rms[i][t->segsites] = (cb[i] >> (CHAR_BIT * 6)) & 0xffff;
                                     t->hap.snpq[i][t->segsites] = (cb[i] >> (CHAR_BIT * 4)) & 0xffff;
                                     t->hap.num_reads[i][t->segsites] = (cb[i] >> (CHAR_BIT * 2)) & 0xffff;
-                                    t->hap.base[i][t->segsites] = bam_nt16_table[(int)iupac[(cb[i] >> CHAR_BIT) & 0xff]];
+                                    t->hap.base[i][t->segsites] = bam_nt16_table[(int)iupac[(cb[i] >> CHAR_BIT) &
+                                                                  0xff]];
                                     if (cb[i] & 0x2ULL)
-                                        t->hap.seq[i][t->segsites/64] |= 0x1ULL << t->segsites % 64;
+                                        {
+                                            t->hap.seq[i][t->segsites/64] |= 0x1ULL << t->segsites % 64;
+                                        }
                                 }
                             t->hap.idx[t->segsites] = t->num_sites;
                             t->segsites++;
@@ -427,7 +434,8 @@ divergeData::printDiverge(const std::string scaffold)
                             if (dist == "pdist")
                                 {
                                     out << "\td[" << sm->smpl[i] << "]:";
-                                    out << '\t' << std::fixed << std::setprecision(5) << (double)(ind_div[i]) / num_sites;
+                                    out << '\t' << std::fixed << std::setprecision(5) << (double)(
+                                            ind_div[i]) / num_sites;
                                 }
                             else if (dist == "jc")
                                 {
@@ -459,11 +467,13 @@ divergeData::printDiverge(const std::string scaffold)
                                 {
                                     if (flag & BAM_SUBSTITUTE)
                                         {
-                                            out << '\t' << std::fixed << std::setprecision(5) << (double)(pop_div[i]) / num_sites;
+                                            out << '\t' << std::fixed << std::setprecision(5) << (double)(
+                                                    pop_div[i]) / num_sites;
                                         }
                                     else
                                         {
-                                            out << '\t' << std::fixed << std::setprecision(5) << (double)(pop_div[i] + num_snps[i]) / num_sites;
+                                            out << '\t' << std::fixed << std::setprecision(5) << (double)(
+                                                    pop_div[i] + num_snps[i]) / num_sites;
                                         }
                                 }
                             else if (dist == "jc")
@@ -519,26 +529,55 @@ usageDiverge(const std::string msg)
     std::cerr << msg << std::endl << std::endl;
     std::cerr << "Usage:   popbam diverge [options] <in.bam> [region]" << std::endl;
     std::cerr << std::endl;
-    std::cerr << "Options: -i          base qualities are Illumina 1.3+     [ default: Sanger ]" << std::endl;
-    std::cerr << "         -h  FILE    Input header file                    [ default: none ]" << std::endl;
-    std::cerr << "         -d  STR     distance metric (pdist or jc)        [ default: pdist ]" << std::endl;
-    std::cerr << "         -o  INT     analysis option                      [ default: 0 ]" << std::endl;
-    std::cerr << "                     0 : output individual divergence" << std::endl;
-    std::cerr << "                     1 : population divergence statistics" << std::endl;
-    std::cerr << "         -p  STR     sample name of outgroup              [ default: reference ]" << std::endl;
-    std::cerr << "         -w  INT     use sliding window of size (kb)" << std::endl;
-    std::cerr << "         -k  INT     minimum number of sites in window    [ default: 10 ]" << std::endl;
-    std::cerr << "         -n  INT     minimum sample size per population   [ default: all samples present ]" << std::endl;
+    std::cerr <<
+              "Options: -i          base qualities are Illumina 1.3+     [ default: Sanger ]"
+              << std::endl;
+    std::cerr <<
+              "         -h  FILE    Input header file                    [ default: none ]" <<
+              std::endl;
+    std::cerr <<
+              "         -d  STR     distance metric (pdist or jc)        [ default: pdist ]"
+              << std::endl;
+    std::cerr <<
+              "         -o  INT     analysis option                      [ default: 0 ]" <<
+              std::endl;
+    std::cerr << "                     0 : output individual divergence" <<
+              std::endl;
+    std::cerr << "                     1 : population divergence statistics" <<
+              std::endl;
+    std::cerr <<
+              "         -p  STR     sample name of outgroup              [ default: reference ]"
+              << std::endl;
+    std::cerr << "         -w  INT     use sliding window of size (kb)" <<
+              std::endl;
+    std::cerr <<
+              "         -k  INT     minimum number of sites in window    [ default: 10 ]" <<
+              std::endl;
+    std::cerr <<
+              "         -n  INT     minimum sample size per population   [ default: all samples present ]"
+              << std::endl;
     std::cerr << "         -t          only count substitutions" << std::endl;
-    std::cerr << "         -e          exclude singleton polymorphisms" << std::endl;
+    std::cerr << "         -e          exclude singleton polymorphisms" <<
+              std::endl;
     std::cerr << "         -f  FILE    Reference fastA file" << std::endl;
-    std::cerr << "         -m  INT     minimum read coverage                [ default: 3 ]" << std::endl;
-    std::cerr << "         -x  INT     maximum read coverage                [ default: 255 ]" << std::endl;
-    std::cerr << "         -q  INT     minimum rms mapping quality          [ default: 25 ]" << std::endl;
-    std::cerr << "         -s  INT     minimum snp quality                  [ default: 25 ]" << std::endl;
-    std::cerr << "         -a  INT     minimum map quality                  [ default: 13 ]" << std::endl;
-    std::cerr << "         -b  INT     minimum base quality                 [ default: 13 ]" << std::endl;
+    std::cerr <<
+              "         -m  INT     minimum read coverage                [ default: 3 ]" <<
+              std::endl;
+    std::cerr <<
+              "         -x  INT     maximum read coverage                [ default: 255 ]" <<
+              std::endl;
+    std::cerr <<
+              "         -q  INT     minimum rms mapping quality          [ default: 25 ]" <<
+              std::endl;
+    std::cerr <<
+              "         -s  INT     minimum snp quality                  [ default: 25 ]" <<
+              std::endl;
+    std::cerr <<
+              "         -a  INT     minimum map quality                  [ default: 13 ]" <<
+              std::endl;
+    std::cerr <<
+              "         -b  INT     minimum base quality                 [ default: 13 ]" <<
+              std::endl;
     std::cerr << std::endl;
     exit(EXIT_FAILURE);
 }
-

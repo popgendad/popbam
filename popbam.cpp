@@ -110,7 +110,8 @@ popbamData::assignPops(const popbamOptions *p)
                 {
                     std::string msg;
                     std::string missing_sample(sm->smpl[i]);
-                    msg = "Sample " + missing_sample + " not assigned to a population.\nPlease check BAM header file definitions";
+                    msg = "Sample " + missing_sample +
+                          " not assigned to a population.\nPlease check BAM header file definitions";
                     fatalError (msg);
                 }
             pop_mask[si] |= 0x1ULL << i;
@@ -124,17 +125,25 @@ popbam_usage(void)
 {
     std::cerr << std::endl;
     std::cerr << "Program: popbam " << std::endl;
-    std::cerr << "(Tools to perform evolutionary analysis from BAM files)" << std::endl;
+    std::cerr << "(Tools to perform evolutionary analysis from BAM files)" <<
+              std::endl;
     std::cerr << "Version: " << POPBAM_RELEASE << std::endl;
-    std::cerr << "Usage: popbam <command> [options] <in.bam> [region]"  << std::endl << std::endl;
+    std::cerr << "Usage: popbam <command> [options] <in.bam> [region]"  << std::endl
+              << std::endl;
     std::cerr << "Commands:  snp       output consensus base calls" << std::endl;
-    std::cerr << "           fasta     output alignment as multi-fasta file" << std::endl;
-    std::cerr << "           haplo     output haplotype-based analyses" << std::endl;
-    std::cerr << "           diverge   output divergence from reference" << std::endl;
+    std::cerr << "           fasta     output alignment as multi-fasta file" <<
+              std::endl;
+    std::cerr << "           haplo     output haplotype-based analyses" <<
+              std::endl;
+    std::cerr << "           diverge   output divergence from reference" <<
+              std::endl;
     std::cerr << "           tree      output neighbor-joining trees" << std::endl;
-    std::cerr << "           nucdiv    output nucleotide diversity statistics" << std::endl;
-    std::cerr << "           ld        output linkage disequilibrium analysis" << std::endl;
-    std::cerr << "           sfs       output site frequency spectrum analysis" << std::endl;
+    std::cerr << "           nucdiv    output nucleotide diversity statistics" <<
+              std::endl;
+    std::cerr << "           ld        output linkage disequilibrium analysis" <<
+              std::endl;
+    std::cerr << "           sfs       output site frequency spectrum analysis" <<
+              std::endl;
     std::cerr << std::endl;
     return 1;
 }

@@ -35,7 +35,8 @@ mainTree(int argc, char *argv[])
     int ref = 0;                  //! ref
     long nWindows = 1;            //! number of windows
     std::string msg;              //! string for error message
-    bam_sample_t *sm = nullptr;   //! Pointer to the sample information for the input BAM file
+    bam_sample_t *sm =
+        nullptr;   //! Pointer to the sample information for the input BAM file
     bam_plbuf_t *buf = nullptr;   //! pileup buffer
 
     // initialize user command line options
@@ -75,7 +76,8 @@ mainTree(int argc, char *argv[])
         }
 
     // fetch reference sequence
-    t.ref_base = faidx_fetch_seq(p.fai_file, p.h->target_name[chr], 0, 0x7fffffff, &(t.len));
+    t.ref_base = faidx_fetch_seq(p.fai_file, p.h->target_name[chr], 0, 0x7fffffff,
+                                 &(t.len));
 
     // calculate the number of windows
     if (p.flag & BAM_WINDOW)
@@ -96,7 +98,8 @@ mainTree(int argc, char *argv[])
             std::ostringstream winc(scaffold_name);
 
             winc.seekp(0, std::ios::end);
-            winc << ':' << beg + (j * p.winSize) + 1 << '-' << ((j + 1) * p.winSize) + (beg - 1);
+            winc << ':' << beg + (j * p.winSize) + 1 << '-' << ((j + 1) * p.winSize) +
+                 (beg - 1);
             std::string winCoord = winc.str();
 
             // initialize number of sites to zero
@@ -136,7 +139,8 @@ mainTree(int argc, char *argv[])
             // fetch region from bam file
             if ((bam_fetch(p.bam_in->x.bam, p.idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
                 {
-                    msg = "Failed to retrieve region " + p.region + " due to corrupted BAM index file";
+                    msg = "Failed to retrieve region " + p.region +
+                          " due to corrupted BAM index file";
                     fatalError(msg);
                 }
 
@@ -213,11 +217,12 @@ makeTree(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data)
                                 {
                                     t->hap.rms[i][t->segsites] = (cb[i] >> (CHAR_BIT * 6)) & 0xffff;
                                     t->hap.snpq[i][t->segsites] = (cb[i] >> (CHAR_BIT * 4)) & 0xffff;
-                                    t->hap.num_reads[i][t->segsites] = (cb[i]>>(CHAR_BIT * 2)) & 0xffff;
-                                    t->hap.base[i][t->segsites] = bam_nt16_table[(int)iupac[(cb[i] >> CHAR_BIT) & 0xff]];
+                                    t->hap.num_reads[i][t->segsites] = (cb[i] >> (CHAR_BIT * 2)) & 0xffff;
+                                    t->hap.base[i][t->segsites] = bam_nt16_table[(int)iupac[(cb[i] >> CHAR_BIT) &
+                                                                  0xff]];
                                     if (cb[i] & 0x2ULL)
                                         {
-                                            t->hap.seq[i][t->segsites/64] |= 0x1ULL << t->segsites % 64;
+                                            t->hap.seq[i][t->segsites / 64] |= 0x1ULL << t->segsites % 64;
                                         }
                                 }
                             t->hap.idx[t->segsites] = t->num_sites;
@@ -241,7 +246,8 @@ treeData::makeNJ(const std::string scaffold)
 
     if ((num_sites < minSites) || (segsites < 1))
         {
-            std::cout << scaffold << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites;
+            std::cout << scaffold << '\t' << beg + 1 << '\t' << end + 1 << '\t' <<
+                      num_sites;
             std::cout << "\tNA" << std::endl;
             return 0;
         }
@@ -260,8 +266,8 @@ treeData::makeNJ(const std::string scaffold)
         }
     initTree(&curtree.nodep);
     node *p = nullptr;
-    p = curtree.nodep[2*ntaxa-2]->next;
-    curtree.nodep[2*ntaxa-2]->next = curtree.nodep[2*ntaxa-2];
+    p = curtree.nodep[2 * ntaxa - 2]->next;
+    curtree.nodep[2 * ntaxa - 2]->next = curtree.nodep[2 * ntaxa - 2];
     free(p->next);
     free(p);
     setupTree(&curtree);
@@ -271,7 +277,8 @@ treeData::makeNJ(const std::string scaffold)
         }
     joinTree(curtree, cluster);
     curtree.start = curtree.nodep[0]->back;
-    std::cout << scaffold << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites << '\t';
+    std::cout << scaffold << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites
+              << '\t';
     printTree(curtree.start, curtree.start);
     freeTree(&curtree.nodep);
     delete [] cluster;
@@ -323,7 +330,7 @@ treeData::joinTree(tree curtree, node **cluster)
         {
             std::cerr << "bad_alloc caught: " << ba.what() << std::endl;
         }
-    for (i = 0; i < ntaxa-1; i++)
+    for (i = 0; i < ntaxa - 1; i++)
         {
             for (j = i + 1; j < ntaxa; j++)
                 {
@@ -350,7 +357,7 @@ treeData::joinTree(tree curtree, node **cluster)
                 {
                     for (i = 0; i <= j - 2; i++)
                         {
-                            x[j-1][i] = x[i][j-1];
+                            x[j - 1][i] = x[i][j - 1];
                         }
                 }
             tmin = DBL_MAX;
@@ -362,16 +369,16 @@ treeData::joinTree(tree curtree, node **cluster)
                 }
             for (ja = 2; ja <= ntaxa; ja++)
                 {
-                    jj = enterorder[ja-1];
-                    if (cluster[jj-1] != 0)
+                    jj = enterorder[ja - 1];
+                    if (cluster[jj - 1] != 0)
                         {
                             for (ia = 0; ia <= ja - 2; ia++)
                                 {
                                     ii = enterorder[ia];
-                                    if (cluster[ii-1] != 0)
+                                    if (cluster[ii - 1] != 0)
                                         {
-                                            R[ii-1] += x[ii-1][jj-1];
-                                            R[jj-1] += x[ii-1][jj-1];
+                                            R[ii - 1] += x[ii - 1][jj - 1];
+                                            R[jj - 1] += x[ii - 1][jj - 1];
                                         }
                                 }
                         }
@@ -379,15 +386,15 @@ treeData::joinTree(tree curtree, node **cluster)
 
             for (ja = 2; ja <= ntaxa; ja++)
                 {
-                    jj = enterorder[ja-1];
-                    if (cluster[jj-1] != 0)
+                    jj = enterorder[ja - 1];
+                    if (cluster[jj - 1] != 0)
                         {
                             for (ia = 0; ia <= ja - 2; ia++)
                                 {
                                     ii = enterorder[ia];
-                                    if (cluster[ii-1] != 0)
+                                    if (cluster[ii - 1] != 0)
                                         {
-                                            total = fotu2 * x[ii-1][jj-1] - R[ii-1] - R[jj-1];
+                                            total = fotu2 * x[ii - 1][jj - 1] - R[ii - 1] - R[jj - 1];
                                         }
                                     if (total < tmin)
                                         {
@@ -402,26 +409,26 @@ treeData::joinTree(tree curtree, node **cluster)
             djo = 0.0;
             for (i = 0; i < ntaxa; i++)
                 {
-                    dio += x[i][mini-1];
-                    djo += x[i][minj-1];
+                    dio += x[i][mini - 1];
+                    djo += x[i][minj - 1];
                 }
-            dmin = x[mini-1][minj-1];
+            dmin = x[mini - 1][minj - 1];
             dio = (dio - dmin) / fotu2;
             djo = (djo - dmin) / fotu2;
             bi = (dmin + dio - djo) * 0.5;
             bj = dmin - bi;
-            bi -= av[mini-1];
-            bj -= av[minj-1];
-            hookup(curtree.nodep[nextnode-1]->next, cluster[mini-1]);
-            hookup(curtree.nodep[nextnode-1]->next->next, cluster[minj-1]);
-            cluster[mini-1]->v = bi;
-            cluster[minj-1]->v = bj;
-            cluster[mini-1]->back->v = bi;
-            cluster[minj-1]->back->v = bj;
-            cluster[mini-1] = curtree.nodep[nextnode-1];
-            cluster[minj-1] = 0;
+            bi -= av[mini - 1];
+            bj -= av[minj - 1];
+            hookup(curtree.nodep[nextnode-1]->next, cluster[mini - 1]);
+            hookup(curtree.nodep[nextnode-1]->next->next, cluster[minj - 1]);
+            cluster[mini - 1]->v = bi;
+            cluster[minj - 1]->v = bj;
+            cluster[mini - 1]->back->v = bi;
+            cluster[minj - 1]->back->v = bj;
+            cluster[mini - 1] = curtree.nodep[nextnode - 1];
+            cluster[minj - 1] = 0;
             nextnode++;
-            av[mini-1] = dmin * 0.5;
+            av[mini - 1] = dmin * 0.5;
 
             // re-initialization
             fotu2 -= 1.0;
@@ -429,51 +436,51 @@ treeData::joinTree(tree curtree, node **cluster)
                 {
                     if (cluster[j] != 0)
                         {
-                            da = (x[mini-1][j] + x[minj-1][j]) * 0.5;
+                            da = (x[mini - 1][j] + x[minj - 1][j]) * 0.5;
                             if ((mini - j - 1) < 0)
                                 {
-                                    x[mini-1][j] = da;
+                                    x[mini - 1][j] = da;
                                 }
                             if ((mini - j - 1) > 0)
                                 {
-                                    x[j][mini-1] = da;
+                                    x[j][mini - 1] = da;
                                 }
                         }
                 }
             for (j = 0; j < ntaxa; j++)
                 {
-                    x[minj-1][j] = 0.0;
-                    x[j][minj-1] = 0.0;
+                    x[minj - 1][j] = 0.0;
+                    x[j][minj - 1] = 0.0;
                 }
-            oc[mini-1] += oc[minj-1];
+            oc[mini - 1] += oc[minj - 1];
         }
 
     // the last cycle
     nude = 1;
     for (i = 1; i <= ntaxa; i++)
         {
-            if (cluster[i-1] != 0)
+            if (cluster[i - 1] != 0)
                 {
-                    el[nude-1] = i;
+                    el[nude - 1] = i;
                     nude++;
                 }
         }
-    bi = (x[el[0]-1][el[1]-1] + x[el[0]-1][el[2]-1] - x[el[1]-1][el[2]-1]) * 0.5;
-    bj = x[el[0]-1][el[1]-1] - bi;
-    bk = x[el[0]-1][el[2]-1] - bi;
-    bi -= av[el[0]-1];
-    bj -= av[el[1]-1];
-    bk -= av[el[2]-1];
-    hookup(curtree.nodep[nextnode-1], cluster[el[0]-1]);
-    hookup(curtree.nodep[nextnode-1]->next, cluster[el[1]-1]);
-    hookup(curtree.nodep[nextnode-1]->next->next, cluster[el[2]-1]);
+    bi = (x[el[0] - 1][el[1] - 1] + x[el[0] - 1][el[2] - 1] - x[el[1] - 1][el[2] - 1]) * 0.5;
+    bj = x[el[0] - 1][el[1] - 1] - bi;
+    bk = x[el[0] - 1][el[2] - 1] - bi;
+    bi -= av[el[0] - 1];
+    bj -= av[el[1] - 1];
+    bk -= av[el[2] - 1];
+    hookup(curtree.nodep[nextnode-1], cluster[el[0] - 1]);
+    hookup(curtree.nodep[nextnode-1]->next, cluster[el[1] - 1]);
+    hookup(curtree.nodep[nextnode-1]->next->next, cluster[el[2] - 1]);
     cluster[el[0]-1]->v = bi;
     cluster[el[1]-1]->v = bj;
     cluster[el[2]-1]->v = bk;
     cluster[el[0]-1]->back->v = bi;
     cluster[el[1]-1]->back->v = bj;
     cluster[el[2]-1]->back->v = bk;
-    curtree.start = cluster[el[0]-1]->back;
+    curtree.start = cluster[el[0] - 1]->back;
 
     // take out the garbage
     delete [] av;
@@ -565,9 +572,10 @@ calcDiffMatrix(treeData *t)
                 {
                     for (k = 0; k <= SEG_IDX(segs); k++)
                         {
-                            t->diff_matrix[j+1][i+1] += hamming_distance(t->hap.seq[i][k], t->hap.seq[j][k]);
+                            t->diff_matrix[j + 1][i + 1] += hamming_distance(t->hap.seq[i][k],
+                                                        t->hap.seq[j][k]);
                         }
-                    t->diff_matrix[i+1][j+1] = t->diff_matrix[j+1][i+1];
+                    t->diff_matrix[i + 1][j + 1] = t->diff_matrix[j + 1][i + 1];
                 }
         }
 }
@@ -632,14 +640,14 @@ void treeData::setupTree(tree *curtree)
 
     for (i = 1; i <= nnodes; i++)
         {
-            curtree->nodep[i-1]->back = 0;
-            curtree->nodep[i-1]->tip = (i <= ntaxa);
-            curtree->nodep[i-1]->index = i;
-            curtree->nodep[i-1]->v = 0.0;
+            curtree->nodep[i - 1]->back = 0;
+            curtree->nodep[i - 1]->tip = (i <= ntaxa);
+            curtree->nodep[i - 1]->index = i;
+            curtree->nodep[i - 1]->v = 0.0;
             if (i > ntaxa)
                 {
-                    p = curtree->nodep[i-1]->next;
-                    while (p != curtree->nodep[i-1])
+                    p = curtree->nodep[i - 1]->next;
+                    while (p != curtree->nodep[i - 1])
                         {
                             p->back = 0;
                             p->tip = 0;
@@ -782,19 +790,39 @@ usageTree(const std::string msg)
     std::cerr << msg << std::endl << std::endl;
     std::cerr << "Usage:   popbam tree [options] <in.bam> [region]" << std::endl;
     std::cerr << std::endl;
-    std::cerr << "Options: -i          base qualities are Illumina 1.3+     [ default: Sanger ]" << std::endl;
-    std::cerr << "         -h  FILE    Input header file                    [ default: none ]" << std::endl;
-    std::cerr << "         -d  STR     distance (pdist or jc)               [ default: pdist ]" << std::endl;
-    std::cerr << "         -w  INT     use sliding window of size (kb)" << std::endl;
-    std::cerr << "         -k  INT     minimum number of sites in window    [ default: 10 ]" << std::endl;
+    std::cerr <<
+              "Options: -i          base qualities are Illumina 1.3+     [ default: Sanger ]"
+              << std::endl;
+    std::cerr <<
+              "         -h  FILE    Input header file                    [ default: none ]" <<
+              std::endl;
+    std::cerr <<
+              "         -d  STR     distance (pdist or jc)               [ default: pdist ]"
+              << std::endl;
+    std::cerr << "         -w  INT     use sliding window of size (kb)" <<
+              std::endl;
+    std::cerr <<
+              "         -k  INT     minimum number of sites in window    [ default: 10 ]" <<
+              std::endl;
     std::cerr << "         -f  FILE    Reference fastA file" << std::endl;
-    std::cerr << "         -m  INT     minimum read coverage                [ default: 3 ]" << std::endl;
-    std::cerr << "         -x  INT     maximum read coverage                [ default: 255 ]" << std::endl;
-    std::cerr << "         -q  INT     minimum rms mapping quality          [ default: 25 ]" << std::endl;
-    std::cerr << "         -s  INT     minimum snp quality                  [ default: 25 ]" << std::endl;
-    std::cerr << "         -a  INT     minimum map quality                  [ default: 13 ]" << std::endl;
-    std::cerr << "         -b  INT     minimum base quality                 [ default: 13 ]" << std::endl;
+    std::cerr <<
+              "         -m  INT     minimum read coverage                [ default: 3 ]" <<
+              std::endl;
+    std::cerr <<
+              "         -x  INT     maximum read coverage                [ default: 255 ]" <<
+              std::endl;
+    std::cerr <<
+              "         -q  INT     minimum rms mapping quality          [ default: 25 ]" <<
+              std::endl;
+    std::cerr <<
+              "         -s  INT     minimum snp quality                  [ default: 25 ]" <<
+              std::endl;
+    std::cerr <<
+              "         -a  INT     minimum map quality                  [ default: 13 ]" <<
+              std::endl;
+    std::cerr <<
+              "         -b  INT     minimum base quality                 [ default: 13 ]" <<
+              std::endl;
     std::cerr << std::endl;
     exit(EXIT_FAILURE);
 }
-

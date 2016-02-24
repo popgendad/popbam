@@ -71,7 +71,8 @@ mainLD(int argc, char *argv[])
         }
 
     // fetch reference sequence
-    t.ref_base = faidx_fetch_seq(p.fai_file, p.h->target_name[chr], 0, 0x7fffffff, &(t.len));
+    t.ref_base = faidx_fetch_seq(p.fai_file, p.h->target_name[chr], 0, 0x7fffffff,
+                                 &(t.len));
 
     // calculate the number of windows
     if (p.flag & BAM_WINDOW)
@@ -92,7 +93,8 @@ mainLD(int argc, char *argv[])
             std::string scaffold_name(p.h->target_name[chr]);
             std::ostringstream winc(scaffold_name);
             winc.seekp(0, std::ios::end);
-            winc << ':' << beg + (i * p.winSize) + 1 << '-' << ((i + 1) * p.winSize) + (beg - 1);
+            winc << ':' << beg + (i * p.winSize) + 1 << '-' << ((i + 1) * p.winSize) +
+                 (beg - 1);
             std::string winCoord = winc.str();
 
             // initialize number of sites to zero
@@ -132,7 +134,8 @@ mainLD(int argc, char *argv[])
             // fetch region from bam file
             if ((bam_fetch(p.bam_in->x.bam, p.idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
                 {
-                    msg = "Failed to retrieve region " + p.region + " due to corrupted BAM index file";
+                    msg = "Failed to retrieve region " + p.region +
+                          " due to corrupted BAM index file";
                     fatalError(msg);
                 }
 
@@ -148,7 +151,7 @@ mainLD(int argc, char *argv[])
 
             // take out the garbage
             bam_plbuf_destroy(buf);
-        } 	// end of window interation
+        }   // end of window interation
 
     errmod_destroy(t.em);
     samclose(p.bam_in);
@@ -311,7 +314,9 @@ ldData::calcOmegamax(void)
                 {
                     r2 = new double* [segsites];
                     for (i = 0; i < segsites; i++)
-                        r2[i] = new double [segsites]();
+                        {
+                            r2[i] = new double [segsites]();
+                        }
                 }
             catch (std::bad_alloc& ba)
                 {
@@ -346,7 +351,8 @@ ldData::calcOmegamax(void)
 
                                             // calculate r2
                                             x11 = bitcount64(type0 & type1);
-                                            r2[count1][count2] = SQ(x0 * x1 - n * x11) / (double)((n - x0) * x0 * (n - x1) * x1);
+                                            r2[count1][count2] = SQ(x0 * x1 - n * x11) / (double)((n - x0) * x0 *
+                                                                 (n - x1) * x1);
                                             r2[count2][count1] = r2[count1][count2];
                                         }
                                 }
@@ -673,24 +679,49 @@ usageLD(const std::string msg)
     std::cerr << msg << std::endl << std::endl;
     std::cerr << "Usage:   popbam ld [options] <in.bam> [region]" << std::endl;
     std::cerr << std::endl;
-    std::cerr << "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]" << std::endl;
-    std::cerr << "         -h  FILE    Input header file                              [ default: none ]" << std::endl;
-    std::cerr << "         -e          exclude singletons from LD calculations        [ default: include singletons ]" << std::endl;
-    std::cerr << "         -o  INT     analysis option                                [ default: 0 ]" << std::endl;
+    std::cerr <<
+              "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]"
+              << std::endl;
+    std::cerr <<
+              "         -h  FILE    Input header file                              [ default: none ]"
+              << std::endl;
+    std::cerr <<
+              "         -e          exclude singletons from LD calculations        [ default: include singletons ]"
+              << std::endl;
+    std::cerr <<
+              "         -o  INT     analysis option                                [ default: 0 ]"
+              << std::endl;
     std::cerr << "                     0 : Kelly's ZnS statistic" << std::endl;
     std::cerr << "                     1 : Omega max" << std::endl;
-    std::cerr << "                     2 : Wall's B and Q congruency statistics" << std::endl;
-    std::cerr << "         -w  INT     use sliding window of size (kb)" << std::endl;
-    std::cerr << "         -k  FLT     minimum proportion of aligned sites in window  [ default: 0.5 ]" << std::endl;
+    std::cerr << "                     2 : Wall's B and Q congruency statistics" <<
+              std::endl;
+    std::cerr << "         -w  INT     use sliding window of size (kb)" <<
+              std::endl;
+    std::cerr <<
+              "         -k  FLT     minimum proportion of aligned sites in window  [ default: 0.5 ]"
+              << std::endl;
     std::cerr << "         -f  FILE    reference fastA file" << std::endl;
-    std::cerr << "         -n  INT     mimimum number of snps to consider window      [ default: 10 ]" << std::endl;
-    std::cerr << "         -m  INT     minimum read coverage                          [ default: 3 ]" << std::endl;
-    std::cerr << "         -x  INT     maximum read coverage                          [ default: 255 ]" << std::endl;
-    std::cerr << "         -q  INT     minimum rms mapping quality                    [ default: 25 ]" << std::endl;
-    std::cerr << "         -s  INT     minimum snp quality                            [ default: 25 ]" << std::endl;
-    std::cerr << "         -a  INT     minimum map quality                            [ default: 13 ]" << std::endl;
-    std::cerr << "         -b  INT     minimum base quality                           [ default: 13 ]" << std::endl;
+    std::cerr <<
+              "         -n  INT     mimimum number of snps to consider window      [ default: 10 ]"
+              << std::endl;
+    std::cerr <<
+              "         -m  INT     minimum read coverage                          [ default: 3 ]"
+              << std::endl;
+    std::cerr <<
+              "         -x  INT     maximum read coverage                          [ default: 255 ]"
+              << std::endl;
+    std::cerr <<
+              "         -q  INT     minimum rms mapping quality                    [ default: 25 ]"
+              << std::endl;
+    std::cerr <<
+              "         -s  INT     minimum snp quality                            [ default: 25 ]"
+              << std::endl;
+    std::cerr <<
+              "         -a  INT     minimum map quality                            [ default: 13 ]"
+              << std::endl;
+    std::cerr <<
+              "         -b  INT     minimum base quality                           [ default: 13 ]"
+              << std::endl;
     std::cerr << std::endl;
     exit(EXIT_FAILURE);
 }
-

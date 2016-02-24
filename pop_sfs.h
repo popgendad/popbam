@@ -15,6 +15,7 @@
  * \class sfsData
  * \brief A derived class for passing parameters and data to the sfs function
  */
+
 class sfsData: public popbamData
 {
 public:

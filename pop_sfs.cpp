@@ -20,8 +20,10 @@
 #include "popbam.h"
 #include "pop_sfs.h"
 
-template uint64_t* callBase<sfsData>(sfsData *t, int n, const bam_pileup1_t *pl);
-int makeSFS(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data);
+template uint64_t* callBase<sfsData>(sfsData *t, int n,
+                                     const bam_pileup1_t *pl);
+int makeSFS(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl,
+            void *data);
 void usageSFS(const std::string);
 
 int
@@ -34,7 +36,8 @@ mainSFS(int argc, char *argv[])
     int ref = 0;                  //! ref
     long nWindows = 0;            //! number of windows
     std::string msg;              //! string for error message
-    bam_sample_t *sm = nullptr;   //! Pointer to the sample information for the input BAM file
+    bam_sample_t *sm =
+        nullptr;   //! Pointer to the sample information for the input BAM file
     bam_plbuf_t *buf = nullptr;   //! pileup buffer
 
     // initialize user command line options
@@ -96,7 +99,8 @@ mainSFS(int argc, char *argv[])
         }
 
     // fetch reference sequence
-    t.ref_base = faidx_fetch_seq(p.fai_file, p.h->target_name[chr], 0, 0x7fffffff, &(t.len));
+    t.ref_base = faidx_fetch_seq(p.fai_file, p.h->target_name[chr], 0, 0x7fffffff,
+                                 &(t.len));
 
     // calculate the number of windows
     if (p.flag & BAM_WINDOW)
@@ -116,7 +120,8 @@ mainSFS(int argc, char *argv[])
             std::string scaffold_name(p.h->target_name[chr]);
             std::ostringstream winc(scaffold_name);
             winc.seekp(0, std::ios::end);
-            winc << ':' << beg + (j * p.winSize) + 1 << '-' << ((j + 1) * p.winSize) + (beg - 1);
+            winc << ':' << beg + (j * p.winSize) + 1 << '-' << ((j + 1) * p.winSize) +
+                 (beg - 1);
             std::string winCoord = winc.str();
 
             // initialize number of sites to zero
@@ -162,7 +167,8 @@ mainSFS(int argc, char *argv[])
             // fetch region from bam file
             if ((bam_fetch(p.bam_in->x.bam, p.idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
                 {
-                    msg = "Failed to retrieve region " + p.region + " due to corrupted BAM index file";
+                    msg = "Failed to retrieve region " + p.region +
+                          " due to corrupted BAM index file";
                     fatalError(msg);
                 }
 
@@ -300,7 +306,8 @@ sfsData::calcSFS(void)
 
                             // check if outgroup is aligned and different from reference
                             // else the reference base is assumed to be ancestral
-                            if ((flag & BAM_OUTGROUP) && (ncov[outpop][j] > 0) && CHECK_BIT(types[j], outidx))
+                            if ((flag & BAM_OUTGROUP) && (ncov[outpop][j] > 0) &&
+                                    CHECK_BIT(types[j], outidx))
                                 {
                                     freq = ncov[i][j] - bitcount64(pop_type);
                                 }
@@ -323,8 +330,10 @@ sfsData::calcSFS(void)
                     if ((n > 1) && (s > 0))
                         {
                             td[i] /= sqrt(e1[n] * s + e2[n] * s * (s - 1));
-                            fwh[i] /= sqrt(((n - 2) * (s / a1[n]) / (6.0 * (n - 1))) + ((s * (s - 1) / (SQ(a1[n]) + a2[n])) *
-                                           (18.0 * SQ(n) * (3.0 * n + 2.0) * a2[n+1] - (88.0 * n * n * n + 9.0 * SQ(n) - 13.0 * n + 6.0)) / (9.0 * n * (SQ(n-1)))));
+                            fwh[i] /= sqrt(((n - 2) * (s / a1[n]) / (6.0 * (n - 1))) + ((s * (s - 1) /
+                                           (SQ(a1[n]) + a2[n])) * (18.0 * SQ(n) * (3.0 * n + 2.0) * a2[n+1] -
+                                                                   (88.0 * n * n * n + 9.0 * SQ(n) - 13.0 * n + 6.0)) /
+                                           (9.0 * n * (SQ(n-1)))));
                         }
                     else
                         {
@@ -397,6 +406,7 @@ sfsData::sfsData(const popbamOptions &p)
 int
 sfsData::allocSFS(void)
 {
+    int i = 0;
     int length = end - beg;
 
     segsites = 0;
@@ -411,7 +421,7 @@ sfsData::allocSFS(void)
             num_snps = new int [npops]();
             td = new double [npops]();
             fwh = new double [npops]();
-            for (int i = 0; i < npops; ++i)
+            for (i = 0; i < npops; ++i)
                 {
                     ncov[i] = new uint32_t [length]();
                 }
@@ -425,6 +435,8 @@ sfsData::allocSFS(void)
 
 sfsData::~sfsData(void)
 {
+    int i = 0;
+
     delete [] pop_mask;
     delete [] ns;
     delete [] types;
@@ -433,7 +445,7 @@ sfsData::~sfsData(void)
     delete [] num_snps;
     delete [] td;
     delete [] fwh;
-    for (int i = 0; i < npops; ++i)
+    for (i = 0; i < npops; ++i)
         {
             delete [] ncov[i];
         }
@@ -444,13 +456,14 @@ int
 sfsData::calc_dw(void)
 {
     int i = 0;
+    int n = 0;
 
-    dw = new double* [sm->n+1];
+    dw = new double* [sm->n + 1];
     for (i = 0; i <= sm->n; ++i)
         {
-            dw[i] = new double [sm->n+1]();
+            dw[i] = new double [sm->n + 1]();
         }
-    for (int n = 2; n <= sm->n; ++n)
+    for (n = 2; n <= sm->n; ++n)
         {
             for(i = 1; i <= sm->n; ++i)
                 {
@@ -463,9 +476,10 @@ sfsData::calc_dw(void)
 int
 sfsData::assignOutpop(void)
 {
+    int i = 0;
     uint64_t u = 0x1ULL << outidx;
 
-    for (int i = 0; i < npops; ++i)
+    for (i = 0; i < npops; ++i)
         {
             if (pop_mask[i] & u)
                 {
@@ -479,13 +493,14 @@ int
 sfsData::calc_hw(void)
 {
     int i = 0;
+    int n = 0;
 
-    hw = new double* [sm->n+1];
+    hw = new double* [sm->n + 1];
     for (i = 0; i <= sm->n; ++i)
         {
-            hw[i] = new double [sm->n+1]();
+            hw[i] = new double [sm->n + 1]();
         }
-    for (int n = 2; n <= sm->n; ++n)
+    for (n = 2; n <= sm->n; ++n)
         {
             for (i = 1; i <= sm->n; ++i)
                 {
@@ -498,14 +513,17 @@ sfsData::calc_hw(void)
 int
 sfsData::calc_a1(void)
 {
-    a1 = new double [sm->n+1];
+    int i = 0;
+    int j = 0;
+
+    a1 = new double [sm->n + 1];
     a1[0] = a1[1] = 1.0;
 
     // consider all sample sizes
-    for (int i = 2; i <= sm->n; i++)
+    for (i = 2; i <= sm->n; i++)
         {
             a1[i] = 0;
-            for (int j = 1; j < i; j++)
+            for (j = 1; j < i; j++)
                 {
                     a1[i] += 1.0 / (double)(j);
                 }
@@ -516,14 +534,17 @@ sfsData::calc_a1(void)
 int
 sfsData::calc_a2(void)
 {
-    a2 = new double [sm->n+2];
+    int i = 0;
+    int j = 0;
+
+    a2 = new double [sm->n + 2];
     a2[0] = a2[1] = 1.0;
 
     // consider all sample sizes
-    for (int i = 2; i <= sm->n+1; i++)
+    for (i = 2; i <= sm->n + 1; i++)
         {
             a2[i] = 0;
-            for (int j = 1; j < i; j++)
+            for (j = 1; j < i; j++)
                 {
                     a2[i] += 1.0 / (double)SQ(j);
                 }
@@ -534,12 +555,15 @@ sfsData::calc_a2(void)
 int
 sfsData::calc_e1(void)
 {
-    e1 = new double [sm->n+1];
+    int i = 0;
+    double b1 = 0.0;
+
+    e1 = new double [sm->n + 1];
     e1[0] = e1[1] = 1.0;
 
-    for (int i = 2; i <= sm->n; i++)
+    for (i = 2; i <= sm->n; i++)
         {
-            double b1 = (i + 1.0) / (3.0 * (i-1));
+            b1 = (i + 1.0) / (3.0 * (i - 1));
             e1[i] = (b1 - (1.0 / a1[i])) / a1[i];
         }
     return 0;
@@ -548,13 +572,17 @@ sfsData::calc_e1(void)
 int
 sfsData::calc_e2(void)
 {
-    e2 = new double [sm->n+1];
+    int i = 0;
+    double b2 = 0.0;
+
+    e2 = new double [sm->n + 1];
     e2[0] = e2[1] = 1.0;
 
-    for (int i = 2; i <= sm->n; i++)
+    for (i = 2; i <= sm->n; i++)
         {
-            double b2 = (2.0 * (SQ(i) + i + 3.0)) / (9.0 * i * (i-1));
-            e2[i] = (b2 - ((i + 2.0) / (a1[i] * i)) + (a2[i] / SQ(a1[i]))) / (SQ(a1[i]) + a2[i]);
+            b2 = (2.0 * (SQ(i) + i + 3.0)) / (9.0 * i * (i-1));
+            e2[i] = (b2 - ((i + 2.0) / (a1[i] * i)) + (a2[i] / SQ(a1[i]))) /
+                    (SQ(a1[i]) + a2[i]);
         }
     return 0;
 }
@@ -565,20 +593,42 @@ usageSFS(const std::string msg)
     std::cerr << msg << std::endl << std::endl;
     std::cerr << "Usage:   popbam sfs [options] <in.bam> [region]" << std::endl;
     std::cerr << std::endl;
-    std::cerr << "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]" << std::endl;
-    std::cerr << "         -h  FILE    Input header file                              [ default: none ]" << std::endl;
-    std::cerr << "         -w  INT     use sliding window of size (kb)" << std::endl;
-    std::cerr << "         -p  STR     sample name of outgroup                        [ default: reference ]" << std::endl;
-    std::cerr << "         -k  FLT     minimum proportion of sites covered in window  [ default: 0.5 ]" << std::endl;
-    std::cerr << "         -n  FLT     minimum proportion of population covered       [ default: 1.0 ]" << std::endl;
+    std::cerr <<
+              "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]"
+              << std::endl;
+    std::cerr <<
+              "         -h  FILE    Input header file                              [ default: none ]"
+              << std::endl;
+    std::cerr << "         -w  INT     use sliding window of size (kb)" <<
+              std::endl;
+    std::cerr <<
+              "         -p  STR     sample name of outgroup                        [ default: reference ]"
+              << std::endl;
+    std::cerr <<
+              "         -k  FLT     minimum proportion of sites covered in window  [ default: 0.5 ]"
+              << std::endl;
+    std::cerr <<
+              "         -n  FLT     minimum proportion of population covered       [ default: 1.0 ]"
+              << std::endl;
     std::cerr << "         -f  FILE    Reference fastA file" << std::endl;
-    std::cerr << "         -m  INT     minimum read coverage                          [ default: 3 ]" << std::endl;
-    std::cerr << "         -x  INT     maximum read coverage                          [ default: 255 ]" << std::endl;
-    std::cerr << "         -q  INT     minimum rms mapping quality                    [ default: 25 ]" << std::endl;
-    std::cerr << "         -s  INT     minimum snp quality                            [ default: 25 ]" << std::endl;
-    std::cerr << "         -a  INT     minimum map quality                            [ default: 13 ]" << std::endl;
-    std::cerr << "         -b  INT     minimum base quality                           [ default: 13 ]" << std::endl;
+    std::cerr <<
+              "         -m  INT     minimum read coverage                          [ default: 3 ]"
+              << std::endl;
+    std::cerr <<
+              "         -x  INT     maximum read coverage                          [ default: 255 ]"
+              << std::endl;
+    std::cerr <<
+              "         -q  INT     minimum rms mapping quality                    [ default: 25 ]"
+              << std::endl;
+    std::cerr <<
+              "         -s  INT     minimum snp quality                            [ default: 25 ]"
+              << std::endl;
+    std::cerr <<
+              "         -a  INT     minimum map quality                            [ default: 13 ]"
+              << std::endl;
+    std::cerr <<
+              "         -b  INT     minimum base quality                           [ default: 13 ]"
+              << std::endl;
     std::cerr << std::endl;
     exit(EXIT_FAILURE);
 }
-
