@@ -472,6 +472,7 @@ snpData::allocSNP(void)
 snpData::~snpData(void)
 {
     int i = 0;
+    int n = sm->n;
 
     delete [] pop_mask;
     delete [] pop_nsmpl;
@@ -480,7 +481,7 @@ snpData::~snpData(void)
     delete [] hap.pos;
     delete [] hap.idx;
     delete [] hap.ref;
-    for (i = 0; i < sm->n; i++)
+    for (i = 0; i < n; i++)
         {
             delete [] hap.seq[i];
             delete [] hap.base[i];
