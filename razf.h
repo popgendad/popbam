@@ -1,32 +1,8 @@
-/*-
-* RAZF : Random Access compressed(Z) File
-* Version: 1.0
-* Release Date: 2008-10-27
-*
-* Copyright 2008, Jue Ruan <ruanjue@gmail.com>, Heng Li <lh3@sanger.ac.uk>
-*
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions
-* are met:
-* 1. Redistributions of source code must retain the above copyright
-*    notice, this list of conditions and the following disclaimer.
-* 2. Redistributions in binary form must reproduce the above copyright
-*    notice, this list of conditions and the following disclaimer in the
-*    documentation and/or other materials provided with the distribution.
-*
-* THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-* OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-* OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-* SUCH DAMAGE.
+/** \file razf.h
+ *  \brief Header for the razf.c file
+ *  \author Daniel Garrigan
+ *  \version 0.5
+ *  Much of the code is adapted from samtools written by Heng Li
 */
 
 #ifndef __RAZF_RJ_H
@@ -61,8 +37,8 @@ typedef struct _gz_header_s _gz_header;
 
 typedef struct
 {
-    unsigned int *cell_offsets;              // i
-    long long *bin_offsets;                  // i / BIN_SIZE
+    unsigned int *cell_offsets;
+    long long *bin_offsets;
     int size;
     int cap;
 } ZBlockIndex;
@@ -110,9 +86,7 @@ int razf_write(RAZF* rz, const void *data, int size);
 int razf_read(RAZF* rz, void *data, int size);
 long long razf_seek(RAZF* rz, long long pos, int where);
 void razf_close(RAZF* rz);
-
 #define razf_tell(rz) ((rz)->out)
-
 RAZF* razf_open2(const char *filename, const char *mode);
 RAZF* razf_dopen2(int fd, const char *mode);
 unsigned long long razf_tell2(RAZF *rz);

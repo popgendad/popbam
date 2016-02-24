@@ -1,7 +1,7 @@
 /** \file pop_sample.cpp
  *  \brief Functions for parsing samples in a BAM file
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
 */
 
 #include <cstdlib>

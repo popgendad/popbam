@@ -1,7 +1,7 @@
 /** \file pop_snp.h
  *  \brief Header for the pop_snp.cpp file
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
 */
 
 #ifndef POP_SNP_H
@@ -11,6 +11,7 @@
  * \class snpData
  * \brief A derived class for passing parameters and data to the snp function
  */
+
 class snpData: public popbamData
 {
     public:

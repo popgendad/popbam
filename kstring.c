@@ -1,3 +1,10 @@
+/** \file kstring.c
+ *  \brief Functions for string handling
+ *  \author Daniel Garrigan
+ *  \version 0.5
+ *  Much of the code is adapted from samtools written by Heng Li
+*/
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <ctype.h>

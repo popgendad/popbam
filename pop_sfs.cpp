@@ -1,7 +1,7 @@
 /** \file pop_sfs.cpp
  *  \brief Functions for calculating frequency spectrum statistics
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
 */
 
 #include <cstdlib>

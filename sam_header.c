@@ -1,9 +1,16 @@
-#include "sam_header.h"
+/** \file sam_header.c
+ *  \brief Functions for processing the SAM/BAM header text
+ *  \author Daniel Garrigan
+ *  \version 0.5
+ *  Much of the code is adapted from samtools written by Heng Li
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include "sam_header.h"
 #include "khash.h"
 
 KHASH_MAP_INIT_STR(str, const char*)

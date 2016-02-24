@@ -1,7 +1,7 @@
 /** \file pop_options.cpp
  *  \brief Functions for parsing runtime options for popbam
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
 */
 
 #include <iostream>

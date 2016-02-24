@@ -1,7 +1,7 @@
 /** \file pop_global.h
  *  \brief Global declarations for the popbam program
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
  */
 
 #ifndef POP_GLOBAL_H
@@ -68,7 +68,7 @@
 /*! \def POPBAM_RELEASE
  *  \brief Version number of popbam program
  */
-#define POPBAM_RELEASE "0.4b"
+#define POPBAM_RELEASE "0.5"
 
 /*! \def NBASES
  *  \brief The number of possible bases

@@ -1,7 +1,7 @@
 /** \file popbam.h
  *  \brief Header for the popbam program
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
  */
 
 #ifndef POPBAM_H
@@ -15,6 +15,7 @@
  * \class popbamData
  * \brief The abstract base class for passing parameters and data
  */
+
 class popbamData
 {
 public:

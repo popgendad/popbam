@@ -1,7 +1,10 @@
 /** \file pop_tree.cpp
  *  \brief Functions for constructing phylogenetic trees file from BAM files
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
+ *  Much of the code for the NJ algorithm heavily borrows from the PHYLIP
+ *  package (v 3.6) written by Mary Kuhner, Jon Yamato, Joseph Felsenstein,
+ *  Akiko Fuseki, Sean Lamont, and Andrew Keefe at the University of Washington
 */
 
 #include <cstdlib>

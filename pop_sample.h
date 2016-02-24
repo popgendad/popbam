@@ -1,7 +1,7 @@
 /** \file pop_sample.h
  *  \brief Header for the pop_sample.cpp file
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
  */
 
 #ifndef POP_SAMPLE_H
@@ -11,6 +11,7 @@
  * \struct bam_sample_t
  * \brief A structure to represent a sample in the BAM file
  */
+
 typedef struct __bam_sample_t
 {
     int npops;          //!< Number of populations in the BAM file

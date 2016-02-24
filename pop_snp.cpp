@@ -1,7 +1,7 @@
 /** \file pop_snp.cpp
  *  \brief Functions for extracting SNP calls from BAM files
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
 */
 
 #include <cstdio>
@@ -282,10 +282,10 @@ snpData::printSNP(const std::string scaffold)
 {
     int i = 0;
     int j = 0;
-    std::stringstream out;
 
     for (i = 0; i < segsites; i++)
         {
+            std::stringstream out;
             out << scaffold << '\t' << hap.pos[i] + 1 << '\t';
             out << bam_nt16_rev_table[hap.ref[i]];
             for (j = 0; j < sm->n; j++)

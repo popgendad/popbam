@@ -1,3 +1,10 @@
+/** \file sam.h
+ *  \brief Header for the sam.c file
+ *  \author Daniel Garrigan
+ *  \version 0.5
+ *  Much of the code is adapted from samtools written by Heng Li
+*/
+
 #ifndef BAM_SAM_H
 #define BAM_SAM_H
 

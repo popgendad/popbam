@@ -1,7 +1,7 @@
 /** \file pop_haplo.h
  *  \brief Header for the pop_haplo.cpp file
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
 */
 
 #ifndef POP_HAPLO_H
@@ -15,6 +15,7 @@
  * \class haploData
  * \brief A derived class for passing parameters and data to the haplo function
  */
+
 class haploData: public popbamData
 {
 public:

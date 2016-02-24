@@ -1,7 +1,7 @@
 /** \file pop_utils.h
  *  \brief Header for the pop_utils.cpp file
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
  */
 #ifndef POP_UTILS_H
 #define POP_UTILS_H

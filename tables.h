@@ -1,7 +1,7 @@
 /** \file tables.h
  *  \brief Header within definitions of tables
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
  */
 
 #ifndef TABLES_H

@@ -1,7 +1,7 @@
 /** \file pop_options.h
  *  \brief Header for pop_options.cpp
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
  */
 
 #ifndef POP_OPTIONS_H

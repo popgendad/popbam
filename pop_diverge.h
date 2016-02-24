@@ -1,7 +1,7 @@
 /** \file pop_diverge.h
  *  \brief Header for the pop_diverge.cpp file
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
 */
 
 #ifndef POP_DIVERGE_H

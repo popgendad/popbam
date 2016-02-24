@@ -1,7 +1,7 @@
 /** \file pop_nucdiv.cpp
  *  \brief Functions for calculating nucleotide diversity statistics
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
 */
 
 #include <cstdlib>

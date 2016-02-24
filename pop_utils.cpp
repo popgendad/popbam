@@ -1,7 +1,7 @@
 /** \file pop_utils.cpp
  *  \brief Utility functions evolutionary analysis of BAM files
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
  *
  * Notes:
  * Byte/bit ordering of unsigned long long consensus base data type ("cb"):

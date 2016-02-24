@@ -1,3 +1,10 @@
+/** \file sam.c
+ *  \brief Functions for manipulating SAM files
+ *  \author Daniel Garrigan
+ *  \version 0.5
+ *  Much of the code is adapted from samtools written by Heng Li
+*/
+
 #include <string.h>
 #include "faidx.h"
 #include "sam.h"

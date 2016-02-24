@@ -1,7 +1,7 @@
 /** \file pop_ld.cpp
  *  \brief Functions for calculating linkage disequilibrium statistics
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
 */
 
 #include <cstdlib>

@@ -1,7 +1,7 @@
 /** \file popbam.cpp
  *  \brief Main entry point for evolutionary analysis of BAM files
  *  \author Daniel Garrigan
- *  \version 0.4
+ *  \version 0.5
 */
 
 #include <cstdlib>
@@ -20,7 +20,7 @@
 #include "pop_nucdiv.h"
 #include "pop_ld.h"
 #include "pop_sfs.h"
-
+#include "pop_fasta.h"
 
 int popbam_usage(void);
 
@@ -62,7 +62,7 @@ main(int argc, char *argv[])
         }
     else if (userFunc.compare(std::string("fasta")) == 0)
         {
-            return 0;
+            return mainFasta(argc, argv);
         }
     else
         {
