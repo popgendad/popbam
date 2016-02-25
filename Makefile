@@ -14,10 +14,11 @@ CSOURCES=          bam_aux.c bam.c bam_index.c faidx.c kstring.c bgzf.c \
                    sam_header.c bam_import.c razf.c sam.c bam_pileup.c
 CXXSOURCES=        popbam.cpp pop_utils.cpp pop_sample.cpp pop_tree.cpp \
                    pop_snp.cpp pop_nucdiv.cpp pop_ld.cpp pop_sfs.cpp \
-                   pop_diverge.cpp pop_haplo.cpp getopt.cpp pop_options.cpp
-OBJS=              popbam.o pop_utils.o pop_sample.o pop_tree.o pop_fasta.cpp \
+                   pop_diverge.cpp pop_haplo.cpp getopt.cpp pop_options.cpp \
+                   pop_fasta.cpp
+OBJS=              popbam.o pop_utils.o pop_sample.o pop_tree.o \
                    pop_snp.o pop_nucdiv.o pop_ld.o pop_sfs.o pop_diverge.o \
-                   pop_haplo.o getopt_pp.o pop_options.o \
+                   pop_haplo.o getopt_pp.o pop_options.o pop_fasta.o \
                    bam_aux.o bam.o bam_index.o faidx.o kstring.o bgzf.o \
                    sam_header.o bam_import.o razf.o sam.o bam_pileup.o
 PROG=              popbam

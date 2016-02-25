@@ -20,10 +20,8 @@
 #include "popbam.h"
 #include "pop_sfs.h"
 
-template uint64_t* callBase<sfsData>(sfsData *t, int n,
-                                     const bam_pileup1_t *pl);
-int makeSFS(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl,
-            void *data);
+template uint64_t* callBase<sfsData>(sfsData *t, int n, const bam_pileup1_t *pl);
+int makeSFS(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data);
 void usageSFS(const std::string);
 
 int
@@ -36,8 +34,7 @@ mainSFS(int argc, char *argv[])
     int ref = 0;                  //! ref
     long nWindows = 0;            //! number of windows
     std::string msg;              //! string for error message
-    bam_sample_t *sm =
-        nullptr;   //! Pointer to the sample information for the input BAM file
+    bam_sample_t *sm = nullptr;   //! Pointer to the sample information for the input BAM file
     bam_plbuf_t *buf = nullptr;   //! pileup buffer
 
     // initialize user command line options
@@ -385,7 +382,6 @@ sfsData::printSFS(const std::string scaffold)
 
 sfsData::sfsData(const popbamOptions &p)
 {
-    // inherit values from popbamOptions
     bamfile = p.bamfile;
     flag = p.flag;
     minDepth = p.minDepth;
@@ -397,8 +393,6 @@ sfsData::sfsData(const popbamOptions &p)
     hetPrior = p.hetPrior;
     minSites = p.minSites;
     minPop = p.minPop;
-
-    // initialize native variables
     derived_type = SFS;
     outidx = 0;
 }
@@ -590,45 +584,23 @@ sfsData::calc_e2(void)
 void
 usageSFS(const std::string msg)
 {
-    std::cerr << msg << std::endl << std::endl;
+    std::cerr << msg << std::endl;
+    std::cerr << std::endl;
     std::cerr << "Usage:   popbam sfs [options] <in.bam> [region]" << std::endl;
     std::cerr << std::endl;
-    std::cerr <<
-              "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]"
-              << std::endl;
-    std::cerr <<
-              "         -h  FILE    Input header file                              [ default: none ]"
-              << std::endl;
-    std::cerr << "         -w  INT     use sliding window of size (kb)" <<
-              std::endl;
-    std::cerr <<
-              "         -p  STR     sample name of outgroup                        [ default: reference ]"
-              << std::endl;
-    std::cerr <<
-              "         -k  FLT     minimum proportion of sites covered in window  [ default: 0.5 ]"
-              << std::endl;
-    std::cerr <<
-              "         -n  FLT     minimum proportion of population covered       [ default: 1.0 ]"
-              << std::endl;
+    std::cerr << "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]" << std::endl;
+    std::cerr << "         -h  FILE    Input header file                              [ default: none ]" << std::endl;
+    std::cerr << "         -w  INT     use sliding window of size (kb)" << std::endl;
+    std::cerr << "         -p  STR     sample name of outgroup                        [ default: reference ]" << std::endl;
+    std::cerr << "         -k  FLT     minimum proportion of sites covered in window  [ default: 0.5 ]" << std::endl;
+    std::cerr << "         -n  FLT     minimum proportion of population covered       [ default: 1.0 ]" << std::endl;
     std::cerr << "         -f  FILE    Reference fastA file" << std::endl;
-    std::cerr <<
-              "         -m  INT     minimum read coverage                          [ default: 3 ]"
-              << std::endl;
-    std::cerr <<
-              "         -x  INT     maximum read coverage                          [ default: 255 ]"
-              << std::endl;
-    std::cerr <<
-              "         -q  INT     minimum rms mapping quality                    [ default: 25 ]"
-              << std::endl;
-    std::cerr <<
-              "         -s  INT     minimum snp quality                            [ default: 25 ]"
-              << std::endl;
-    std::cerr <<
-              "         -a  INT     minimum map quality                            [ default: 13 ]"
-              << std::endl;
-    std::cerr <<
-              "         -b  INT     minimum base quality                           [ default: 13 ]"
-              << std::endl;
+    std::cerr << "         -m  INT     minimum read coverage                          [ default: 3 ]" << std::endl;
+    std::cerr << "         -x  INT     maximum read coverage                          [ default: 255 ]" << std::endl;
+    std::cerr << "         -q  INT     minimum rms mapping quality                    [ default: 25 ]" << std::endl;
+    std::cerr << "         -s  INT     minimum snp quality                            [ default: 25 ]" << std::endl;
+    std::cerr << "         -a  INT     minimum map quality                            [ default: 13 ]" << std::endl;
+    std::cerr << "         -b  INT     minimum base quality                           [ default: 13 ]" << std::endl;
     std::cerr << std::endl;
     exit(EXIT_FAILURE);
 }

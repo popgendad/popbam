@@ -144,7 +144,7 @@ popbamOptions::popbamOptions(int argc, char *argv[])
             errorCount++;
         }
 
-    //check if BAM header input file exists on disk
+    // check if BAM header input file exists on disk
     if (flag & BAM_HEADERIN)
         {
             if (!(is_file_exist(headfile.c_str())))

@@ -323,7 +323,7 @@ ldData::calcOmegamax(void)
                     std::cerr << "bad_alloc caught: " << ba.what() << std::endl;
                 }
 
-            // Zero the pairwise comparison counter
+            // zero the pairwise comparison counter
             num_snps[j] = 0;
             count1 = 0;
             count2 = 0;
@@ -522,15 +522,15 @@ ldData::printLD(const std::string scaffold)
     int i = 0;
     std::stringstream out;
 
-    //print coordinate information and number of aligned sites
+    // print coordinate information and number of aligned sites
     out << scaffold << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites;
 
-    //print results for each population
+    // print results for each population
     for (i = 0; i < npops; i++)
         {
             out << "\tS[" << sm->popul[i] << "]:\t" << num_snps[i];
 
-            //If window passes the minimum number of SNPs filter
+            // if window passes the minimum number of SNPs filter
             if (num_snps[i] >= minSNPs)
                 {
                     switch (output)
@@ -585,7 +585,6 @@ ldData::printLD(const std::string scaffold)
 
 ldData::ldData(const popbamOptions &p)
 {
-    // inherit values from popbamOptions
     bamfile = p.bamfile;
     flag = p.flag;
     minDepth = p.minDepth;
@@ -597,8 +596,6 @@ ldData::ldData(const popbamOptions &p)
     hetPrior = p.hetPrior;
     output = p.output;
     minSites = p.minSites;
-
-    // initialize native variables
     derived_type = LD;
     minSNPs = 10;
     if (flag & BAM_NOSINGLETONS)
@@ -676,52 +673,27 @@ ldData::~ldData(void)
 void
 usageLD(const std::string msg)
 {
-    std::cerr << msg << std::endl << std::endl;
+    std::cerr << msg << std::endl;
+    std::cerr << std::endl;
     std::cerr << "Usage:   popbam ld [options] <in.bam> [region]" << std::endl;
     std::cerr << std::endl;
-    std::cerr <<
-              "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]"
-              << std::endl;
-    std::cerr <<
-              "         -h  FILE    Input header file                              [ default: none ]"
-              << std::endl;
-    std::cerr <<
-              "         -e          exclude singletons from LD calculations        [ default: include singletons ]"
-              << std::endl;
-    std::cerr <<
-              "         -o  INT     analysis option                                [ default: 0 ]"
-              << std::endl;
+    std::cerr << "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]" << std::endl;
+    std::cerr << "         -h  FILE    Input header file                              [ default: none ]" << std::endl;
+    std::cerr << "         -e          exclude singletons from LD calculations        [ default: include singletons ]" << std::endl;
+    std::cerr << "         -o  INT     analysis option                                [ default: 0 ]" << std::endl;
     std::cerr << "                     0 : Kelly's ZnS statistic" << std::endl;
     std::cerr << "                     1 : Omega max" << std::endl;
-    std::cerr << "                     2 : Wall's B and Q congruency statistics" <<
-              std::endl;
-    std::cerr << "         -w  INT     use sliding window of size (kb)" <<
-              std::endl;
-    std::cerr <<
-              "         -k  FLT     minimum proportion of aligned sites in window  [ default: 0.5 ]"
-              << std::endl;
+    std::cerr << "                     2 : Wall's B and Q congruency statistics" << std::endl;
+    std::cerr << "         -w  INT     use sliding window of size (kb)" << std::endl;
+    std::cerr << "         -k  FLT     minimum proportion of aligned sites in window  [ default: 0.5 ]" << std::endl;
     std::cerr << "         -f  FILE    reference fastA file" << std::endl;
-    std::cerr <<
-              "         -n  INT     mimimum number of snps to consider window      [ default: 10 ]"
-              << std::endl;
-    std::cerr <<
-              "         -m  INT     minimum read coverage                          [ default: 3 ]"
-              << std::endl;
-    std::cerr <<
-              "         -x  INT     maximum read coverage                          [ default: 255 ]"
-              << std::endl;
-    std::cerr <<
-              "         -q  INT     minimum rms mapping quality                    [ default: 25 ]"
-              << std::endl;
-    std::cerr <<
-              "         -s  INT     minimum snp quality                            [ default: 25 ]"
-              << std::endl;
-    std::cerr <<
-              "         -a  INT     minimum map quality                            [ default: 13 ]"
-              << std::endl;
-    std::cerr <<
-              "         -b  INT     minimum base quality                           [ default: 13 ]"
-              << std::endl;
+    std::cerr << "         -n  INT     mimimum number of snps to consider window      [ default: 10 ]" << std::endl;
+    std::cerr << "         -m  INT     minimum read coverage                          [ default: 3 ]" << std::endl;
+    std::cerr << "         -x  INT     maximum read coverage                          [ default: 255 ]" << std::endl;
+    std::cerr << "         -q  INT     minimum rms mapping quality                    [ default: 25 ]" << std::endl;
+    std::cerr << "         -s  INT     minimum snp quality                            [ default: 25 ]" << std::endl;
+    std::cerr << "         -a  INT     minimum map quality                            [ default: 13 ]" << std::endl;
+    std::cerr << "         -b  INT     minimum base quality                           [ default: 13 ]" << std::endl;
     std::cerr << std::endl;
     exit(EXIT_FAILURE);
 }

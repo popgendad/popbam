@@ -403,13 +403,13 @@ snpData::printMSHeader(long nwindows)
             out << "ms " << sm->n << ' ' << nwindows << " -t 5.0 ";
         }
     out << "\n1350154902";
-    std::cout << out.str() << std::endl << std::endl;
+    std::cout << out.str() << std::endl;
+    std::cout << std::endl;
 }
 
 
 snpData::snpData(const popbamOptions &p)
 {
-    // inherit values from popbamOptions
     bamfile = p.bamfile;
     flag = p.flag;
     minDepth = p.minDepth;
@@ -421,8 +421,6 @@ snpData::snpData(const popbamOptions &p)
     hetPrior = p.hetPrior;
     minPop = p.minPop;
     output = p.output;
-
-    // initialize native variables
     derived_type = SNP;
     outidx = 0;
 }
@@ -504,53 +502,28 @@ snpData::~snpData(void)
 void
 usageSNP(const std::string msg)
 {
-    std::cerr << msg << std::endl << std::endl;
-    std::cerr << "Usage:   popbam snp [options] <in.bam> [region]" << std::endl <<
-              std::endl;
-    std::cerr <<
-              "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]"
-              << std::endl;
-    std::cerr <<
-              "         -h  FILE    Input header file                              [ default: none ]"
-              << std::endl;
-    std::cerr <<
-              "         -v          output variant sites only                      [ default: all sites ]"
-              << std::endl;
-    std::cerr <<
-              "         -z  FLT     output heterozygous base calls                 [ default: consensus ]"
-              << std::endl;
-    std::cerr << "         -w  INT     use sliding window of size (kb)" <<
-              std::endl;
-    std::cerr <<
-              "         -p  STR     sample name of outgroup                        [ default: reference ]"
-              << std::endl;
-    std::cerr <<
-              "         -o  INT     output format                                  [ default: 0 ]"
-              << std::endl;
+    std::cerr << msg << std::endl;
+    std::cerr << std::endl;
+    std::cerr << "Usage:   popbam snp [options] <in.bam> [region]" << std::endl;
+    std::cerr << std::endl;
+    std::cerr << "Options: -i          base qualities are Illumina 1.3+               [ default: Sanger ]" << std::endl;
+    std::cerr << "         -h  FILE    Input header file                              [ default: none ]" << std::endl;
+    std::cerr << "         -v          output variant sites only                      [ default: all sites ]" << std::endl;
+    std::cerr << "         -z  FLT     output heterozygous base calls                 [ default: consensus ]" << std::endl;
+    std::cerr << "         -w  INT     use sliding window of size (kb)" << std::endl;
+    std::cerr << "         -p  STR     sample name of outgroup                        [ default: reference ]" << std::endl;
+    std::cerr << "         -o  INT     output format                                  [ default: 0 ]" << std::endl;
     std::cerr << "                     0 : popbam snp format" << std::endl;
     std::cerr << "                     1 : SweepFinder snp format" << std::endl;
     std::cerr << "                     2 : MS format" << std::endl;
-    std::cerr <<
-              "         -n  FLT     minimum proportion of population covered       [ default: 1.0 ]"
-              << std::endl;
+    std::cerr << "         -n  FLT     minimum proportion of population covered       [ default: 1.0 ]" << std::endl;
     std::cerr << "         -f  FILE    Reference fastA file" << std::endl;
-    std::cerr <<
-              "         -m  INT     minimum read coverage                          [ default: 3 ]"
-              << std::endl;
-    std::cerr <<
-              "         -x  INT     maximum read coverage                          [ default: 255 ]"
-              << std::endl;
-    std::cerr <<
-              "         -q  INT     minimum rms mapping quality                    [ default: 25 ]"
-              << std::endl;
-    std::cerr <<
-              "         -s  INT     minimum snp quality                            [ default: 25 ]"
-              << std::endl;
-    std::cerr <<
-              "         -a  INT     minimum map quality                            [ default: 13 ]"
-              << std::endl;
-    std::cerr <<
-              "         -b  INT     minimum base quality                           [ default: 13 ]"
-              << std::endl << std::endl;
+    std::cerr << "         -m  INT     minimum read coverage                          [ default: 3 ]" << std::endl;
+    std::cerr << "         -x  INT     maximum read coverage                          [ default: 255 ]" << std::endl;
+    std::cerr << "         -q  INT     minimum rms mapping quality                    [ default: 25 ]" << std::endl;
+    std::cerr << "         -s  INT     minimum snp quality                            [ default: 25 ]" << std::endl;
+    std::cerr << "         -a  INT     minimum map quality                            [ default: 13 ]" << std::endl;
+    std::cerr << "         -b  INT     minimum base quality                           [ default: 13 ]" << std::endl;
+    std::cerr << std::endl;
     exit(EXIT_FAILURE);
 }
