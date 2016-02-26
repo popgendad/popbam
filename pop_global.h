@@ -69,7 +69,7 @@
 /*! \def POPBAM_RELEASE
  *  \brief Version number of popbam program
  */
-#define POPBAM_RELEASE "0.5"
+#define POPBAM_RELEASE "0.5b"
 
 /*! \def NBASES
  *  \brief The number of possible bases
