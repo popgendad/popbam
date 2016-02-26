@@ -8,9 +8,12 @@ sliding windows across a genome.
 INTRODUCTION
 ------------
 
-This is the fourth beta release (0.4b) of the POPBAM program. The source code has primarily been alpha tested 
+This is the fifth beta release (0.5b) of the POPBAM program. The source code has primarily been alpha tested 
 on Debian and Red Hat based operating systems using the GNU C++ compiler. A Makefile is provided for the 
 GNU C++ or clang compilers with three compilation modes: release (default), debug, and profile.
+
+POPBAM is now being once again actively developed for Lummei Analytics LLC. The code base is
+being refactored with the aim of incorporating support for VCF and GFF files.
 
 OBTAINING THE SOURCE CODE
 -------------------------
@@ -25,7 +28,12 @@ as either a gzipped tar file or a zipped file with the prefix
 
 where <version> is the current version number of POPBAM.
 
-The only dependency of the POPBAM program is the zlib compression library and headers. 
+The only dependencies of the POPBAM program are the zlib compression library and headers
+and htslib which is available in the repositories of some linux distributions or
+can be obtained from
+
+[https://github.com/samtools/htslib]
+
 Please insure these are installed on your system before attempting to compile POPBAM.
 
 COMPILING THE SOURCE CODE
@@ -69,12 +77,5 @@ the current directory by typing
 EXAMPLE DATA SET
 ----------------
 
-To test the build of POPBAM, the user may download an example BAM file
-from the web site:
-
-[http://kimura.biology.rochester.edu/data/popbam/trial.bam]
-	
-This BAM files comprises a single read group each from nine lines of *Drosophila melanogaster*
-from sub-Saharan Africa and one line from France. For the outgroup sequence, there is a single
-*Drosophila mauritiana* read group. This example contains only reads that map to the X chromosome
-of the *Drosophila melanogaster* reference genome (build 5.45).
+The example data set mentioned in the Evolutionary Bioinformatics paper is 
+no longer being made available.
