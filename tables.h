@@ -6,8 +6,8 @@
 
 #ifndef TABLES_H
 #define TABLES_H
- 
-#ifdef __cplusplus 
+
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -20,13 +20,13 @@ const int bam_nt16_nt4_table[16] = { 4, 0, 1, 4, 2, 4, 4, 4, 3, 4, 4, 4, 4, 4, 4
 /*! \def iupac[16]
  *  \brief A lookup table for IUPAC codes
  */
- 
+
 const char iupac[16] = {'A','M','R','W','N','C','S','Y','N','N','G','K','N','N','N','T'};
 
 /*! \def bam_nt16_table[256]
  *  \brief A lookup table
  */
- 
+
 const unsigned char bam_nt16_table[256] =
 {
 	15,15,15,15, 15,15,15,15, 15,15,15,15, 15,15,15,15,
@@ -52,7 +52,7 @@ const char bam_nt16_rev_table[16] = {'=','A','C','M','G','R','S','V','T','W','Y'
 /*! \def iupac_rev[256]
  *  \brief A reverse lookup table for IUPAC codes
  */
- 
+
 const unsigned char iupac_rev[256] =
 {
 	14,14,14,14, 14,14,14,14, 14,14,14,14, 14,14,14,14,

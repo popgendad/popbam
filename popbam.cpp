@@ -127,7 +127,7 @@ popbam_usage(void)
     std::cerr << "Program: popbam " << std::endl;
     std::cerr << "(Tools to perform evolutionary analysis from BAM files)" << std::endl;
     std::cerr << "Version: " << POPBAM_RELEASE << std::endl;
-    std::cerr << "Usage: popbam <command> [options] <in.bam> [region]"  << std::endl
+    std::cerr << "Usage: popbam <command> [options] <in.bam> [region]"  << std::endl;
     std::cerr << std::endl;
     std::cerr << "Commands:  snp       output consensus base calls" << std::endl;
     std::cerr << "           fasta     output alignment as multi-fasta file" << std::endl;

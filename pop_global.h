@@ -8,12 +8,13 @@
 #define POP_GLOBAL_H
 
 #include "tables.h"
-#include "ksort.h"
-#include "khash.h"
-#include "kstring.h"
+#include "htslib/ksort.h"
+#include "htslib/khash.h"
+#include "htslib/kstring.h"
+#include "htslib/sam.h"
+#include "htslib/faidx.h"
 #include "bam.h"
 #include "sam.h"
-#include "faidx.h"
 
 ///
 /// Definitions

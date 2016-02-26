@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include "sam_header.h"
-#include "khash.h"
+#include "htslib/khash.h"
 
 KHASH_MAP_INIT_STR(str, const char*)
 

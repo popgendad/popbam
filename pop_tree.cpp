@@ -71,7 +71,7 @@ mainTree(int argc, char *argv[])
     t.refid = get_refid(p.h->text);
 
     // parse genomic region
-    int k = bam_parse_region(p.h, p.region, &chr, &beg, &end);
+    int k = bam_parse_region(p.h, p.region.c_str(), &chr, &beg, &end);
     if (k < 0)
         {
             msg = "Bad genome coordinates: " + p.region;
@@ -111,7 +111,7 @@ mainTree(int argc, char *argv[])
             // parse the BAM file and check if region is retrieved from the reference
             if (p.flag & BAM_WINDOW)
                 {
-                    k = bam_parse_region(p.h, winCoord, &ref, &(t.beg), &(t.end));
+                    k = bam_parse_region(p.h, winCoord.c_str(), &ref, &(t.beg), &(t.end));
                     if (k < 0)
                         {
                             msg = "Bad window coordinates " + winCoord;

@@ -1,239 +1,128 @@
-/** \file sam.c
- *  \brief Functions for manipulating SAM files
- *  \author Daniel Garrigan
- *  \version 0.5
- *  Much of the code is adapted from samtools written by Heng Li
-*/
+/*  sam.c -- format-neutral SAM/BAM API.
+    Copyright (C) 2009, 2012-2015 Genome Research Ltd.
+    Portions copyright (C) 2011 Broad Institute.
+    Author: Heng Li <lh3@sanger.ac.uk>
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.  */
 
 #include <string.h>
-#include "faidx.h"
+#include <unistd.h>
+#include "htslib/faidx.h"
 #include "sam.h"
 
-#define TYPE_BAM  1
-#define TYPE_READ 2
-
-bam_header_t *
-bam_header_dup(const bam_header_t *h0)
+int samthreads(samfile_t *fp, int n_threads, int n_sub_blks)
 {
-    int i = 0;
-    bam_header_t *h;
-
-    h = bam_header_init();
-    *h = *h0;
-    h->hash = h->dict = h->rg2lib = 0;
-    h->text = (char*)calloc(h->l_text + 1, 1);
-    memcpy(h->text, h0->text, h->l_text);
-    h->target_len = (unsigned int*)calloc(h->n_targets, 4);
-    h->target_name = (char**)calloc(h->n_targets, sizeof(void*));
-    for (i = 0; i < h->n_targets; ++i)
-        {
-            h->target_len[i] = h0->target_len[i];
-            h->target_name[i] = strdup(h0->target_name[i]);
-        }
-    return h;
-}
-
-static void
-append_header_text(bam_header_t *header, char* text, int len)
-{
-    int x = header->l_text + 1;
-    int y = header->l_text + len + 1;
-
-    if (text == 0)
-        {
-            return;
-        }
-    kroundup32(x);
-    kroundup32(y);
-    if (x < y)
-        {
-            header->text = (char*)realloc(header->text, y);
-        }
-    // we cannot use strcpy() here.
-    strncpy(header->text + header->l_text, text, len);
-    header->l_text += len;
-    header->text[header->l_text] = 0;
-}
-
-samfile_t *
-samopen(const char *fn, const char *mode, const void *aux)
-{
-    samfile_t *fp;
-
-    fp = (samfile_t*)calloc(1, sizeof(samfile_t));
-    if (strchr(mode, 'r'))
-        {
-            fp->type |= TYPE_READ;
-            if (strchr(mode, 'b'))
-                {
-                    fp->type |= TYPE_BAM;
-                    fp->x.bam = strcmp(fn, "-") ? bam_open(fn, "r") : bam_dopen(fileno(stdin), "r");
-                    if (fp->x.bam == 0)
-                        {
-                            goto open_err_ret;
-                        }
-                    fp->header = bam_header_read(fp->x.bam);
-                }
-            else
-                {
-                    fp->x.tamr = sam_open(fn);
-                    if (fp->x.tamr == 0)
-                        {
-                            goto open_err_ret;
-                        }
-                    fp->header = sam_header_read(fp->x.tamr);
-                    if (fp->header->n_targets == 0)
-                        {
-                            // no @SQ fields
-                            if (aux)
-                                {
-                                    // check if aux is present
-                                    bam_header_t *textheader = fp->header;
-                                    fp->header = sam_header_read2((const char*)aux);
-                                    if (fp->header == 0)
-                                        {
-                                            goto open_err_ret;
-                                        }
-                                    append_header_text(fp->header, textheader->text, textheader->l_text);
-                                    bam_header_destroy(textheader);
-                                }
-                            if ((fp->header->n_targets == 0) && (bam_verbose >= 1))
-                                {
-                                    fprintf(stderr, "[samopen] no @SQ lines in the header.\n");
-                                }
-                        }
-                    else if (bam_verbose >= 2)
-                        {
-                            fprintf(stderr, "[samopen] SAM header is present: %d sequences.\n",
-                                    fp->header->n_targets);
-                        }
-                }
-        }
-    else if (strchr(mode, 'w'))
-        {
-            // write
-            fp->header = bam_header_dup((const bam_header_t*)aux);
-            if (strchr(mode, 'b'))
-                {
-                    // binary
-                    char bmode[3];
-                    int i = 0;
-                    int compress_level = -1;
-
-                    for (i = 0; mode[i]; ++i)
-                        if ((mode[i] >= '0') && (mode[i] <= '9'))
-                            {
-                                break;
-                            }
-                    if (mode[i])
-                        {
-                            compress_level = mode[i] - '0';
-                        }
-                    if (strchr(mode, 'u'))
-                        {
-                            compress_level = 0;
-                        }
-                    bmode[0] = 'w';
-                    bmode[1] = compress_level < 0 ? 0 : compress_level + '0';
-                    bmode[2] = 0;
-                    fp->type |= TYPE_BAM;
-                    fp->x.bam = strcmp(fn, "-") ? bam_open(fn, bmode) : bam_dopen(fileno(stdout),
-                                bmode);
-                    if (fp->x.bam == 0)
-                        {
-                            goto open_err_ret;
-                        }
-                    bam_header_write(fp->x.bam, fp->header);
-                }
-            else
-                {
-                    // text
-                    // open file
-                    fp->x.tamw = strcmp(fn, "-") ? fopen(fn, "w") : stdout;
-                    if (fp->x.tamw == 0)
-                        {
-                            goto open_err_ret;
-                        }
-                    if (strchr(mode, 'X'))
-                        {
-                            fp->type |= BAM_OFSTR << 2;
-                        }
-                    else if (strchr(mode, 'x'))
-                        {
-                            fp->type |= BAM_OFHEX << 2;
-                        }
-                    else
-                        {
-                            fp->type |= BAM_OFDEC << 2;
-                        }
-
-                    // write header
-                    if (strchr(mode, 'h'))
-                        {
-                            int i = 0;
-                            bam_header_t *alt;
-
-                            // parse the header text
-                            alt = bam_header_init();
-                            alt->l_text = fp->header->l_text;
-                            alt->text = fp->header->text;
-                            sam_header_parse(alt);
-                            alt->l_text = 0;
-                            alt->text = 0;
-
-                            // check if there are @SQ lines in the header
-                            // FIXME: better to skip the trailing NULL
-                            fwrite(fp->header->text, 1, fp->header->l_text, fp->x.tamw);
-                            if (alt->n_targets)
-                                {
-                                    // then write the header text without dumping ->target_{name,len}
-                                    if ((alt->n_targets != fp->header->n_targets) && (bam_verbose >= 1))
-                                        {
-                                            fprintf(stderr,
-                                                    "[samopen] inconsistent number of target sequences. Output the text header.\n");
-                                        }
-                                }
-                            else
-                                {
-                                    // then dump ->target_{name,len}
-                                    for (i = 0; i < fp->header->n_targets; ++i)
-                                        {
-                                            fprintf(fp->x.tamw, "@SQ\tSN:%s\tLN:%d\n", fp->header->target_name[i],
-                                                    fp->header->target_len[i]);
-                                        }
-                                }
-                            bam_header_destroy(alt);
-                        }
-                }
-        }
-    return fp;
-open_err_ret:
-    free(fp);
+    if (hts_get_format(fp->file)->format != bam || !fp->is_write) return -1;
+    bgzf_mt(fp->x.bam, n_threads, n_sub_blks);
     return 0;
 }
 
-void
-samclose(samfile_t *fp)
+samfile_t *samopen(const char *fn, const char *mode, const void *aux)
 {
-    if (fp == 0)
-        {
-            return;
+    // hts_open() is really sam_open(), except for #define games
+    samFile *hts_fp = hts_open(fn, mode);
+    if (hts_fp == NULL)  return NULL;
+
+    samfile_t *fp = malloc(sizeof (samfile_t));
+    fp->file = hts_fp;
+    fp->x.bam = hts_fp->fp.bgzf;
+    if (strchr(mode, 'r')) {
+        if (aux) {
+            if (hts_set_fai_filename(fp->file, aux) != 0) {
+                sam_close(hts_fp);
+                free(fp);
+                return NULL;
+            }
         }
-    if (fp->header)
-        {
-            bam_header_destroy(fp->header);
+        fp->header = sam_hdr_read(fp->file);  // samclose() will free this
+        if (fp->header == NULL) {
+            sam_close(hts_fp);
+            free(fp);
+            return NULL;
         }
-    if (fp->type & TYPE_BAM)
-        {
-            bam_close(fp->x.bam);
+        fp->is_write = 0;
+        if (fp->header->n_targets == 0 && bam_verbose >= 1)
+            fprintf(stderr, "[samopen] no @SQ lines in the header.\n");
+    }
+    else {
+        enum htsExactFormat fmt = hts_get_format(fp->file)->format;
+        fp->header = (bam_hdr_t *)aux;  // For writing, we won't free it
+        fp->is_write = 1;
+        if (!(fmt == text_format || fmt == sam) || strchr(mode, 'h')) sam_hdr_write(fp->file, fp->header);
+    }
+
+    return fp;
+}
+
+void samclose(samfile_t *fp)
+{
+    if (fp) {
+        if (!fp->is_write && fp->header) bam_hdr_destroy(fp->header);
+        sam_close(fp->file);
+        free(fp);
+    }
+}
+
+int samfetch(samfile_t *fp, const bam_index_t *idx, int tid, int beg, int end, void *data, bam_fetch_f func)
+{
+    bam1_t *b = bam_init1();
+    hts_itr_t *iter = sam_itr_queryi(idx, tid, beg, end);
+    int ret;
+    while ((ret = sam_itr_next(fp->file, iter, b)) >= 0) func(b, data);
+    hts_itr_destroy(iter);
+    bam_destroy1(b);
+    return (ret == -1)? 0 : ret;
+}
+
+int sampileup(samfile_t *fp, int mask, bam_pileup_f func, void *func_data)
+{
+    bam_plbuf_t *buf;
+    int ret;
+    bam1_t *b;
+    b = bam_init1();
+    buf = bam_plbuf_init(func, func_data);
+    if (mask < 0) mask = BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP;
+    else mask |= BAM_FUNMAP;
+    while ((ret = samread(fp, b)) >= 0) {
+        // bam_plp_push() itself now filters out unmapped reads only
+        if (b->core.flag & mask) b->core.flag |= BAM_FUNMAP;
+        bam_plbuf_push(b, buf);
+    }
+    bam_plbuf_push(0, buf);
+    bam_plbuf_destroy(buf);
+    bam_destroy1(b);
+    return 0;
+}
+
+char *samfaipath(const char *fn_ref)
+{
+    char *fn_list = 0;
+    if (fn_ref == 0) return 0;
+    fn_list = calloc(strlen(fn_ref) + 5, 1);
+    strcat(strcpy(fn_list, fn_ref), ".fai");
+    if (access(fn_list, R_OK) == -1) { // fn_list is unreadable
+        if (access(fn_ref, R_OK) == -1) {
+            fprintf(stderr, "[samfaipath] fail to read file %s.\n", fn_ref);
+        } else {
+            if (bam_verbose >= 3) fprintf(stderr, "[samfaipath] build FASTA index...\n");
+            if (fai_build(fn_ref) == -1) {
+                fprintf(stderr, "[samfaipath] fail to build FASTA index.\n");
+                free(fn_list); fn_list = 0;
+            }
         }
-    else if (fp->type & TYPE_READ)
-        {
-            sam_close(fp->x.tamr);
-        }
-    else
-        {
-            fclose(fp->x.tamw);
-        }
-    free(fp);
+    }
+    return fn_list;
 }

@@ -5,7 +5,7 @@
  */
 #ifndef POP_UTILS_H
 #define POP_UTILS_H
-
+#include <cmath>
 /*!
  * \struct errmod_coef_t
  * \brief A structure to hold the coefficients necessary in the error model
@@ -132,28 +132,6 @@ extern void errmod_destroy(errmod_t *em);
 
 extern int errmod_cal(const errmod_t *em, uint16_t n, int m, uint16_t *bases,
                       float *q);
-
-/*!
- * \fn void bam_init_header_hash(bam_header_t *header)
- * \brief Initialize the BAM header
- * \param header Pointer to the BAM header text
- */
-
-extern void bam_init_header_hash(bam_header_t *header);
-
-/*!
- * \fn int bam_parse_region(bam_header_t *header, std::string region, int *ref_id, int *begin, int *end)
-  \brief Parse a region in the format: "chr2:100,000-200,000".
-  \param header Pointer to the header structure
-  \param str String to be parsed
-  \param ref_id The returned chromosome ID
-  \param begin The returned start coordinate
-  \param end The returned end coordinate
-  \return 0 on success; -1 on failure
- */
-
-extern int bam_parse_region(bam_header_t *header, std::string region,
-                            int *ref_id, int *beg, int *end);
 
 /*!
  * \fn char *get_refid(char *htext)

@@ -6,7 +6,7 @@
 
 #ifndef POP_OPTIONS_H
 #define POP_OPTIONS_H
-
+#include "htslib/sam.h"
 ///
 /// Define classes
 ///
