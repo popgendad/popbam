@@ -30,7 +30,50 @@
 template uint64_t* callBase<divergeData>(divergeData *t, int n, const bam_pileup1_t *pl);
 
 int
-mainDiverge(int argc, char *argv[])
+main_diverge (int argc, char *argv[])
+{
+    char *description = NULL;              //! description of input file format
+    pop_diverge_parser param(argc, argv);  //! parse command line options
+    htsFormat fmt;                         //! input file format
+    hFILE *fp;                             //! input file handle
+
+    fp = hopen (param.input_arg, "r");
+    if (fp == NULL)
+    {
+        fprintf (stderr, "read_file: can't open \"%s\"\n", param.input_arg);
+        exit (EXIT_FAILURE);
+    }
+    if (hts_detect_format (fp, &fmt) < 0)
+    {
+        fprintf(stderr, "read_file: detecting \"%s\" format failed.\n", param.input_arg);
+        hclose_abruptly (fp);
+        exit (EXIT_FAILURE);
+    }
+    description = hts_format_description (&fmt);
+    fprintf (stdout, "%s:\t%s\n", param.input_arg, description);
+    switch (fmt.category)
+    {
+        case sequence_data:
+            main_diverge_bam (&param);
+            break;
+        case variant_data:
+            main_diverge_vcf (&param);
+            break;
+        default:
+            fprintf (stderr, "htsfile: can't open %s: unknown format\n", param.input_arg);
+            exit (EXIT_FAILURE);
+    }
+    if (fp && (hclose(fp) < 0))
+    {
+        fprintf(stderr, "htsfile: closing %s failed\n", param.input_arg);
+        exit(EXIT_FAILURE);
+    }
+    free (description);
+    return 0;
+}
+
+int
+main_diverge_bam(pop_diverge_parser *param)
 {
     bool found = false;                  //! is the outgroup sequence found?
     int bp_indict = 0;                   //! bam parse indicator
@@ -44,72 +87,34 @@ mainDiverge(int argc, char *argv[])
     std::string msg;                     //! string for error message
     bam_sample_t *sm = NULL;             //! pointer to the sample information for the input BAM file
     bam_plbuf_t *buf = NULL;             //! pileup buffer
-    pop_diverge_parser arg(argc, argv);  //! parse command line options
     samfile_t *bam_in;                   //! handle for input BAM file
     bam_header_t *h;                     //! pointer to BAM header
     bam_index_t *idx;                    //! pointer to BAM index
     faidx_t *fai_file;                   //! handle for indexed reference fastA file
     errmod_t *em;                        //! pointer to error model structure
-    char *description = NULL;
-    htsFormat fmt;
-    hFILE *fp;
-
-    fp = hopen(arg.input_arg, "r");
-    if (fp == NULL)
-    {
-        fprintf(stderr, "read_file: can't open \"%s\"\n", arg.input_arg);
-        exit(EXIT_FAILURE);
-    }
-    if (hts_detect_format(fp, &fmt) < 0)
-    {
-        fprintf(stderr, "read_file: detecting \"%s\" format failed.\n", arg.input_arg);
-        hclose_abruptly(fp);
-        exit(EXIT_FAILURE);
-    }
-    description = hts_format_description(&fmt);
-    fprintf(stdout, "%s:\t%s\n", arg.input_arg, description);
-    switch (fmt.category)
-    {
-        case sequence_data:
-            if (view_sam(fp, input_file)) fp = NULL;
-            break;
-        case variant_data:
-            if (view_vcf(fp, input_file)) fp = NULL;
-            break;
-        default:
-            fprintf(stderr, "htsfile: can't open %s: unknown format\n", input_file);
-            status = EXIT_FAILURE;
-            break;
-    }
-    if (fp && hclose(fp) < 0)
-    {
-        fprintf(stderr, "htsfile: closing %s failed\n", input_file);
-        status = EXIT_FAILURE;
-    }
-    free(description);
 
     // check input BAM file for errors
-    arg.checkBAM(bam_in, h, idx, fai_file);
+    param->checkBAM (bam_in, h, idx, fai_file);
 
     // initialize the sample data structure
-    sm = bam_smpl_init();
+    sm = bam_smpl_init ();
 
     // add samples
-    bam_smpl_add(sm, h, arg.input_arg);
+    bam_smpl_add (sm, h, param->input_arg);
 
     // initialize the diverge data structre
     divergeData t(arg);
     t.npops = sm->npops;
 
     // initialize error model
-    em = errmod_init(0.17);
+    em = errmod_init (0.17);
 
     // if outgroup option is used check to make sure it exists
-    if (arg.outgroup_given)
+    if (param->outgroup_given)
         {
             for (i = 0; i < sm->n; i++)
                 {
-                    if (strcmp(sm->smpl[i], arg.outgroup_arg) == 0)
+                    if (strcmp (sm->smpl[i], param->outgroup_arg) == 0)
                         {
                             t.outidx = i;
                             found = true;
@@ -117,26 +122,26 @@ mainDiverge(int argc, char *argv[])
                 }
             if (!found)
                 {
-                    fprintf(stderr, "Specified outgroup %s not found\n", arg.outgroup_arg);
-                    exit(EXIT_FAILURE);
+                    fprintf (stderr, "Specified outgroup %s not found\n", param->outgroup_arg);
+                    exit (EXIT_FAILURE);
                 }
         }
 
     // parse genomic region
-    bp_indict = bam_parse_region(h, arg.region_arg, &chr, &beg, &end);
+    bp_indict = bam_parse_region (h, param->region_arg, &chr, &beg, &end);
     if (bp_indict < 0)
         {
-            fprintf(stderr, "Bad genome coordinates: %s\n", arg.region_arg);
-            exit(EXIT_FAILURE);
+            fprintf (stderr, "Bad genome coordinates: %s\n", param->region_arg);
+            exit (EXIT_FAILURE);
         }
 
     // fetch reference sequence
-    t.ref_base = faidx_fetch_seq(arg.ref_arg, h->target_name[chr], 0, 0x7fffffff, &(t.len));
+    t.ref_base = faidx_fetch_seq (param->ref_arg, h->target_name[chr], 0, 0x7fffffff, &(t.len));
 
     // calculate the number of windows
-    if (arg.win_size_given)
+    if (param->win_size_given)
         {
-            win_size = (int)(arg.win_size_arg * 1000)
+            win_size = (int)(param->win_size_arg * 1000)
             num_windows = ((end - beg) - 1) / win_size;
         }
     else
@@ -159,13 +164,13 @@ mainDiverge(int argc, char *argv[])
             t.num_sites = 0;
 
             // parse the BAM file and check if region is retrieved from the reference
-            if (arg.win_size_given)
+            if (param->win_size_given)
                 {
-                    k = bam_parse_region(h, win_coord, &ref, &(t.beg), &(t.end));
+                    k = bam_parse_region (h, win_coord, &ref, &(t.beg), &(t.end));
                     if (k < 0)
                         {
-                            fprintf(stderr, "Bad window coordinates: %s\n", win_coord);
-                            exit(EXIT_FAILURE);
+                            fprintf (stderr, "Bad window coordinates: %s\n", win_coord);
+                            exit (EXIT_FAILURE);
                         }
                 }
             else
@@ -175,53 +180,59 @@ mainDiverge(int argc, char *argv[])
                     t.end = end;
                     if (ref < 0)
                         {
-                            fprintf(stderr, "Bad scaffold name: %s\n", arg.region_arg);
-                            exit(EXIT_FAILURE);
+                            fprintf (stderr, "Bad scaffold name: %s\n", param->region_arg);
+                            exit (EXIT_FAILURE);
                         }
                 }
 
             // initialize diverge specific variables
-            t.allocDiverge();
+            t.alloc_diverge();
 
             // create population assignments
-            t.assignPops(arg.input_arg);
+            t.assign_pops(arg.input_arg);
 
             // set default minimum sample size as
             // the number of samples in the population
-            t.setMinPop_n();
+            t.set_min_pop_n();
 
             // initialize pileup
-            buf = bam_plbuf_init(makeDiverge, &t);
+            buf = bam_plbuf_init (make_diverge, &t);
 
             // fetch region from bam file
-            if ((bam_fetch(bam_in->x.bam, idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
+            if ((bam_fetch (bam_in->x.bam, idx, ref, t.beg, t.end, buf, fetch_func)) < 0)
                 {
-                    fprintf(stderr, "Failed to retrieve region %s"
-                            " due to corrupted BAM index file", arg.region_arg);
-                    exit(EXIT_FAILURE);
+                    fprintf (stderr, "Failed to retrieve region %s "
+                             "due to corrupted BAM index file", param->region_arg);
+                    exit (EXIT_FAILURE);
                 }
 
             // finalize pileup
-            bam_plbuf_push(0, buf);
+            bam_plbuf_push (0, buf);
 
             // print results to stdout
-            t.calcDiverge(arg);
-            t.printDiverge(arg, h->target_name[chr], win_size);
+            t.calc_diverge (param);
+            t.print_diverge (param, h->target_name[chr], win_size);
 
             // take out the garbage
-            bam_plbuf_destroy(buf);
+            bam_plbuf_destroy (buf);
         }  // end of window interation
 
-    errmod_destroy(em);
-    samclose(bam_in);
-    bam_index_destroy(idx);
-    bam_smpl_destroy(sm);
-    free(t.ref_base);
+    errmod_destroy (em);
+    samclose (bam_in);
+    bam_index_destroy (idx);
+    bam_smpl_destroy (sm);
+    free (t.ref_base);
     return 0;
 }
 
 int
-makeDiverge(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data)
+main_diverge_vcf(pop_diverge_parser *param)
+{
+
+}
+
+int
+make_diverge(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data)
 {
     int i = 0;
     int fq = 0;
@@ -241,7 +252,7 @@ makeDiverge(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *da
             // resolve heterozygous sites
             if (!(t->flag & BAM_HETEROZYGOTE))
                 {
-                    cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t->minSNPQ);
+                    cleanHeterozygotes(t->sm->n, cb, (int)t->ref_base[pos], t.minSNPQ);
                 }
 
             // determine if site is segregating
@@ -288,7 +299,7 @@ makeDiverge(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *da
 }
 
 int
-divergeData::calcDiverge(const pop_diverge_parser *pdp)
+divergeData::calc_diverge (const pop_diverge_parser *param)
 {
     int i = 0;
     int j = 0;
@@ -345,22 +356,13 @@ divergeData::calcDiverge(const pop_diverge_parser *pdp)
     return 0;
 }
 
-divergeData::divergeData(const pop_diverge_parser arg)
+divergeData::divergeData(void)
 {
-    bamfile = arg.input_arg;
-    minDepth = arg.min_depth_arg;
-    maxDepth = arg.max_depth_arg;
-    minRMSQ = arg.min_rms_arg;
-    minSNPQ = arg.min_snp_arg;
-    minMapQ = arg.min_map_arg;
-    minBaseQ = arg.min_base_arg;
-    minSites = arg.min_sites_arg;
-    out_format = arg.format_arg;
     derived_type = DIVERGE;
 }
 
 int
-divergeData::allocDiverge(void)
+divergeData::alloc_diverge(void)
 {
     int i = 0;
     int length = end - beg;
@@ -450,7 +452,7 @@ divergeData::~divergeData(void)
 }
 
 int
-divergeData::printDiverge(const pop_diverge_parser *pdp, const char *scaffold, int win_size)
+divergeData::print_diverge(const pop_diverge_parser *param, const char *scaffold, int win_size)
 {
     int i = 0;
     double pdist = 0.0;
@@ -458,20 +460,20 @@ divergeData::printDiverge(const pop_diverge_parser *pdp, const char *scaffold, i
     std::stringstream out;
 
     out << scaffold << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites;
-    switch (out_format)
+    switch (param->format_arg)
         {
         case 0:
             for (i = 0; i < sm->n; i++)
                 {
-                    if (num_sites >= (int)(pdp->min_sites_arg * win_size))
+                    if (num_sites >= (int)(param->min_sites_arg * win_size))
                         {
-                            if (strcmp(pdp->dist_arg, "pdist") == 0)
+                            if (strcmp(param->dist_arg, "pdist") == 0)
                                 {
                                     out << "\td[" << sm->smpl[i] << "]:";
                                     out << '\t' << std::fixed << std::setprecision(5) << 
                                             (double)(ind_div[i]) / num_sites;
                                 }
-                            else if (strcmp(pdp->dist_arg, "jc") == 0)
+                            else if (strcmp(param->dist_arg, "jc") == 0)
                                 {
                                     pdist = (double)(ind_div[i]) / num_sites;
                                     jc = -0.75 * log(1.0 - pdist * (4.0 / 3.0));
@@ -497,9 +499,9 @@ divergeData::printDiverge(const pop_diverge_parser *pdp, const char *scaffold, i
                             out << "\tFixed[" << sm->popul[i] << "]:\t" << pop_div[i];
                             out << "\tSeg[" << sm->popul[i] << "]:\t" << num_snps[i];
                             out << "\td[" << sm->popul[i] << "]:";
-                            if (strcmp(pdp->dist_arg, "pdist") == 0)
+                            if (strcmp(param->dist_arg, "pdist") == 0)
                                 {
-                                    if (pdp->subst_flag)
+                                    if (param->subst_flag)
                                         {
                                             out << '\t' << std::fixed << std::setprecision(5) << 
                                                     (double)(pop_div[i]) / num_sites;
@@ -510,9 +512,9 @@ divergeData::printDiverge(const pop_diverge_parser *pdp, const char *scaffold, i
                                                     (double)(pop_div[i] + num_snps[i]) / num_sites;
                                         }
                                 }
-                            else if (strcmp(pdp->dist_arg, "jc") == 0)
+                            else if (strcmp(param->dist_arg, "jc") == 0)
                                 {
-                                    if (pdp->subst_flag)
+                                    if (param->subst_flag)
                                         {
                                             pdist = (double)(pop_div[i]) / num_sites;
                                         }
@@ -545,16 +547,17 @@ divergeData::printDiverge(const pop_diverge_parser *pdp, const char *scaffold, i
     return 0;
 }
 
-// TODO: The setMinPop_n function cannot currently take input from user
+// TODO: The set_min_pop_n function cannot currently take input from user
 
 int
-divergeData::setMinPop_n(void)
+divergeData::set_min_pop_n(void)
 {
-    int pop_i = 0;
+    int i = 0;
 
-    for (pop_i = 0; pop_i < npops; pop_i++)
+    for (i = 0; i < npops; i++)
         {
-            min_pop_n[pop_i] = (unsigned short)pop_nsmpl[pop_i];
+            min_pop_n[i] = (unsigned short)pop_nsmpl[i];
         }
     return 0;
 }
+
