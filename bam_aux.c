@@ -25,15 +25,15 @@ DEALINGS IN THE SOFTWARE.  */
 static inline int
 bam_aux_type2size(int x)
 {
-    if (x == 'C' || x == 'c' || x == 'A')
+    if ((x == 'C') || (x == 'c') || (x == 'A'))
         {
             return 1;
         }
-    else if (x == 'S' || x == 's')
+    else if ((x == 'S') || (x == 's'))
         {
             return 2;
         }
-    else if (x == 'I' || x == 'i' || x == 'f' || x == 'F')
+    else if ((x == 'I') || (x == 'i') || (x == 'f') || (x == 'F'))
         {
             return 4;
         }
@@ -94,5 +94,5 @@ bam_parse_region(bam_header_t *header, const char *str, int *ref_id, int *beg, i
         {
             return -1;
         }
-    return *beg <= *end? 0 : -1;
+    return *beg <= *end ? 0 : -1;
 }

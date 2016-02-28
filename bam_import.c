@@ -17,10 +17,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.  */
 
-#include <zlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <zlib.h>
 #include "htslib/kstring.h"
 #include "bam.h"
 #include "htslib/kseq.h"
@@ -36,11 +36,12 @@ sam_header_read2(const char *fn)
     kstream_t *ks;
     kstring_t *str;
     kstring_t samstr = { 0, 0, NULL };
+
     if (fn == 0)
         {
             return 0;
         }
-    fp = (strcmp(fn, "-") == 0)? gzdopen(fileno(stdin), "r") : gzopen(fn, "r");
+    fp = (strcmp(fn, "-") == 0) ? gzdopen(fileno(stdin), "r") : gzopen(fn, "r");
     if (fp == 0)
         {
             return 0;
@@ -65,4 +66,3 @@ sam_header_read2(const char *fn)
     fprintf(stderr, "[sam_header_read2] %d sequences loaded.\n", n_targets);
     return header;
 }
-

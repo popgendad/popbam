@@ -243,8 +243,7 @@ sam_header_compare_lines(HeaderLine *hline1, HeaderLine *hline2)
     HeaderTag *t1;
     HeaderTag *t2;
 
-    if ((hline1->type[0] != hline2->type[0]) ||
-            (hline1->type[1] != hline2->type[1]))
+    if ((hline1->type[0] != hline2->type[0]) || (hline1->type[1] != hline2->type[1]))
         {
             return 0;
         }
@@ -391,10 +390,10 @@ static HeaderLine *
 sam_header_line_parse(const char *headerLine)
 {
     int itype = 0;
-    HeaderLine *hline;
-    HeaderTag *tag;
     const char *from;
     const char *to;
+    HeaderLine *hline;
+    HeaderTag *tag;
 
     from = headerLine;
     if (*from != '@')

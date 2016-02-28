@@ -23,9 +23,10 @@ DEALINGS IN THE SOFTWARE.  */
 #include "htslib/faidx.h"
 #include "sam.h"
 
-int samthreads(samfile_t *fp, int n_threads, int n_sub_blks)
+int
+samthreads(samfile_t *fp, int n_threads, int n_sub_blks)
 {
-    if (hts_get_format(fp->file)->format != bam || !fp->is_write)
+    if ((hts_get_format(fp->file)->format != bam) || !fp->is_write)
         {
             return -1;
         }
@@ -33,10 +34,11 @@ int samthreads(samfile_t *fp, int n_threads, int n_sub_blks)
     return 0;
 }
 
-samfile_t *samopen(const char *fn, const char *mode, const void *aux)
+samfile_t *
+samopen(const char *fn, const char *mode, const void *aux)
 {
-    // hts_open() is really sam_open(), except for #define games
     samFile *hts_fp = hts_open(fn, mode);
+
     if (hts_fp == NULL)
         {
             return NULL;
@@ -79,11 +81,11 @@ samfile_t *samopen(const char *fn, const char *mode, const void *aux)
                     sam_hdr_write(fp->file, fp->header);
                 }
         }
-
     return fp;
 }
 
-void samclose(samfile_t *fp)
+void
+samclose(samfile_t *fp)
 {
     if (fp)
         {
@@ -96,25 +98,29 @@ void samclose(samfile_t *fp)
         }
 }
 
-int samfetch(samfile_t *fp, const bam_index_t *idx, int tid, int beg, int end, void *data, bam_fetch_f func)
+int
+samfetch(samfile_t *fp, const bam_index_t *idx, int tid, int beg, int end, void *data, bam_fetch_f func)
 {
+    int ret = 0;
     bam1_t *b = bam_init1();
     hts_itr_t *iter = sam_itr_queryi(idx, tid, beg, end);
-    int ret;
+
     while ((ret = sam_itr_next(fp->file, iter, b)) >= 0)
         {
             func(b, data);
         }
     hts_itr_destroy(iter);
     bam_destroy1(b);
-    return (ret == -1)? 0 : ret;
+    return (ret == -1) ? 0 : ret;
 }
 
-int sampileup(samfile_t *fp, int mask, bam_pileup_f func, void *func_data)
+int
+sampileup(samfile_t *fp, int mask, bam_pileup_f func, void *func_data)
 {
+    int ret = 0;
     bam_plbuf_t *buf;
-    int ret;
     bam1_t *b;
+
     b = bam_init1();
     buf = bam_plbuf_init(func, func_data);
     if (mask < 0)
@@ -140,16 +146,18 @@ int sampileup(samfile_t *fp, int mask, bam_pileup_f func, void *func_data)
     return 0;
 }
 
-char *samfaipath(const char *fn_ref)
+char *
+samfaipath(const char *fn_ref)
 {
-    char *fn_list = 0;
+    char *fn_list = NULL;
+
     if (fn_ref == 0)
         {
             return 0;
         }
     fn_list = calloc(strlen(fn_ref) + 5, 1);
     strcat(strcpy(fn_list, fn_ref), ".fai");
-    if (access(fn_list, R_OK) == -1)   // fn_list is unreadable
+    if (access(fn_list, R_OK) == -1)
         {
             if (access(fn_ref, R_OK) == -1)
                 {

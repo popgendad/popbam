@@ -16,13 +16,13 @@
 #include "popbam.h"
 
 int
-bam_smpl_add(bam_sample_t *sm, const popbamOptions *op)
+bam_smpl_add(bam_sample_t *sm, const char *bamfile)
 {
     int n = 0;
-    const char *p = nullptr;
-    const char *q = nullptr;
-    const char *r = nullptr;
-    const char *s = nullptr;
+    const char *p = NULL;
+    const char *q = NULL;
+    const char *r = NULL;
+    const char *s = NULL;
     kstring_t buf;
     kstring_t bug;
     khash_t(sm) *sm2id = (khash_t(sm)*)sm->sm2id;
@@ -51,8 +51,8 @@ bam_smpl_add(bam_sample_t *sm, const popbamOptions *op)
             // if no PO tag is found in the header
             if (r && q && !s)
                 {
-                    char *u = nullptr;
-                    char *v = nullptr;
+                    char *u = NULL;
+                    char *v = NULL;
                     int oq = 0;
                     int or1 = 0;
                     for (u = (char*)q; *u && *u != '\t' && *u != '\n'; ++u);
@@ -61,7 +61,7 @@ bam_smpl_add(bam_sample_t *sm, const popbamOptions *op)
                     or1 = *v;
                     *u = *v = '\0';
                     buf.l = 0;
-                    kputs(op->bamfile.c_str(), &buf);
+                    kputs(bamfile, &buf);
                     kputc('/', &buf);
                     kputs(q, &buf);
                     add_sample_pair(sm, sm2id, buf.s, r);
@@ -71,23 +71,23 @@ bam_smpl_add(bam_sample_t *sm, const popbamOptions *op)
             // if PO tag is found
             else if (r && q && s)
                 {
-                    char *u = nullptr;
-                    char *v = nullptr;
-                    char *w = nullptr;
+                    char *u = NULL;
+                    char *v = NULL;
+                    char *w = NULL;
                     int oq = 0;
                     int or1 = 0;
                     int os = 0;
-                    for (u = (char *)q; *u && *u != '\t' && *u != '\n'; ++u);
-                    for (v = (char *)r; *v && *v != '\t' && *v != '\n'; ++v);
-                    for (w = (char *)s; *w && *w != '\t' && *w != '\n'; ++w);
+                    for (u = (char*)q; *u && (*u != '\t') && (*u != '\n'); ++u);
+                    for (v = (char*)r; *v && (*v != '\t') && (*v != '\n'); ++v);
+                    for (w = (char*)s; *w && (*w != '\t') && (*w != '\n'); ++w);
                     oq = *u;
                     or1 = *v;
                     os = *w;
                     *u = *v = *w = '\0';
                     buf.l = 0;
                     bug.l = 0;
-                    kputs(op->bamfile.c_str(), &buf);
-                    kputs(op->bamfile.c_str(), &bug);
+                    kputs(bamfile, &buf);
+                    kputs(bamfile, &bug);
                     kputc('/', &buf);
                     kputc('/', &bug);
                     kputs(q, &buf);
@@ -109,8 +109,8 @@ bam_smpl_add(bam_sample_t *sm, const popbamOptions *op)
         }
     if (n == 0)
         {
-            add_sample_pair(sm, sm2id, op->bamfile.c_str(), op->bamfile.c_str());
-            add_pop_pair(sm, sm2id, op->bamfile.c_str(), op->bamfile.c_str());
+            add_sample_pair(sm, sm2id, bamfile, bamfile);
+            add_pop_pair(sm, sm2id, bamfile, bamfile);
         }
     free(buf.s);
     free(bug.s);

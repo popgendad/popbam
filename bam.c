@@ -66,9 +66,6 @@ bam_validate1(const bam_header_t *header, const bam1_t *b)
         {
             return 0;
         }
-
-    // FIXME: Other fields could also be checked, especially the auxiliary data
-
     return 1;
 }
 
@@ -76,15 +73,12 @@ bam_validate1(const bam_header_t *header, const bam1_t *b)
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #endif
 
-// FIXME: we should also check the LB tag associated with each alignment
 const char *
 bam_get_library(bam_header_t *h, const bam1_t *b)
 {
-    // Slow and inefficient.  Rewrite once we get a proper header API.
     const char *rg;
     char *cp = h->text;
     rg = (char *)bam_aux_get(b, "RG");
-
     if (!rg)
         {
             return NULL;
@@ -93,11 +87,10 @@ bam_get_library(bam_header_t *h, const bam1_t *b)
         {
             rg++;
         }
-
-    // Header is guaranteed to be nul terminated, so this is valid.
     while (*cp)
         {
-            char *ID, *LB;
+            char *ID;
+            char *LB;
             char last = '\t';
 
             // Find a @RG line
@@ -123,11 +116,11 @@ bam_get_library(bam_header_t *h, const bam1_t *b)
                         {
                             if (strncmp(cp, "LB:", 3) == 0)
                                 {
-                                    LB = cp+3;
+                                    LB = cp + 3;
                                 }
                             else if (strncmp(cp, "ID:", 3) == 0)
                                 {
-                                    ID = cp+3;
+                                    ID = cp + 3;
                                 }
                         }
                     last = *cp++;
@@ -139,22 +132,20 @@ bam_get_library(bam_header_t *h, const bam1_t *b)
                 }
 
             // Check it's the correct ID
-            if (strncmp(rg, ID, strlen(rg)) != 0 || ID[strlen(rg)] != '\t')
+            if ((strncmp(rg, ID, strlen(rg)) != 0) || (ID[strlen(rg)] != '\t'))
                 {
                     continue;
                 }
 
             // Valid until next query
             static char LB_text[1024];
-            for (cp = LB; *cp && *cp != '\t' && *cp != '\n'; cp++)
-                ;
+            for (cp = LB; *cp && *cp != '\t' && *cp != '\n'; cp++);
             strncpy(LB_text, LB, MIN(cp-LB, 1023));
             LB_text[MIN(cp-LB, 1023)] = 0;
 
             // Return it; valid until the next query.
             return LB_text;
         }
-
     return NULL;
 }
 
@@ -164,6 +155,7 @@ bam_fetch(bamFile fp, const bam_index_t *idx, int tid, int beg, int end, void *d
     int ret = 0;
     bam_iter_t iter;
     bam1_t *b;
+
     b = bam_init1();
     iter = bam_iter_query(idx, tid, beg, end);
     while ((ret = bam_iter_read(fp, iter, b)) >= 0)
@@ -172,7 +164,7 @@ bam_fetch(bamFile fp, const bam_index_t *idx, int tid, int beg, int end, void *d
         }
     bam_iter_destroy(iter);
     bam_destroy1(b);
-    return (ret == -1)? 0 : ret;
+    return (ret == -1) ? 0 : ret;
 }
 
 #define bam1_seq_seti(s, i, c) ( (s)[(i)>>1] = ((s)[(i)>>1] & 0xf<<(((i)&1)<<2)) | (c)<<((~(i)&1)<<2) )
@@ -229,7 +221,8 @@ bam_remove_B(bam1_t *b)
             int len = bam_cigar_oplen(cigar[k]);
             if (op == BAM_CBACK)   // the backward operation
                 {
-                    int t, u;
+                    int t = 0;
+                    int u = 0;
                     if (k == b->core.n_cigar - 1)
                         {
                             break;    // ignore 'B' at the end of CIGAR
@@ -270,7 +263,9 @@ bam_remove_B(bam1_t *b)
                         {
                             if (i != j)   // no need to copy if i == j
                                 {
-                                    int u, c, c0;
+                                    int u = 0;
+                                    int c = 0;
+                                    int c0 = 0;
                                     for (u = 0; u < len; ++u)   // construct the consensus
                                         {
                                             c = bam1_seqi(seq, i+u);

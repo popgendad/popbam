@@ -19,27 +19,24 @@ class divergeData: public popbamData
 {
 public:
     // constructor
-    divergeData(const popbamOptions&);
+    divergeData(const pop_diverge_parser&);
 
     // destructor
     ~divergeData(void);
 
     // member public variables
-    int output;                     //!< Analysis output option
-    std::string outgroup;           //!< Sample name of outgroup to use
     int outidx;                     //!< Index of outgroup sequence
     hData_t hap;                    //!< Structure to hold haplotype data
     uint64_t *pop_sample_mask;      //!< Bit mask for samples covered from a specific population
-    std::string dist;               //!< Pointer to the name of the desired distance metric	(-d switch)
     uint16_t *min_pop_n;            //!< Minimum sample size per population
     int *num_snps;                  //!< Number of SNPs in a given window
     int npops;                      //!< Number of populations represented in BAM
 
     // member public functions
-    int calcDiverge(void);
+    int calcDiverge(const pop_diverge_parser *pdp);
     int allocDiverge(void);
     int setMinPop_n(void);
-    int printDiverge(const std::string);
+    int printDiverge(const pop_diverge_parser *pdp, const char *scaffold, int win_size);
 
 private:
     // member private variables
@@ -54,4 +51,7 @@ private:
 
 extern int mainDiverge(int argc, char *argv[]);
 
+extern int makeDiverge(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data);
+
 #endif
+

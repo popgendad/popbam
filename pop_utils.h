@@ -177,11 +177,11 @@ template <class T> uint64_t* callBase(T *t, int n, const bam_pileup1_t *pl)
     int rmsq = 0;
     int n_smpl = t->sm->n;
     uint16_t k = 0;
-    uint16_t *bases = nullptr;
+    uint16_t *bases = NULL;
     uint64_t rms = 0;
     uint64_t *cb;
     std::vector<int> depth(n_smpl, 0);
-    uint8_t *s = nullptr;
+    uint8_t *s = NULL;
     float q[16];
     std::string msg;
     bam_pileup1_t ***p = nullptr;
