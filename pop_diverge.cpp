@@ -19,13 +19,13 @@
 #include "htslib/sam.h"
 #include "htslib/vcf.h"
 
-#include "pop_global.h"
-#include "pop_options.h"
-#include "pop_sample.h"
-#include "pop_utils.h"
-#include "popbam.h"
+#include "pop_global.hpp"
+#include "pop_options.hpp"
+#include "pop_sample.hpp"
+#include "pop_utils.hpp"
+#include "pop_main.hpp"
 #include "pop_diverge_parser.hpp"
-#include "pop_diverge.h"
+#include "pop_diverge.hpp"
 
 template uint64_t* callBase<divergeData>(divergeData *t, int n, const bam_pileup1_t *pl);
 
