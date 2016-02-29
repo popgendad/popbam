@@ -12,15 +12,11 @@ C_DEBUG_FLAGS=    -Wall -ggdb -DDEBUG
 C_PROFILE_FLAGS=  -Wall -O2 -pg
 CSOURCES=          bam_aux.c bam.c sam_header.c bam_import.c sam.c \
 		   bam_plbuf.c
-CXXSOURCES=        popbam.cpp pop_utils.cpp pop_sample.cpp pop_tree.cpp \
-                   pop_snp.cpp pop_nucdiv.cpp pop_ld.cpp pop_sfs.cpp \
-                   pop_diverge.cpp pop_haplo.cpp getopt.cpp pop_options.cpp \
-                   pop_fasta.cpp
-OBJS=              popbam.o pop_utils.o pop_sample.o pop_tree.o \
-                   pop_snp.o pop_nucdiv.o pop_ld.o pop_sfs.o pop_diverge.o \
-                   pop_haplo.o getopt_pp.o pop_options.o pop_fasta.o \
-                   bam_aux.o bam.o sam_header.o bam_import.o sam.o \
-                   bam_plbuf.o
+CXXSOURCES=        pop_main.cpp pop_utils.cpp pop_sample.cpp pop_diverge.cpp \
+                   pop_error.cpp
+OBJS=              pop_main.o pop_utils.o pop_sample.o pop_diverge.o \
+                   pop_error.o bam_aux.o bam.o sam_header.o bam_import.o \
+                   sam.o bam_plbuf.o
 PROG=              popbam
 LIBFLAGS=          -lhts -lz -lm
 INSTALL_DIR=       /usr/local/bin

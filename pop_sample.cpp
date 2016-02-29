@@ -6,17 +6,16 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
-#include <string>
-#include <vector>
-#include "pop_global.h"
-#include "pop_options.h"
-#include "pop_sample.h"
-#include "pop_utils.h"
-#include "popbam.h"
+
+#include "htslib/hts.h"
+#include "htslib/kstring.h"
+#include "htslib/khash.h"
+
+#include "pop_utils.hpp"
+#include "pop_sample.hpp"
 
 int
-bam_smpl_add(bam_sample_t *sm, const char *bamfile)
+bam_smpl_add (bam_sample_t *sm, const char *bamfile)
 {
     int n = 0;
     const char *p = NULL;
@@ -30,21 +29,21 @@ bam_smpl_add(bam_sample_t *sm, const char *bamfile)
 
     p = op->h->text;
     n = 0;
-    memset(&buf, 0, sizeof(kstring_t));
-    memset(&bug, 0, sizeof(kstring_t));
+    memset (&buf, 0, sizeof(kstring_t));
+    memset (&bug, 0, sizeof(kstring_t));
     while ((q = strstr(p, "@RG")) != 0)
         {
             p = q + 3;
             r = q = s = 0;
-            if ((q = strstr(p, "\tID:")) != 0)
+            if ((q = strstr (p, "\tID:")) != 0)
                 {
                     q += 4;
                 }
-            if ((r = strstr(p, "\tSM:")) != 0)
+            if ((r = strstr (p, "\tSM:")) != 0)
                 {
                     r += 4;
                 }
-            if ((s = strstr(p, "\tPO:")) != 0)
+            if ((s = strstr (p, "\tPO:")) != 0)
                 {
                     s += 4;
                 }
@@ -55,16 +54,16 @@ bam_smpl_add(bam_sample_t *sm, const char *bamfile)
                     char *v = NULL;
                     int oq = 0;
                     int or1 = 0;
-                    for (u = (char*)q; *u && *u != '\t' && *u != '\n'; ++u);
-                    for (v = (char*)r; *v && *v != '\t' && *v != '\n'; ++v);
+                    for (u = (char*)q; *u && (*u != '\t') && (*u != '\n'); ++u);
+                    for (v = (char*)r; *v && (*v != '\t') && (*v != '\n'); ++v);
                     oq = *u;
                     or1 = *v;
                     *u = *v = '\0';
                     buf.l = 0;
-                    kputs(bamfile, &buf);
-                    kputc('/', &buf);
-                    kputs(q, &buf);
-                    add_sample_pair(sm, sm2id, buf.s, r);
+                    kputs (bamfile, &buf);
+                    kputc ('/', &buf);
+                    kputs (q, &buf);
+                    add_sample_pair (sm, sm2id, buf.s, r);
                     *u = oq;
                     *v = or1;
                 }
@@ -86,14 +85,14 @@ bam_smpl_add(bam_sample_t *sm, const char *bamfile)
                     *u = *v = *w = '\0';
                     buf.l = 0;
                     bug.l = 0;
-                    kputs(bamfile, &buf);
-                    kputs(bamfile, &bug);
-                    kputc('/', &buf);
-                    kputc('/', &bug);
-                    kputs(q, &buf);
-                    kputs(r, &bug);
-                    add_sample_pair(sm, sm2id, buf.s, r);
-                    add_pop_pair(sm, pop2sm, bug.s, s);
+                    kputs (bamfile, &buf);
+                    kputs (bamfile, &bug);
+                    kputc ('/', &buf);
+                    kputc ('/', &bug);
+                    kputs (q, &buf);
+                    kputs (r, &bug);
+                    add_sample_pair (sm, sm2id, buf.s, r);
+                    add_pop_pair (sm, pop2sm, bug.s, s);
                     *u = oq;
                     *v = or1;
                     *w = os;
@@ -109,11 +108,11 @@ bam_smpl_add(bam_sample_t *sm, const char *bamfile)
         }
     if (n == 0)
         {
-            add_sample_pair(sm, sm2id, bamfile, bamfile);
-            add_pop_pair(sm, sm2id, bamfile, bamfile);
+            add_sample_pair (sm, sm2id, bamfile, bamfile);
+            add_pop_pair (sm, sm2id, bamfile, bamfile);
         }
-    free(buf.s);
-    free(bug.s);
+    free (buf.s);
+    free (bug.s);
     return 0;
 }
 
@@ -122,7 +121,7 @@ bam_smpl_init(void)
 {
     bam_sample_t *sm;
 
-    sm = (bam_sample_t*)calloc(1, sizeof(bam_sample_t));
+    sm = (bam_sample_t*)calloc (1, sizeof(bam_sample_t));
     sm->sm2popid = kh_init(sm);
     sm->rg2smid = kh_init(sm);
     sm->sm2id = kh_init(sm);
@@ -131,7 +130,7 @@ bam_smpl_init(void)
 }
 
 void
-bam_smpl_destroy(bam_sample_t *sm)
+bam_smpl_destroy (bam_sample_t *sm)
 {
     int i = 0;
     khint_t k;
@@ -144,40 +143,40 @@ bam_smpl_destroy(bam_sample_t *sm)
         }
     for (i = 0; i < sm->n; i++)
         {
-            free(sm->smpl[i]);
+            free (sm->smpl[i]);
         }
-    free(sm->smpl);
+    free (sm->smpl);
     for (i = 0; i < sm->npops; i++)
         {
-            free(sm->popul[i]);
+            free (sm->popul[i]);
         }
-    free(sm->popul);
+    free (sm->popul);
 
     // deallocate strdups
     for (k = kh_begin(rg2smid); k != kh_end(rg2smid); ++k)
         {
             if (kh_exist(rg2smid, k))
                 {
-                    free((char*)kh_key(rg2smid, k));
+                    free ((char*)kh_key(rg2smid, k));
                 }
         }
     for (k = kh_begin(sm2popid); k != kh_end(sm2popid); ++k)
         {
             if (kh_exist(sm2popid, k))
                 {
-                    free((char*)kh_key(sm2popid, k));
+                    free ((char*)kh_key(sm2popid, k));
                 }
         }
     kh_destroy(sm, static_cast<kh_sm_t*>(sm->sm2popid));
     kh_destroy(sm, static_cast<kh_sm_t*>(sm->rg2smid));
     kh_destroy(sm, static_cast<kh_sm_t*>(sm->sm2id));
     kh_destroy(sm, static_cast<kh_sm_t*>(sm->pop2sm));
-    free(sm);
+    free (sm);
 }
 
 void
-add_sample_pair(bam_sample_t *sm, khash_t(sm) *sm2id, const char *key,
-                const char *val)
+add_sample_pair (bam_sample_t *sm, khash_t(sm) *sm2id, const char *key,
+                 const char *val)
 {
     int ret = 0;
     khint_t k_rg;
@@ -200,11 +199,11 @@ add_sample_pair(bam_sample_t *sm, khash_t(sm) *sm2id, const char *key,
             if (sm->n == sm->m)
                 {
                     sm->m = sm->m ? sm->m << 1 : 1;
-                    sm->smpl = static_cast<char**>(realloc(sm->smpl, sizeof(void*)*sm->m));
+                    sm->smpl = static_cast<char**>(realloc (sm->smpl, sizeof(void*)*sm->m));
                 }
 
             //add sample name
-            sm->smpl[sm->n] = strdup(val);
+            sm->smpl[sm->n] = strdup (val);
 
             //add new entry in sm2id hash table
             k_sm = kh_put(sm, sm2id, sm->smpl[sm->n], &ret);
@@ -293,8 +292,8 @@ bam_smpl_rg2smid(const bam_sample_t *sm, const char *fn, const char *rg,
 }
 
 int
-bam_smpl_sm2popid(const bam_sample_t *sm, const char *fn, const char *smpl,
-                  kstring_t *str)
+bam_smpl_sm2popid (const bam_sample_t *sm, const char *fn, const char *smpl,
+                   kstring_t *str)
 {
     khint_t k;
     khash_t(sm) *sm2popid = (khash_t(sm)*)sm->sm2popid;

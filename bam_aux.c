@@ -72,7 +72,8 @@ bam_aux_drop_other(bam1_t *b, uint8_t *s)
 }
 
 int
-bam_parse_region(bam_header_t *header, const char *str, int *ref_id, int *beg, int *end)
+bam_parse_region (bam_header_t *header, const char *str, int *ref_id, int *beg,
+                  int *end)
 {
     const char *name_lim = hts_parse_reg(str, beg, end);
     if (name_lim)

@@ -24,6 +24,7 @@
  *
 **/
 
+#include <cstdio>
 #include <cstdlib>
 #include <cmath>
 #include <cfloat>
@@ -31,26 +32,12 @@
 #include <cstdint>
 #include <cstddef>
 #include <cstring>
-#include <cassert>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <new>
-#include <vector>
-#include <algorithm>
-#include "pop_global.h"
-#include "pop_options.h"
-#include "pop_utils.h"
-#include "pop_sample.h"
-#include "popbam.h"
+
+#include "pop_sample.hpp"
+#include "pop_utils.hpp"
+#include "tables.h"
 
 #define lfact(n) lgamma(n+1)
-
-typedef char *str_p;
-
-KHASH_MAP_INIT_STR(s, int)
-KHASH_MAP_INIT_STR(r2l, str_p)
-KSORT_INIT_GENERIC(uint16_t)
 
 uint64_t
 gl2cns(float q[16], uint16_t k)
@@ -91,8 +78,8 @@ gl2cns(float q[16], uint16_t k)
 }
 
 uint64_t
-qualFilter(int num_samples, uint64_t *cb, int min_rmsQ, int min_depth,
-           int max_depth)
+qual_filter (int num_samples, uint64_t *cb, int min_rmsQ, int min_depth,
+             int max_depth)
 {
     int i = 0;
     uint16_t rms = 0;
@@ -114,7 +101,7 @@ qualFilter(int num_samples, uint64_t *cb, int min_rmsQ, int min_depth,
 }
 
 int
-segBase(int num_samples, uint64_t *cb, char ref, int min_snpq)
+seg_base (int num_samples, uint64_t *cb, char ref, int min_snpq)
 {
     int i = 0;
     int j = 0;
@@ -182,7 +169,7 @@ segBase(int num_samples, uint64_t *cb, char ref, int min_snpq)
 }
 
 void
-cleanHeterozygotes(int num_samples, uint64_t *cb, int ref, int min_snpq)
+clean_hets (int num_samples, uint64_t *cb, int ref, int min_snpq)
 {
     int i = 0;
     uint16_t snp_quality = 0;
@@ -214,7 +201,7 @@ cleanHeterozygotes(int num_samples, uint64_t *cb, int ref, int min_snpq)
                 {
                     if (allele1 != iupac_rev[ref])
                         {
-                            cb[i] += (allele2 - allele1) << (CHAR_BIT+2);
+                            cb[i] += (allele2 - allele1) << (CHAR_BIT + 2);
                         }
                     if (allele2 != iupac_rev[ref])
                         {
@@ -225,13 +212,13 @@ cleanHeterozygotes(int num_samples, uint64_t *cb, int ref, int min_snpq)
 }
 
 double *
-logbinomial_table(const int n_size)
+logbinomial_table (const int n_size)
 {
     int k = 0;
     int n = 0;
     double *logbinom = nullptr;
 
-    logbinom = (double*)calloc(SQ(n_size), sizeof(double));
+    logbinom = (double*)calloc (n_size * n_size, sizeof(double));
     for (n = 1; n < n_size; ++n)
         {
             double lfn = lfact(n);
@@ -243,243 +230,39 @@ logbinomial_table(const int n_size)
     return logbinom;
 }
 
-errmod_coef_t *
-cal_coef(double depcorr, double eta)
-{
-    int k = 0;
-    int n = 0;
-    int q = 0;
-    double *lC = nullptr;
-    long double sum = 0.0;
-    long double sum1 = 0.0;
-    errmod_coef_t *ec;
-
-    ec = (errmod_coef_t*)calloc(1, sizeof(errmod_coef_t));
-
-    // initialize ->fk
-    ec->fk = (double*)calloc(256, sizeof(double));
-    ec->fk[0] = 1.0;
-    for (n = 1; n < 256; ++n)
-        {
-            ec->fk[n] = pow(1.0 - depcorr, n) * (1.0 - eta) + eta;
-        }
-
-    // initialize ->coef
-    ec->beta = (double*)calloc(SQ(256) * 64, sizeof(double));
-
-    lC = logbinomial_table(256);
-    for (q = 1; q < 64; ++q)
-        {
-            double e = pow(10.0, -q / 10.0);
-            double le = log(e);
-            double le1 = log(1.0 - e);
-            for (n = 1; n <= 255; ++n)
-                {
-                    double *beta = ec->beta + (q << 16 | n << 8);
-                    sum1 = sum = 0.0;
-                    for (k = n; k >= 0; --k, sum1 = sum)
-                        {
-                            sum = sum1 + expl(lC[n << 8 | k] + k * le + (n - k) * le1);
-                            beta[k] = -10.0 / M_LN10 * logl(sum1 / sum);
-                        }
-                }
-        }
-
-    // initialize ->lhet
-    ec->lhet = (double*)calloc(SQ(256), sizeof(double));
-
-    for (n = 0; n < 256; ++n)
-        {
-            for (k = 0; k < 256; ++k)
-                {
-                    ec->lhet[n << 8 | k] = lC[n << 8 | k] - M_LN2 * n;
-                }
-        }
-    free(lC);
-    return ec;
-}
-
-errmod_t *
-errmod_init(float depcorr)
-{
-    errmod_t *em;
-
-    em = (errmod_t*)calloc(1, sizeof(errmod_t));
-    em->depcorr = depcorr;
-    em->coef = cal_coef(depcorr, 0.03);
-    return em;
-}
-
-void
-errmod_destroy(errmod_t *em)
-{
-    if (em == 0)
-        {
-            return;
-        }
-    free(em->coef->lhet);
-    free(em->coef->fk);
-    free(em->coef->beta);
-    free(em->coef);
-    free(em);
-}
-
-// qual:6, strand:1, base:4
-int
-errmod_cal(const errmod_t *em, uint16_t n, int m, uint16_t *bases, float *q)
-{
-    int i = 0;
-    int j = 0;
-    int k = 0;
-    int w[32];
-    call_aux_t aux;
-
-    memset(q, 0, SQ(m) * sizeof(float));
-    if (n == 0)
-        {
-            return 0;
-        }
-
-    // calculate aux.esum and aux.fsum
-    // then sample 255 bases
-    if (n > 255)
-        {
-            ks_shuffle(uint16_t, n, bases);
-            n = 255;
-        }
-    ks_introsort(uint16_t, n, bases);
-    memset(w, 0, 32 * sizeof(int));
-    memset(&aux, 0, sizeof(call_aux_t));
-
-    // calculate esum and fsum
-    for (j = n - 1; j >= 0; --j)
-        {
-            uint16_t b = bases[j];
-            int qlty = b >> 5 < NBASES ? NBASES : b >> 5;
-            if (qlty > 63)
-                {
-                    qlty = 63;
-                }
-            int basestrand = b & 0x1f;
-            int base = b & 0xf;
-            aux.fsum[base] += em->coef->fk[w[basestrand]];
-            aux.bsum[base] += em->coef->fk[w[basestrand]] * em->coef->beta[qlty << 16 | 
-                              n << 8 | aux.c[base]];
-            ++aux.c[base];
-            ++w[basestrand];
-        }
-
-    // generate likelihood
-    for (j = 0; j < m; ++j)
-        {
-            int tmp2 = 0;
-            float tmp1 = 0.0;
-            float tmp3 = 0.0;
-
-            // homozygous
-            for (k = 0, tmp1 = tmp3 = 0.0, tmp2 = 0; k < m; ++k)
-                {
-                    if (k == j)
-                        {
-                            continue;
-                        }
-                    tmp1 += aux.bsum[k];
-                    tmp2 += aux.c[k];
-                    tmp3 += aux.fsum[k];
-                }
-            if (tmp2)
-                {
-                    q[j * m + j] = tmp1;
-                }
-            // heterozygous
-            for (k = j + 1; k < m; ++k)
-                {
-                    int cjk = aux.c[j] + aux.c[k];
-                    for (i = 0, tmp2 = 0, tmp1 = tmp3 = 0.0; i < m; ++i)
-                        {
-                            if ((i == j) || (i == k))
-                                {
-                                    continue;
-                                }
-                            tmp1 += aux.bsum[i];
-                            tmp2 += aux.c[i];
-                            tmp3 += aux.fsum[i];
-                        }
-                    if (tmp2)
-                        {
-                            q[j * m + k] = q[k * m + j] = -4.343 * em->coef->lhet[cjk << 8 | aux.c[k]] + tmp1;
-                        }
-                    // all the bases are either j or k
-                    else
-                        {
-                            q[j * m + k] = q[k * m + j] = -4.343 * em->coef->lhet[cjk << 8 | aux.c[k]];
-                        }
-                }
-
-            for (k = 0; k < m; ++k)
-                {
-                    if (q[j * m + k] < 0.0)
-                        {
-                            q[j * m + k] = 0.0;
-                        }
-                }
-        }
-    return 0;
-}
-
 char *
-get_refid(char *htext)
+get_refid (char *htext)
 {
     int z = 0;
     const int idblock = 200;
-    char *u = nullptr;
-    char *v = nullptr;
-    char *w = nullptr;
-    char *refid = nullptr;
+    char *u = NULL;
+    char *v = NULL;
+    char *w = NULL;
+    char *refid = NULL;
 
     u = htext;
-    v = strstr(htext, "AS:");
+    v = strstr (htext, "AS:");
     if (!v)
         {
-            fatalError("Unable to parse reference sequence name\nBe sure the AS tag is defined in the sequence dictionary");
+            fputs("Unable to parse reference sequence name\nBe sure "
+                  "the AS tag is defined in the sequence dictionary", stderr);
+            exit (EXIT_FAILURE);
         }
     u = v + 3;
-    for (z = 0, w = (char*)u; *w && *w != '\t' && *w != '\n'; ++w, ++z);
-    try
-        {
-            refid = new char [idblock];
-        }
-    catch (std::bad_alloc& ba)
-        {
-            std::cerr << "bad_alloc caught: " << ba.what() << std::endl;
-        }
+    for (z = 0, w = (char*)u; *w && (*w != '\t') && (*w != '\n'); ++w, ++z);
+    refid = (char*) malloc (idblock * sizeof(char));
     refid[0] = '\0';
-    strncpy(refid, u, z);
+    strncpy (refid, u, z);
     refid[z] = '\0';
     return refid;
 }
 
-bool
-is_file_exist(const char *fileName)
-{
-    std::ifstream infile(fileName);
-    return infile.good();
-}
-
 int
-fetch_func(const bam1_t *b, void *data)
+fetch_func (const bam1_t *b, void *data)
 {
     bam_plbuf_t *buf;
 
     buf = (bam_plbuf_t*)data;
-    bam_plbuf_push(b, buf);
+    bam_plbuf_push (b, buf);
     return 0;
-}
-
-void
-fatalError(const std::string msg)
-{
-    std::cerr << "popbam runtime error:" << std::endl;
-    std::cerr << msg << std::endl;
-    exit(EXIT_FAILURE);
 }
