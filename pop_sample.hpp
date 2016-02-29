@@ -24,8 +24,8 @@ typedef struct __bam_sample_t
     int m;              //!< Counter for sample configuration
     char **smpl;        //!< Pointer to array of sample names
     char **popul;       //!< Pointer to array of population names
-    void *rg2smid;      //!< Pointer to hash for read group to sample id lookup
-    void *sm2popid;     //!< Pointer to hash for sample to population id lookup
+    void *rg2sm;        //!< Pointer to hash for read group to sample id lookup
+    void *sm2pop;       //!< Pointer to hash for sample to population id lookup
     void *sm2id;        //!< Pointer to hash for sample to identifier lookup
     void *pop2sm;       //!< Pointer to hash for population to sample lookup
 } bam_sample_t;

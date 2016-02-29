@@ -86,7 +86,7 @@ main_diverge_bam (pop_diverge_parser *param)
     sm = bam_smpl_init ();
 
     // add samples
-    bam_smpl_add (sm, h, param->input_arg);
+    bam_smpl_add (sm, ddb->h, param->input_arg);
 
     // initialize the diverge data structre
     init_diverge_bam (ddb);
