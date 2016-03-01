@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.  */
 #include "sam.h"
 
 int
-samthreads(samfile_t *fp, int n_threads, int n_sub_blks)
+samthreads (samfile_t *fp, int n_threads, int n_sub_blks)
 {
     if ((hts_get_format(fp->file)->format != bam) || !fp->is_write)
         {
@@ -35,40 +35,40 @@ samthreads(samfile_t *fp, int n_threads, int n_sub_blks)
 }
 
 samfile_t *
-samopen(const char *fn, const char *mode, const void *aux)
+samopen (const char *fn, const char *mode, const void *aux)
 {
-    samFile *hts_fp = hts_open(fn, mode);
+    samFile *hts_fp = hts_open (fn, mode);
 
     if (hts_fp == NULL)
         {
             return NULL;
         }
 
-    samfile_t *fp = malloc(sizeof (samfile_t));
+    samfile_t *fp = malloc (sizeof (samfile_t));
     fp->file = hts_fp;
     fp->x.bam = hts_fp->fp.bgzf;
-    if (strchr(mode, 'r'))
+    if (strchr (mode, 'r'))
         {
             if (aux)
                 {
-                    if (hts_set_fai_filename(fp->file, aux) != 0)
+                    if (hts_set_fai_filename (fp->file, aux) != 0)
                         {
-                            sam_close(hts_fp);
-                            free(fp);
+                            sam_close (hts_fp);
+                            free (fp);
                             return NULL;
                         }
                 }
-            fp->header = sam_hdr_read(fp->file);  // samclose() will free this
+            fp->header = sam_hdr_read (fp->file);  // samclose() will free this
             if (fp->header == NULL)
                 {
-                    sam_close(hts_fp);
-                    free(fp);
+                    sam_close (hts_fp);
+                    free (fp);
                     return NULL;
                 }
             fp->is_write = 0;
-            if (fp->header->n_targets == 0 && bam_verbose >= 1)
+            if ((fp->header->n_targets == 0) && (bam_verbose >= 1))
                 {
-                    fprintf(stderr, "[samopen] no @SQ lines in the header.\n");
+                    fprintf (stderr, "[samopen] no @SQ lines in the header.\n");
                 }
         }
     else
@@ -76,16 +76,16 @@ samopen(const char *fn, const char *mode, const void *aux)
             enum htsExactFormat fmt = hts_get_format(fp->file)->format;
             fp->header = (bam_hdr_t *)aux;  // For writing, we won't free it
             fp->is_write = 1;
-            if (!(fmt == text_format || fmt == sam) || strchr(mode, 'h'))
+            if (!(fmt == text_format || fmt == sam) || strchr (mode, 'h'))
                 {
-                    sam_hdr_write(fp->file, fp->header);
+                    sam_hdr_write (fp->file, fp->header);
                 }
         }
     return fp;
 }
 
 void
-samclose(samfile_t *fp)
+samclose (samfile_t *fp)
 {
     if (fp)
         {

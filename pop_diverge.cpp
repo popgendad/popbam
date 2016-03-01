@@ -80,6 +80,8 @@ main_diverge_bam (pop_diverge_parser *param)
     bam_plbuf_t *buf = NULL;             //! pileup buffer
     diverge_data_bam *ddb;               //! diverge function data structure
 
+    ddb = malloc (sizeof(diverge_data_bam));
+
     // check input BAM file for errors
     check_BAM (ddb, param);
 
@@ -226,8 +228,6 @@ main_diverge_vcf(pop_diverge_parser *param)
     init_diverge_vcf (ddv);
     return 0;
 }
-
-// TODO: How to get param into this function-- edit bam_plbuf.c?
 
 int
 make_diverge (uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl,
@@ -786,7 +786,7 @@ call_base_diverge (diverge_data_bam *ddb, const pop_diverge_parser *param, int n
 int
 check_BAM (diverge_data_bam *ddb, const pop_diverge_parser *param)
 {
-    ddb->bam_in = samopen(param->input_arg, "rb", 0);
+    ddb->bam_in = samopen (param->input_arg, "rb", 0);
 
     // check if BAM file is readable
     if (!ddb->bam_in)

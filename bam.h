@@ -234,7 +234,7 @@ static inline bam_header_t *sam_header_read(tamFile fp)
 }
 
 // Note the distressing cast -- bam_name2id is not thread-safe
-static inline int32_t bam_get_tid(const bam_header_t *header, const char *seq_name)
+static inline int32_t bam_get_tid (const bam_header_t *header, const char *seq_name)
 {
     return bam_name2id((bam_header_t *)header, seq_name);
 }
@@ -248,7 +248,7 @@ static inline int32_t bam_get_tid(const bam_header_t *header, const char *seq_na
   @abstract Initialize a header structure.
   @return   the pointer to the header structure
  */
-static inline bam_header_t *bam_header_init(void)
+static inline bam_header_t *bam_header_init (void)
 {
     return bam_hdr_init();
 }
@@ -257,9 +257,9 @@ static inline bam_header_t *bam_header_init(void)
   @abstract        Destroy a header structure.
   @param  header  pointer to the header
  */
-static inline void bam_header_destroy(bam_header_t *header)
+static inline void bam_header_destroy (bam_header_t *header)
 {
-    bam_hdr_destroy(header);
+    bam_hdr_destroy (header);
 }
 
 /*!
@@ -270,7 +270,7 @@ static inline void bam_header_destroy(bam_header_t *header)
   beginning of the file. Upon success, the position indicator will
   be set at the start of the first alignment.
  */
-static inline bam_header_t *bam_header_read(bamFile fp)
+static inline bam_header_t *bam_header_read (bamFile fp)
 {
     return bam_hdr_read(fp);
 }
@@ -281,7 +281,7 @@ static inline bam_header_t *bam_header_read(bamFile fp)
   @param  header pointer to the header structure
   @return        always 0 currently
  */
-static inline int bam_header_write(bamFile fp, const bam_header_t *header)
+static inline int bam_header_write (bamFile fp, const bam_header_t *header)
 {
     return bam_hdr_write(fp, header);
 }
@@ -326,10 +326,10 @@ int bam_remove_B(bam1_t *b);
   @param  b       alignment to print
   @return         a pointer to the SAM string
  */
-char *bam_format1(const bam_header_t *header, const bam1_t *b);
+char *bam_format1 (const bam_header_t *header, const bam1_t *b);
 
 /*! @abstract     Formats a BAM record and writes it and \n to stdout */
-void bam_view1(const bam_header_t *header, const bam1_t *b);
+void bam_view1 (const bam_header_t *header, const bam1_t *b);
 
 /*!
   @abstract       Check whether a BAM record is plausibly valid
@@ -343,7 +343,7 @@ void bam_view1(const bam_header_t *header, const bam1_t *b);
   to detect when bam_seek() has been called with a virtual file offset
   that is not the offset of an alignment record.
  */
-int bam_validate1(const bam_header_t *header, const bam1_t *b);
+int bam_validate1 (const bam_header_t *header, const bam1_t *b);
 
 // TODO Parses headers, so not yet implemented in terms of htslib
 const char *bam_get_library(bam_header_t *header, const bam1_t *b);
@@ -508,7 +508,7 @@ static inline void bam_iter_destroy(bam_iter_t iter)
   @param  end     the returned end coordinate
   @return         0 on success; -1 on failure
  */
-int bam_parse_region(bam_header_t *header, const char *str, int *ref_id, int *begin, int *end);
+int bam_parse_region (bam_header_t *header, const char *str, int *ref_id, int *begin, int *end);
 
 
 /**************************
@@ -551,7 +551,7 @@ static inline uint8_t *bam_aux_get_core(bam1_t *b, const char tag[2])
   @param  cigar  the corresponding CIGAR array (from bam1_t::cigar)
   @return        the rightmost coordinate, 0-based
 */
-static inline uint32_t bam_calend(const bam1_core_t *c, const uint32_t *cigar)
+static inline uint32_t bam_calend (const bam1_core_t *c, const uint32_t *cigar)
 {
     return c->pos + (c->n_cigar? bam_cigar2rlen(c->n_cigar, cigar) : 1);
 }
@@ -562,7 +562,7 @@ static inline uint32_t bam_calend(const bam1_core_t *c, const uint32_t *cigar)
   @param  cigar  the corresponding CIGAR array (from bam1_t::cigar)
   @return        length of the query sequence
 */
-static inline int32_t samtools_bam_cigar2qlen(const bam1_core_t *c, const uint32_t *cigar)
+static inline int32_t samtools_bam_cigar2qlen (const bam1_core_t *c, const uint32_t *cigar)
 {
     return bam_cigar2qlen(c->n_cigar, cigar);
 }
@@ -579,7 +579,7 @@ static inline int32_t samtools_bam_cigar2qlen(const bam1_core_t *c, const uint32
   @param  end  end of the region, 0-based
   @return      bin
  */
-static inline int bam_reg2bin(uint32_t beg, uint32_t end)
+static inline int bam_reg2bin (uint32_t beg, uint32_t end)
 {
     return hts_reg2bin(beg, end, 14, 5);
 }

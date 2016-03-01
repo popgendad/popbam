@@ -114,7 +114,7 @@ extern void clean_hets (int num_samples, uint64_t *cb, int ref, int min_snpq);
  * \param n_size Size of the table
  */
 
-extern double* logbinomial_table (const int n_size);
+extern double *logbinomial_table (const int n_size);
 
 /*!
  * \fn char *get_refid(char *htext)
@@ -131,24 +131,6 @@ extern char *get_refid (char *htext);
  * \param data User defined data structure
  */
 extern int fetch_func (const bam1_t *b, void *data);
-
-/*!
- * \fn inline uint32_t log2int (const uint32_t val)
- * \brief Returns integer of log-base2 of val
- * \param val The input value
- */
-
-extern __inline uint32_t
-log2int (const uint32_t va)
-{
-    uint32_t re;
-
-    asm ( "\tbsr  %1, %0\n"
-          : "=r" (re)
-          : "r"  (va)
-        );
-    return re;
-}
 
 /*!
  * \fn inline uint16_t bitcount64 (uint64_t x)
@@ -185,7 +167,7 @@ hamming_distance (uint64_t x, uint64_t y)
     while (val)
         {
             ++dist;
-            val &= val-1;
+            val &= val - 1;
         }
     return dist;
 }
