@@ -99,30 +99,30 @@ samclose(samfile_t *fp)
 }
 
 int
-samfetch(samfile_t *fp, const bam_index_t *idx, int tid, int beg, int end, void *data, bam_fetch_f func)
+samfetch (samfile_t *fp, const bam_index_t *idx, int tid, int beg, int end, void *data, bam_fetch_f func)
 {
     int ret = 0;
     bam1_t *b = bam_init1();
-    hts_itr_t *iter = sam_itr_queryi(idx, tid, beg, end);
+    hts_itr_t *iter = sam_itr_queryi (idx, tid, beg, end);
 
-    while ((ret = sam_itr_next(fp->file, iter, b)) >= 0)
+    while ((ret = sam_itr_next (fp->file, iter, b)) >= 0)
         {
             func(b, data);
         }
-    hts_itr_destroy(iter);
-    bam_destroy1(b);
+    hts_itr_destroy (iter);
+    bam_destroy1 (b);
     return (ret == -1) ? 0 : ret;
 }
 
 int
-sampileup(samfile_t *fp, int mask, bam_pileup_f func, void *func_data)
+sampileup (samfile_t *fp, int mask, bam_pileup_f func, void *param, void *func_data)
 {
     int ret = 0;
     bam_plbuf_t *buf;
     bam1_t *b;
 
     b = bam_init1();
-    buf = bam_plbuf_init(func, func_data);
+    buf = bam_plbuf_init (func, param, func_data);
     if (mask < 0)
         {
             mask = BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP;
@@ -131,7 +131,7 @@ sampileup(samfile_t *fp, int mask, bam_pileup_f func, void *func_data)
         {
             mask |= BAM_FUNMAP;
         }
-    while ((ret = samread(fp, b)) >= 0)
+    while ((ret = samread (fp, b)) >= 0)
         {
             // bam_plp_push() itself now filters out unmapped reads only
             if (b->core.flag & mask)
@@ -140,14 +140,14 @@ sampileup(samfile_t *fp, int mask, bam_pileup_f func, void *func_data)
                 }
             bam_plbuf_push(b, buf);
         }
-    bam_plbuf_push(0, buf);
-    bam_plbuf_destroy(buf);
-    bam_destroy1(b);
+    bam_plbuf_push (0, buf);
+    bam_plbuf_destroy (buf);
+    bam_destroy1 (b);
     return 0;
 }
 
 char *
-samfaipath(const char *fn_ref)
+samfaipath (const char *fn_ref)
 {
     char *fn_list = NULL;
 

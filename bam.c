@@ -26,7 +26,7 @@ DEALINGS IN THE SOFTWARE.  */
 #include "sam_header.h"
 
 char *
-bam_format1(const bam_header_t *header, const bam1_t *b)
+bam_format1 (const bam_header_t *header, const bam1_t *b)
 {
     kstring_t str;
     str.l = str.m = 0;
@@ -36,15 +36,15 @@ bam_format1(const bam_header_t *header, const bam1_t *b)
 }
 
 void
-bam_view1(const bam_header_t *header, const bam1_t *b)
+bam_view1 (const bam_header_t *header, const bam1_t *b)
 {
-    char *s = bam_format1(header, b);
+    char *s = bam_format1 (header, b);
     puts(s);
     free(s);
 }
 
 int
-bam_validate1(const bam_header_t *header, const bam1_t *b)
+bam_validate1 (const bam_header_t *header, const bam1_t *b)
 {
     char *s;
 
@@ -74,7 +74,7 @@ bam_validate1(const bam_header_t *header, const bam1_t *b)
 #endif
 
 const char *
-bam_get_library(bam_header_t *h, const bam1_t *b)
+bam_get_library (bam_header_t *h, const bam1_t *b)
 {
     const char *rg;
     char *cp = h->text;
@@ -94,9 +94,9 @@ bam_get_library(bam_header_t *h, const bam1_t *b)
             char last = '\t';
 
             // Find a @RG line
-            if (strncmp(cp, "@RG", 3) != 0)
+            if (strncmp (cp, "@RG", 3) != 0)
                 {
-                    while (*cp && *cp != '\n')
+                    while (*cp && (*cp != '\n'))
                         {
                             cp++;    // skip line
                         }
@@ -110,15 +110,15 @@ bam_get_library(bam_header_t *h, const bam1_t *b)
             // Find ID: and LB: keys
             cp += 4;
             ID = LB = NULL;
-            while (*cp && *cp != '\n')
+            while (*cp && (*cp != '\n'))
                 {
                     if (last == '\t')
                         {
-                            if (strncmp(cp, "LB:", 3) == 0)
+                            if (strncmp (cp, "LB:", 3) == 0)
                                 {
                                     LB = cp + 3;
                                 }
-                            else if (strncmp(cp, "ID:", 3) == 0)
+                            else if (strncmp (cp, "ID:", 3) == 0)
                                 {
                                     ID = cp + 3;
                                 }
@@ -132,14 +132,14 @@ bam_get_library(bam_header_t *h, const bam1_t *b)
                 }
 
             // Check it's the correct ID
-            if ((strncmp(rg, ID, strlen(rg)) != 0) || (ID[strlen(rg)] != '\t'))
+            if ((strncmp (rg, ID, strlen(rg)) != 0) || (ID[strlen(rg)] != '\t'))
                 {
                     continue;
                 }
 
             // Valid until next query
             static char LB_text[1024];
-            for (cp = LB; *cp && *cp != '\t' && *cp != '\n'; cp++);
+            for (cp = LB; *cp && (*cp != '\t') && (*cp != '\n'); cp++);
             strncpy(LB_text, LB, MIN(cp-LB, 1023));
             LB_text[MIN(cp-LB, 1023)] = 0;
 
@@ -150,15 +150,15 @@ bam_get_library(bam_header_t *h, const bam1_t *b)
 }
 
 int
-bam_fetch(bamFile fp, const bam_index_t *idx, int tid, int beg, int end, void *data, bam_fetch_f func)
+bam_fetch (bamFile fp, const bam_index_t *idx, int tid, int beg, int end, void *data, bam_fetch_f func)
 {
     int ret = 0;
     bam_iter_t iter;
     bam1_t *b;
 
     b = bam_init1();
-    iter = bam_iter_query(idx, tid, beg, end);
-    while ((ret = bam_iter_read(fp, iter, b)) >= 0)
+    iter = bam_iter_query (idx, tid, beg, end);
+    while ((ret = bam_iter_read (fp, iter, b)) >= 0)
         {
             func(b, data);
         }
@@ -170,7 +170,7 @@ bam_fetch(bamFile fp, const bam_index_t *idx, int tid, int beg, int end, void *d
 #define bam1_seq_seti(s, i, c) ( (s)[(i)>>1] = ((s)[(i)>>1] & 0xf<<(((i)&1)<<2)) | (c)<<((~(i)&1)<<2) )
 
 int
-bam_remove_B(bam1_t *b)
+bam_remove_B (bam1_t *b)
 {
     int i = 0;
     int j = 0;
@@ -178,8 +178,11 @@ bam_remove_B(bam1_t *b)
     int k = 0;
     int l = 0;
     int no_qual = 0;
-    uint32_t *cigar, *new_cigar;
-    uint8_t *seq, *qual, *p;
+    uint32_t *cigar;
+    uint32_t *new_cigar;
+    uint8_t *seq;
+    uint8_t *qual;
+    uint8_t *p;
 
     // test if removal is necessary
     if (b->core.flag & BAM_FUNMAP)

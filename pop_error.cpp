@@ -9,6 +9,7 @@
 #include <cmath>
 
 #include "htslib/ksort.h"
+#include "htslib/khash.h"
 #include "pop_error.hpp"
 #include "pop_utils.hpp"
 

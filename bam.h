@@ -396,35 +396,36 @@ const char *bam_get_library(bam_header_t *header, const bam1_t *b);
   @param  data user provided data
   @discussion  See also bam_plbuf_push(), bam_plbuf_init() and bam_pileup1_t.
  */
-typedef int (*bam_pileup_f)(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data);
+typedef int (*bam_pileup_f)(uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *param, void *data);
 
 typedef struct
 {
     bam_plp_t iter;
     bam_pileup_f func;
+    void *param;
     void *data;
 } bam_plbuf_t;
 
-void bam_plbuf_reset(bam_plbuf_t *buf);
-bam_plbuf_t *bam_plbuf_init(bam_pileup_f func, void *data);
-void bam_plbuf_destroy(bam_plbuf_t *buf);
-int bam_plbuf_push(const bam1_t *b, bam_plbuf_t *buf);
+void bam_plbuf_reset (bam_plbuf_t *buf);
+bam_plbuf_t *bam_plbuf_init (bam_pileup_f func, void *param, void *data);
+void bam_plbuf_destroy (bam_plbuf_t *buf);
+int bam_plbuf_push (const bam1_t *b, bam_plbuf_t *buf);
 
-int bam_pileup_file(bamFile fp, int mask, bam_pileup_f func, void *func_data);
+int bam_pileup_file (bamFile fp, int mask, bam_pileup_f func, void *func_data);
 
 struct __bam_lplbuf_t;
 typedef struct __bam_lplbuf_t bam_lplbuf_t;
 
-void bam_lplbuf_reset(bam_lplbuf_t *buf);
+void bam_lplbuf_reset (bam_lplbuf_t *buf);
 
 /*! @abstract  bam_plbuf_init() equivalent with level calculated. */
-bam_lplbuf_t *bam_lplbuf_init(bam_pileup_f func, void *data);
+bam_lplbuf_t *bam_lplbuf_init (bam_pileup_f func, void *data);
 
 /*! @abstract  bam_plbuf_destroy() equivalent with level calculated. */
-void bam_lplbuf_destroy(bam_lplbuf_t *tv);
+void bam_lplbuf_destroy (bam_lplbuf_t *tv);
 
 /*! @abstract  bam_plbuf_push() equivalent with level calculated. */
-int bam_lplbuf_push(const bam1_t *b, bam_lplbuf_t *buf);
+int bam_lplbuf_push (const bam1_t *b, bam_lplbuf_t *buf);
 
 
 /*********************
@@ -439,7 +440,7 @@ typedef hts_idx_t bam_index_t;
   @param  fn  name of the BAM file
   @return     always 0 currently
  */
-static inline int samtools_bam_index_build(const char *fn)
+static inline int samtools_bam_index_build (const char *fn)
 {
     return bam_index_build(fn, 0);
 }

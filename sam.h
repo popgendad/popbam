@@ -71,13 +71,13 @@ extern "C" {
   aux is not used, either.
   @return       SAM/BAM file handler
  */
-samfile_t *samopen(const char *fn, const char *mode, const void *aux);
+samfile_t *samopen (const char *fn, const char *mode, const void *aux);
 
 /*!
   @abstract     Close a SAM/BAM handler
   @param  fp    file handler to be closed
  */
-void samclose(samfile_t *fp);
+void samclose (samfile_t *fp);
 
 /*!
   @abstract     Read one alignment
@@ -85,9 +85,9 @@ void samclose(samfile_t *fp);
   @param  b     alignment
   @return       bytes read
  */
-static inline int samread(samfile_t *fp, bam1_t *b)
+static inline int samread (samfile_t *fp, bam1_t *b)
 {
-    return sam_read1(fp->file, fp->header, b);
+    return sam_read1 (fp->file, fp->header, b);
 }
 
 /*!
@@ -96,9 +96,9 @@ static inline int samread(samfile_t *fp, bam1_t *b)
   @param  b     alignment
   @return       bytes written
  */
-static inline int samwrite(samfile_t *fp, const bam1_t *b)
+static inline int samwrite (samfile_t *fp, const bam1_t *b)
 {
-    return sam_write1(fp->file, fp->header, b);
+    return sam_write1 (fp->file, fp->header, b);
 }
 
 /*!
@@ -107,9 +107,9 @@ static inline int samwrite(samfile_t *fp, const bam1_t *b)
   @param  fn    name of the BAM or CRAM file (NOT the index file)
   @return       pointer to the index structure
  */
-static inline bam_index_t *samtools_sam_index_load(samfile_t *fp, const char *fn)
+static inline bam_index_t *samtools_sam_index_load (samfile_t *fp, const char *fn)
 {
-    return sam_index_load(fp->file, fn);
+    return sam_index_load (fp->file, fn);
 }
 #undef sam_index_load
 #define sam_index_load(fp,fn) (samtools_sam_index_load((fp), (fn)))
@@ -126,7 +126,7 @@ static inline bam_index_t *samtools_sam_index_load(samfile_t *fp, const char *fn
   @param  data  user provided data (will be transferred to func)
   @param  func  user defined function
  */
-int samfetch(samfile_t *fp, const bam_index_t *idx, int tid, int beg, int end, void *data, bam_fetch_f func);
+int samfetch (samfile_t *fp, const bam_index_t *idx, int tid, int beg, int end, void *data, bam_fetch_f func);
 
 /*!
   @abstract     Get the pileup for a whole alignment file
@@ -135,10 +135,10 @@ int samfetch(samfile_t *fp, const bam_index_t *idx, int tid, int beg, int end, v
   @param  func  user defined function called in the pileup process
   #param  data  user provided data for func()
  */
-int sampileup(samfile_t *fp, int mask, bam_pileup_f func, void *data);
+int sampileup (samfile_t *fp, int mask, bam_pileup_f func, void *param, void *data);
 
-char *samfaipath(const char *fn_ref);
-int samthreads(samfile_t *fp, int n_threads, int n_sub_blks);
+char *samfaipath (const char *fn_ref);
+int samthreads (samfile_t *fp, int n_threads, int n_sub_blks);
 
 #ifdef __cplusplus
 }

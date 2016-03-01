@@ -7,6 +7,7 @@
 #ifndef POP_SAMPLE_HPP
 #define POP_SAMPLE_HPP
 
+#include "bam.h"
 #include "htslib/hts.h"
 #include "htslib/kstring.h"
 #include "htslib/khash.h"

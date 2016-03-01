@@ -85,18 +85,18 @@ extern int main_diverge_bam (pop_diverge_parser *param);
 extern int main_diverge_vcf (pop_diverge_parser *param);
 extern int init_diverge_bam (diverge_data_bam *ddb);
 extern int init_diverge_vcf (diverge_data_vcf *ddv);
-extern int make_diverge (uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *data);
-extern int calc_diverge (const pop_diverge_parser *param);
+extern int make_diverge (uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl, void *par, void *data);
+extern int calc_diverge (diverge_data_bam *ddb, const pop_diverge_parser *param);
 extern int alloc_diverge_bam (diverge_data_bam *ddb, const pop_diverge_parser *param);
 extern void dealloc_diverge_bam (diverge_data_bam *ddb, const pop_diverge_parser *param);
 extern int alloc_diverge_vcf (diverge_data_vcf *ddv, const pop_diverge_parser *param);
 extern void dealloc_diverge_vcf (diverge_data_vcf *ddv, const pop_diverge_parser *param);
-extern int set_min_pop_n (void);
+extern int set_min_pop_n (diverge_data_bam *ddb);
 extern int print_diverge_bam (diverge_data_bam *ddb, const pop_diverge_parser *param, const char *scaffold, int win_size);
 extern int print_diverge_vcf (diverge_data_vcf *ddv, const pop_diverge_parser *param, const char *scaffold, int win_size);
 extern uint64_t *call_base_diverge (diverge_data_bam *ddb, const pop_diverge_parser *param, int n, const bam_pileup1_t *pl);
 extern int check_BAM (diverge_data_bam *ddb, const pop_diverge_parser *param);
-extern int assignPops (diverge_data_bam *ddb, const pop_diverge_parser *param);
+extern int assign_pops (diverge_data_bam *ddb, const pop_diverge_parser *param);
 
 #endif
 

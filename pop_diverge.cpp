@@ -18,6 +18,7 @@
 #include "htslib/hfile.h"
 
 #include "pop_diverge.hpp"
+#include "tables.h"
 
 int
 main_diverge (int argc, char *argv[])
@@ -123,7 +124,7 @@ main_diverge_bam (pop_diverge_parser *param)
         }
 
     // fetch reference sequence
-    ddb->ref_base = faidx_fetch_seq (param->ref_arg, ddb->h->target_name[chr],
+    ddb->ref_base = faidx_fetch_seq (ddb->fai_file, ddb->h->target_name[chr],
                                      0, 0x7fffffff, &(ddb->len));
 
     // calculate the number of windows
@@ -156,7 +157,7 @@ main_diverge_bam (pop_diverge_parser *param)
             // region is retrieved from the reference
             if (param->win_size_given)
                 {
-                    k = bam_parse_region (ddb->h, win_coord.c_str(), &ref, &(ddb->beg),
+                    int k = bam_parse_region (ddb->h, win_coord.c_str(), &ref, &(ddb->beg),
                                           &(ddb->end));
                     if (k < 0)
                         {
@@ -179,17 +180,17 @@ main_diverge_bam (pop_diverge_parser *param)
                 }
 
             // initialize diverge specific variables
-            alloc_diverge_bam ();
+            alloc_diverge_bam (ddb, param);
 
             // create population assignments
-            assign_pops (param.input_arg);
+            assign_pops (ddb, param);
 
             // set default minimum sample size as
             // the number of samples in the population
-            set_min_pop_n ();
+            set_min_pop_n (ddb);
 
             // initialize pileup
-            buf = bam_plbuf_init (make_diverge, ddb);
+            buf = bam_plbuf_init (make_diverge, param, ddb);
 
             // fetch region from bam file
             if ((bam_fetch (ddb->bam_in->x.bam, ddb->idx, ref, ddb->beg, ddb->end, buf, fetch_func)) < 0)
@@ -203,8 +204,8 @@ main_diverge_bam (pop_diverge_parser *param)
             bam_plbuf_push (0, buf);
 
             // print results to stdout
-            calc_diverge (param);
-            print_diverge_bam (param, ddb->h->target_name[chr], win_size);
+            calc_diverge (ddb, param);
+            print_diverge_bam (ddb, param, ddb->h->target_name[chr], win_size);
 
             // take out the garbage
             bam_plbuf_destroy (buf);
@@ -230,13 +231,14 @@ main_diverge_vcf(pop_diverge_parser *param)
 
 int
 make_diverge (uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl,
-              void *data)
+              void *par, void *data)
 {
     int i = 0;
     int fq = 0;
     uint64_t sample_cov = 0;
     uint64_t *cb = NULL;
     diverge_data_bam *ddb = NULL;
+    pop_diverge_parser *param = static_cast<pop_diverge_parser*>(par);
 
     // get control data structure
     ddb = (diverge_data_bam*)data;
@@ -245,19 +247,20 @@ make_diverge (uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl,
     if ((ddb->beg <= (int)pos) && (ddb->end > (int)pos))
         {
             // call bases
-            cb = call_base_diverge (ddb, n, pl);
+            cb = call_base_diverge (ddb, param, n, pl);
 
             // resolve heterozygous sites
-            if (!(param->clean_hets))
+            //if (!(param->clean_hets))
+            if (0)
                 {
-                    clean_hets (ddb->sm->n, cb, (int)ddb->ref_base[pos], ddb->min_snp_arg);
+                    clean_hets (ddb->sm->n, cb, (int)ddb->ref_base[pos], param->min_snp_arg);
                 }
 
             // determine if site is segregating
-            fq = seg_base (ddb->sm->n, cb, ddb->ref_base[pos], ddb->min_snp_arg);
+            fq = seg_base (ddb->sm->n, cb, ddb->ref_base[pos], param->min_snp_arg);
 
             // determine how many samples pass the quality filters
-            sample_cov = qual_filter (ddb->sm->n, cb, ddb->min_rms_arg, ddb->min_depth_arg, ddb->max_depth_arg);
+            sample_cov = qual_filter (ddb->sm->n, cb, param->min_rms_arg, param->min_depth_arg, param->max_depth_arg);
 
             for (i = 0; i < ddb->npops; i++)
                 {
@@ -312,11 +315,11 @@ calc_diverge (diverge_data_bam *ddb, const pop_diverge_parser *param)
                     ddb->num_snps[i] = 0;
                     for (j = 0; j < ddb->segsites; j++)
                         {
-                            pop_type = ddb->types[hap.idx[j]] & ddb->pop_mask[i];
+                            pop_type = ddb->types[ddb->hap.idx[j]] & ddb->pop_mask[i];
 
                             // check if outgroup is different from reference
                             if (param->outgroup_given &&
-                                CHECK_BIT(ddb->types[hap.idx[j]], ddb->outidx))
+                                CHECK_BIT(ddb->types[ddb->hap.idx[j]], ddb->outidx))
                                 {
                                     freq = ddb->pop_nsmpl[i] - bitcount64(pop_type);
                                 }
@@ -355,14 +358,20 @@ calc_diverge (diverge_data_bam *ddb, const pop_diverge_parser *param)
 }
 
 int
+init_diverge_bam (diverge_data_bam *ddb)
+{
+    return 0;
+}
+
+int
 alloc_diverge_bam (diverge_data_bam *ddb, const pop_diverge_parser *param)
 {
     int i = 0;
-    int length = end - beg;
+    int length = ddb->end - ddb->beg;
     int npops = ddb->npops;
-    int n = sm->n;
+    int n = ddb->sm->n;
 
-    segsites = 0;
+    ddb->segsites = 0;
     try
         {
             ddb->types = new uint64_t [length]();
@@ -403,41 +412,59 @@ alloc_diverge_bam (diverge_data_bam *ddb, const pop_diverge_parser *param)
     return 0;
 }
 
+int
+init_diverge_vcf (diverge_data_vcf *ddv)
+{
+    return 0;
+}
+
+int
+alloc_diverge_vcf (diverge_data_vcf *ddv, const pop_diverge_parser *param)
+{
+    return 0;
+}
+
 void dealloc_diverge_bam (diverge_data_bam *ddb, const pop_diverge_parser *param)
 {
     int i = 0;
-    int n = sm->n;
+    int n = ddb->sm->n;
 
-    delete [] pop_mask;
-    delete [] types;
-    delete [] pop_nsmpl;
-    delete [] pop_sample_mask;
-    delete [] num_snps;
-    delete [] min_pop_n;
-    delete [] hap.pos;
-    delete [] hap.idx;
-    delete [] hap.ref;
+    delete [] ddb->pop_mask;
+    delete [] ddb->types;
+    delete [] ddb->pop_nsmpl;
+    delete [] ddb->pop_sample_mask;
+    delete [] ddb->num_snps;
+    delete [] ddb->min_pop_n;
+    delete [] ddb->hap.pos;
+    delete [] ddb->hap.idx;
+    delete [] ddb->hap.ref;
     if (param->pop_flag)
         {
-            delete [] ind_div;
+            delete [] ddb->ind_div;
         }
     else
         {
-            delete [] pop_div;
+            delete [] ddb->pop_div;
         }
     for (i = 0; i < n; i++)
         {
-            delete [] hap.seq[i];
-            delete [] hap.base[i];
-            delete [] hap.num_reads[i];
-            delete [] hap.snpq[i];
-            delete [] hap.rms[i];
+            delete [] ddb->hap.seq[i];
+            delete [] ddb->hap.base[i];
+            delete [] ddb->hap.num_reads[i];
+            delete [] ddb->hap.snpq[i];
+            delete [] ddb->hap.rms[i];
         }
-    delete [] hap.seq;
-    delete [] hap.base;
-    delete [] hap.snpq;
-    delete [] hap.rms;
-    delete [] hap.num_reads;
+    delete [] ddb->hap.seq;
+    delete [] ddb->hap.base;
+    delete [] ddb->hap.snpq;
+    delete [] ddb->hap.rms;
+    delete [] ddb->hap.num_reads;
+}
+
+void
+dealloc_diverge_vcf (diverge_data_vcf *ddv, const pop_diverge_parser *param)
+{
+    return;
 }
 
 int
@@ -449,7 +476,7 @@ print_diverge_bam (diverge_data_bam *ddb, const pop_diverge_parser *param,
     double jc = 0.0;
     std::stringstream out;
 
-    out << scaffold << '\t' << beg + 1 << '\t' << end + 1 << '\t' << num_sites;
+    out << scaffold << '\t' << ddb->beg + 1 << '\t' << ddb->end + 1 << '\t' << ddb->num_sites;
     if (param->pop_flag)
         {
             for (i = 0; i < ddb->npops; i++)
@@ -535,6 +562,13 @@ print_diverge_bam (diverge_data_bam *ddb, const pop_diverge_parser *param,
     return 0;
 }
 
+int
+print_diverge_vcf (diverge_data_vcf *ddv, const pop_diverge_parser *param,
+                   const char *scaffold, int win_size)
+{
+    return 0;
+}
+
 // TODO: The set_min_pop_n function cannot currently take input from user
 
 int
@@ -542,7 +576,7 @@ set_min_pop_n (diverge_data_bam *ddb)
 {
     int i = 0;
 
-    for (i = 0; i < npops; i++)
+    for (i = 0; i < ddb->npops; i++)
         {
             ddb->min_pop_n[i] = (unsigned short)ddb->pop_nsmpl[i];
         }
@@ -550,7 +584,7 @@ set_min_pop_n (diverge_data_bam *ddb)
 }
 
 int
-assignPops (diverge_data_bam *ddb, const pop_diverge_parser *param)
+assign_pops (diverge_data_bam *ddb, const pop_diverge_parser *param)
 {
     int i = 0;
     int si = -1;
@@ -757,14 +791,14 @@ check_BAM (diverge_data_bam *ddb, const pop_diverge_parser *param)
     // check if BAM file is readable
     if (!ddb->bam_in)
         {
-			fprintf (stderr, "Cannot read infile \"%s\"\n", param->input_arg);
+            fprintf (stderr, "Cannot read infile \"%s\"\n", param->input_arg);
             exit (EXIT_FAILURE);
         }
 
     // check if BAM header is returned
     if (!ddb->bam_in->header)
         {
-			fprintf (stderr, "Cannot read BAM header from file \"%s\"\n", param->input_arg);
+            fprintf (stderr, "Cannot read BAM header from file \"%s\"\n", param->input_arg);
             exit (EXIT_FAILURE);
         }
     else
@@ -787,7 +821,7 @@ check_BAM (diverge_data_bam *ddb, const pop_diverge_parser *param)
     // check for bam index file
     if (!(ddb->idx = bam_index_load (param->input_arg)))
         {
-			fprintf (stderr, "Index file not available for BAM file \"%s\"\n", param->input_arg);
+            fprintf (stderr, "Index file not available for BAM file \"%s\"\n", param->input_arg);
             exit (EXIT_FAILURE);
         }
 
@@ -795,8 +829,8 @@ check_BAM (diverge_data_bam *ddb, const pop_diverge_parser *param)
     ddb->fai_file = fai_load (param->ref_arg);
     if (!ddb->fai_file)
         {
-			fprintf (stderr, "Failed to load index for fastA reference file \"%s\"\n", param->ref_arg);
-            exit (EXIT_FAILURE)
+            fprintf (stderr, "Failed to load index for fastA reference file \"%s\"\n", param->ref_arg);
+            exit (EXIT_FAILURE);
         }
     return 0;
 }
