@@ -94,7 +94,9 @@ extern void dealloc_diverge_vcf (diverge_data_vcf *ddv, const pop_diverge_parser
 extern int set_min_pop_n (void);
 extern int print_diverge_bam (diverge_data_bam *ddb, const pop_diverge_parser *param, const char *scaffold, int win_size);
 extern int print_diverge_vcf (diverge_data_vcf *ddv, const pop_diverge_parser *param, const char *scaffold, int win_size);
-uint64_t *call_base_diverge (diverge_data_bam *ddb, const pop_diverge_parser *param, int n, const bam_pileup1_t *pl);
+extern uint64_t *call_base_diverge (diverge_data_bam *ddb, const pop_diverge_parser *param, int n, const bam_pileup1_t *pl);
+extern int check_BAM (diverge_data_bam *ddb, const pop_diverge_parser *param);
+extern int assignPops (diverge_data_bam *ddb, const pop_diverge_parser *param);
 
 #endif
 

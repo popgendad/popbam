@@ -80,27 +80,27 @@ main_diverge_bam (pop_diverge_parser *param)
     diverge_data_bam *ddb;               //! diverge function data structure
 
     // check input BAM file for errors
-    checkBAM (bam_in, h, idx, fai_file);
+    check_BAM (ddb, param);
 
     // initialize the sample data structure
-    sm = bam_smpl_init ();
+    ddb->sm = bam_smpl_init ();
 
     // add samples
-    bam_smpl_add (sm, ddb->h, param->input_arg);
+    bam_smpl_add (ddb->sm, ddb->h, param->input_arg);
 
     // initialize the diverge data structre
     init_diverge_bam (ddb);
-    ddb->npops = sm->npops;
+    ddb->npops = ddb->sm->npops;
 
     // initialize error model
-    em = errmod_init (0.17);
+    ddb->em = errmod_init (0.17);
 
     // if outgroup option is used check to make sure it exists
     if (param->outgroup_given)
         {
-            for (i = 0; i < sm->n; i++)
+            for (i = 0; i < ddb->sm->n; i++)
                 {
-                    if (strcmp (sm->smpl[i], param->outgroup_arg) == 0)
+                    if (strcmp (ddb->sm->smpl[i], param->outgroup_arg) == 0)
                         {
                             ddb->outidx = i;
                             found = true;
@@ -115,7 +115,7 @@ main_diverge_bam (pop_diverge_parser *param)
         }
 
     // parse genomic region
-    bp_indict = bam_parse_region (h, param->region_arg, &chr, &beg, &end);
+    bp_indict = bam_parse_region (ddb->h, param->region_arg, &chr, &beg, &end);
     if (bp_indict < 0)
         {
             fprintf (stderr, "Bad genome coordinates: %s\n", param->region_arg);
@@ -123,13 +123,13 @@ main_diverge_bam (pop_diverge_parser *param)
         }
 
     // fetch reference sequence
-    ddb->ref_base = faidx_fetch_seq (param->ref_arg, h->target_name[chr],
+    ddb->ref_base = faidx_fetch_seq (param->ref_arg, ddb->h->target_name[chr],
                                      0, 0x7fffffff, &(ddb->len));
 
     // calculate the number of windows
     if (param->win_size_given)
         {
-            win_size = (int)(param->win_size_arg * 1000)
+            win_size = (int)(param->win_size_arg * 1000);
             num_windows = ((end - beg) - 1) / win_size;
         }
     else
@@ -142,7 +142,7 @@ main_diverge_bam (pop_diverge_parser *param)
     for (i = 0; i < num_windows; i++)
         {
             // construct genome coordinate string
-            std::string scaffold_name(h->target_name[chr]);
+            std::string scaffold_name(ddb->h->target_name[chr]);
             std::ostringstream winc(scaffold_name);
             winc.seekp(0, std::ios::end);
             winc << ':' << beg + (i * win_size) + 1 << '-';
@@ -156,12 +156,12 @@ main_diverge_bam (pop_diverge_parser *param)
             // region is retrieved from the reference
             if (param->win_size_given)
                 {
-                    k = bam_parse_region (h, win_coord, &ref, &(ddb->beg),
+                    k = bam_parse_region (ddb->h, win_coord.c_str(), &ref, &(ddb->beg),
                                           &(ddb->end));
                     if (k < 0)
                         {
                             fprintf (stderr, "Bad window coordinates: %s\n",
-                                     win_coord);
+                                     win_coord.c_str());
                             exit (EXIT_FAILURE);
                         }
                 }
@@ -179,10 +179,10 @@ main_diverge_bam (pop_diverge_parser *param)
                 }
 
             // initialize diverge specific variables
-            alloc_diverge ();
+            alloc_diverge_bam ();
 
             // create population assignments
-            assign_pops (arg.input_arg);
+            assign_pops (param.input_arg);
 
             // set default minimum sample size as
             // the number of samples in the population
@@ -192,7 +192,7 @@ main_diverge_bam (pop_diverge_parser *param)
             buf = bam_plbuf_init (make_diverge, ddb);
 
             // fetch region from bam file
-            if ((bam_fetch (bam_in->x.bam, idx, ref, ddb->beg, ddb->end, buf, fetch_func)) < 0)
+            if ((bam_fetch (ddb->bam_in->x.bam, ddb->idx, ref, ddb->beg, ddb->end, buf, fetch_func)) < 0)
                 {
                     fprintf (stderr, "Failed to retrieve region %s "
                              "due to corrupted BAM index file", param->region_arg);
@@ -204,7 +204,7 @@ main_diverge_bam (pop_diverge_parser *param)
 
             // print results to stdout
             calc_diverge (param);
-            print_diverge (param, h->target_name[chr], win_size);
+            print_diverge_bam (param, ddb->h->target_name[chr], win_size);
 
             // take out the garbage
             bam_plbuf_destroy (buf);
@@ -225,6 +225,8 @@ main_diverge_vcf(pop_diverge_parser *param)
     init_diverge_vcf (ddv);
     return 0;
 }
+
+// TODO: How to get param into this function-- edit bam_plbuf.c?
 
 int
 make_diverge (uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl,
@@ -262,7 +264,7 @@ make_diverge (uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl,
                     ddb->pop_sample_mask[i] = sample_cov & ddb->pop_mask[i];
                 }
 
-            if (bitcount64(sample_cov) == ddb->sm->n)
+            if (bitcount64 (sample_cov) == ddb->sm->n)
                 {
                     // calculate the site type
                     ddb->types[ddb->num_sites] = calculate_sitetype (ddb->sm->n, cb);
@@ -320,7 +322,7 @@ calc_diverge (diverge_data_bam *ddb, const pop_diverge_parser *param)
                                 }
                             else
                                 {
-                                    freq = bitcount64(pop_type);
+                                    freq = bitcount64 (pop_type);
                                 }
                             if ((freq > 0) && (freq < ddb->pop_nsmpl[i]) &&
                                 !param->single_flag)
@@ -345,7 +347,7 @@ calc_diverge (diverge_data_bam *ddb, const pop_diverge_parser *param)
                 {
                     for (j = 0; j <= SEG_IDX(ddb->segsites); j++)
                         {
-                            ddb->ind_div[i] += bitcount64(ddb->hap.seq[i][j]);
+                            ddb->ind_div[i] += bitcount64 (ddb->hap.seq[i][j]);
                         }
                 }
         }
@@ -589,7 +591,7 @@ call_base_diverge (diverge_data_bam *ddb, const pop_diverge_parser *param, int n
     int b = 0;
     int si = -1;
     int rmsq = 0;
-    int n_smpl = t->sm->n;
+    int n_smpl = ddb->sm->n;
     uint16_t k = 0;
     uint16_t *bases = NULL;
     uint64_t rms = 0;
@@ -745,4 +747,56 @@ call_base_diverge (diverge_data_bam *ddb, const pop_diverge_parser *param, int n
     free (buf.s);
 
     return cb;
+}
+
+int
+check_BAM (diverge_data_bam *ddb, const pop_diverge_parser *param)
+{
+    ddb->bam_in = samopen(param->input_arg, "rb", 0);
+
+    // check if BAM file is readable
+    if (!ddb->bam_in)
+        {
+			fprintf (stderr, "Cannot read infile \"%s\"\n", param->input_arg);
+            exit (EXIT_FAILURE);
+        }
+
+    // check if BAM header is returned
+    if (!ddb->bam_in->header)
+        {
+			fprintf (stderr, "Cannot read BAM header from file \"%s\"\n", param->input_arg);
+            exit (EXIT_FAILURE);
+        }
+    else
+        {
+            ddb->h = ddb->bam_in->header;
+        }
+
+    // read in new header text
+    //if (flag & BAM_HEADERIN)
+    //    {
+    //        std::ifstream headin(headfile);
+    //        headin.seekg(0, std::ios::end);
+    //        h->l_text = headin.tellg();
+    //        headin.seekg(0, std::ios::beg);
+    //        h->text = (char*)realloc(h->text, (size_t)h->l_text);
+    //        headin.read(h->text, h->l_text);
+    //        headin.close();
+    //    }
+
+    // check for bam index file
+    if (!(ddb->idx = bam_index_load (param->input_arg)))
+        {
+			fprintf (stderr, "Index file not available for BAM file \"%s\"\n", param->input_arg);
+            exit (EXIT_FAILURE);
+        }
+
+    // check if fastA reference index is available
+    ddb->fai_file = fai_load (param->ref_arg);
+    if (!ddb->fai_file)
+        {
+			fprintf (stderr, "Failed to load index for fastA reference file \"%s\"\n", param->ref_arg);
+            exit (EXIT_FAILURE)
+        }
+    return 0;
 }
