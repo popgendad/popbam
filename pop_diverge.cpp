@@ -80,7 +80,7 @@ main_diverge_bam (pop_diverge_parser *param)
     bam_plbuf_t *buf = NULL;             //! pileup buffer
     diverge_data_bam *ddb;               //! diverge function data structure
 
-    ddb = malloc (sizeof(diverge_data_bam));
+    ddb = (diverge_data_bam*) malloc (sizeof(diverge_data_bam));
 
     // check input BAM file for errors
     check_BAM (ddb, param);
