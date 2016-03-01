@@ -24,11 +24,13 @@ bam_smpl_add (bam_sample_t *sm, bam_header_t *h, const char *bamfile)
     const char *r = NULL;
     const char *s = NULL;
     kstring_t buf;
+    kstring_t bug;
     khash_t(sm) *sm2id = (khash_t(sm)*)sm->sm2id;
     khash_t(sm) *pop2sm = (khash_t(sm)*)sm->pop2sm;
 
     p = h->text;
     memset (&buf, 0, sizeof(kstring_t));
+    memset (&bug, 0, sizeof(kstring_t));
     while ((q = strstr (p, "@RG")) != 0)
         {
             p = q + 3;
@@ -68,12 +70,13 @@ bam_smpl_add (bam_sample_t *sm, bam_header_t *h, const char *bamfile)
                             int os = 0;
                             char *w = NULL;
                             for (w = (char*)s; *w && (*w != '\t') && (*w != '\n'); ++w);
-                            os = *w;                        
-                            buf.l = 0;
-                            kputs (bamfile, &buf);
-                            kputc ('/', &buf);
-                            kputs (r, &buf);
-                            add_pop_pair(sm, pop2sm, buf.s, s);
+                            os = *w;
+                            *w = '\0';
+                            bug.l = 0;
+                            kputs (bamfile, &bug);
+                            kputc ('/', &bug);
+                            kputs (r, &bug);
+                            add_pop_pair(sm, pop2sm, bug.s, s);
                             *w = os;
                         }
                     *u = oq;
@@ -94,6 +97,7 @@ bam_smpl_add (bam_sample_t *sm, bam_header_t *h, const char *bamfile)
             add_pop_pair(sm, sm2id, bamfile, bamfile);
         }
     free(buf.s);
+    free(bug.s);
     return 0;
 }
 
