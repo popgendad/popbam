@@ -71,7 +71,7 @@ typedef struct _diverge_data_vcf
     uint64_t *pop_mask;            //!< Bit mask for which individuals are in which population
     char *ref_base;                //!< Reference sequence string for specified region
     hData_t hap;                   //!< Structure to hold haplotype data
-    int min_sites;                 //!< User-specified minimum number of aligned sites to perform analysis
+    int minSites;                  //!< User-specified minimum number of aligned sites to perform analysis
     uint16_t *pop_div;             //!< Array of mean population divergence calculations
     uint16_t *ind_div;             //!< Array of individual divergence calculations
 } diverge_data_vcf;

@@ -249,12 +249,7 @@ make_diverge (uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl,
             cb = call_base_diverge (ddb, param, n, pl);
 
             // resolve heterozygous sites
-<<<<<<< HEAD
             if (param->clean_hets)
-=======
-            //if (!(param->clean_hets))
-            if (1)
->>>>>>> 38db4a4ab02cd25d0d234a800bb1a25b4d4aebac
                 {
                     clean_hets (ddb->sm->n, cb, (int)ddb->ref_base[pos], param->min_snp_arg);
                 }
@@ -264,19 +259,17 @@ make_diverge (uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl,
 
             // determine how many samples pass the quality filters
             sample_cov = qual_filter (ddb->sm->n, cb, param->min_rms_arg, param->min_depth_arg, param->max_depth_arg);
+
             for (i = 0; i < ddb->npops; i++)
                 {
                     ddb->pop_sample_mask[i] = sample_cov & ddb->pop_mask[i];
                 }
 
-<<<<<<< HEAD
             if (bitcount64 (sample_cov) >= (int)(0.5 * ddb->sm->n))
-=======
-            if (bitcount64(sample_cov) == ddb->sm->n)
->>>>>>> 38db4a4ab02cd25d0d234a800bb1a25b4d4aebac
                 {
                     // calculate the site type
                     ddb->types[ddb->num_sites] = calculate_sitetype (ddb->sm->n, cb);
+
                     if (fq > 0)
                         {
                             ddb->hap.pos[ddb->segsites] = pos;
