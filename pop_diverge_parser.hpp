@@ -259,7 +259,7 @@ class pop_diverge_parser
         {
             ::std::string err;
             uint32_t res = conv_uint<uint32_t>((const char*)this->c_str(), err, si_suffix);
-            if(!err.empty())
+            if (!err.empty())
                 {
                     ::std::string msg("Invalid conversion of '");
                     msg += *this;
@@ -277,7 +277,7 @@ class pop_diverge_parser
         {
             ::std::string err;
             uint64_t res = conv_uint<uint64_t>((const char*)this->c_str(), err, si_suffix);
-            if(!err.empty())
+            if (!err.empty())
                 {
                     ::std::string msg("Invalid conversion of '");
                     msg += *this;
@@ -291,11 +291,11 @@ class pop_diverge_parser
         {
             return as_int32(true);
         }
-        int32_t as_int32(bool si_suffix = false) const
+        int32_t as_int32 (bool si_suffix = false) const
         {
             ::std::string err;
             int32_t res = conv_int<int32_t>((const char*)this->c_str(), err, si_suffix);
-            if(!err.empty())
+            if (!err.empty())
                 {
                     ::std::string msg("Invalid conversion of '");
                     msg += *this;
@@ -309,11 +309,11 @@ class pop_diverge_parser
         {
             return as_int64(true);
         }
-        int64_t as_int64(bool si_suffix = false) const
+        int64_t as_int64 (bool si_suffix = false) const
         {
             ::std::string err;
             int64_t res = conv_int<int64_t>((const char*)this->c_str(), err, si_suffix);
-            if(!err.empty())
+            if (!err.empty())
                 {
                     ::std::string msg("Invalid conversion of '");
                     msg += *this;
@@ -331,7 +331,7 @@ class pop_diverge_parser
         {
             ::std::string err;
             int res = conv_int<int>((const char*)this->c_str(), err, si_suffix);
-            if(!err.empty())
+            if (!err.empty())
                 {
                     ::std::string msg("Invalid conversion of '");
                     msg += *this;
@@ -345,11 +345,11 @@ class pop_diverge_parser
         {
             return as_long(true);
         }
-        long as_long(bool si_suffix = false) const
+        long as_long (bool si_suffix = false) const
         {
             ::std::string err;
             long res = conv_int<long>((const char*)this->c_str(), err, si_suffix);
-            if(!err.empty())
+            if (!err.empty())
                 {
                     ::std::string msg("Invalid conversion of '");
                     msg += *this;
@@ -367,7 +367,7 @@ class pop_diverge_parser
         {
             ::std::string err;
             double res = conv_double((const char*)this->c_str(), err, si_suffix);
-            if(!err.empty())
+            if (!err.empty())
                 {
                     ::std::string msg("Invalid conversion of '");
                     msg += *this;
@@ -616,13 +616,13 @@ public:
             }
 
         // Check that required switches are present
-        if(!ref_given)
+        if (!ref_given)
             {
                 error("[-r, --ref=path] required switch");
             }
 
         // Parse arguments
-        if(argc - optind != 2)
+        if (argc - optind != 2)
             {
                 error("Requires exactly 2 arguments.");
             }
@@ -715,30 +715,29 @@ public:
     {
         return
             "Tools to perform evolutionary analysis from BAM files\n\n\n" \
-            "Calculates either the proportion of aligned sites that differ between each individual genome\n"
-            \
-            "and the reference sequence, or the Jukes-Cantor distance (Jukes and Cantor 1969). Also outputs\n"
-            \
-            "the mean divergence per population, or the number of substitutions with the outgroup and the\n"
-            \
-            "number of segregating sites per population, both of which can be used in the HKA test.\n\n"
+            "Calculates either the proportion of aligned sites that differ\n" \
+            "between each individual genome and the reference sequence,\n" \
+            "or the Jukes-Cantor distance. Also outputs the mean divergence\n" \
+            "per population, or the number of substitutions with the outgroup\n" \
+            "and the number of segregating sites per population, both of which\n" \
+            "can be used in the HKA test.\n\n"
             "Options (default value in (), *required):\n"
-            " -r, --ref=path                 *Reference fasta file name\n"
-            " -h, --head=path                 Text file with pop-sample mappings\n"
+            " -r, --ref=path                 *Reference fastA file\n"
+            " -h, --head=path                 File with pop-sample mappings\n"
             " -g, --outgroup=string           Name of outgroup sample\n"
             " -o, --out=string                Output file name\n"
-            " -m, --min-depth=int             Minimum read depth to consider a site (3)\n"
-            " -x, --max-depth=int             Maximum read depth to consider a site (255)\n"
+            " -m, --min-depth=int             Minimum read depth for a site (3)\n"
+            " -x, --max-depth=int             Maximum read depth for a site (255)\n"
             " -q, --min-rms=int               Minimum root-mean alignment score (25)\n"
-            " -s, --min-snp=int               Minimum SNP quality score to consider site variable (25)\n"
-            " -a, --min-map=int               Minimum mapping score to consider a site (13)\n"
+            " -s, --min-snp=int               Minimum SNP quality for a site (25)\n"
+            " -a, --min-map=int               Minimum mapping score for a site (13)\n"
             " -b, --min-base=int              Minimum base quality (13)\n"
-            " -k, --min-sites=double          Proportion of sites to consider a window (1.0)\n"
-            " -n, --min-pops=double           Minimum proportion of populations with coverage (1.0)\n"
+            " -k, --min-sites=double          Proportion of sites for a window (1.0)\n"
+            " -n, --min-pops=double           Minimum proportion of pops with coverage (1.0)\n"
             " -i, --illumina                  Base qualities are Illumina 1.3+ (false)\n"
             " -t, --subst                     Only count substitutions (false)\n"
             " -e, --single                    Exclude singleton sites (false)\n"
-            " -p, --pop                       Output population-based divergence statistics (false)\n"
+            " -p, --pop                       Output pop-based divergence statistics (false)\n"
             " -c, --hom                       Make genotypes homozygous derived (false)\n"
             " -w, --win-size=double           Size of a sliding window in kilobases (1.0)\n"
             " -d, --dist=string               Sequence distance metric (pdist)\n"
