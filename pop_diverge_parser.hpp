@@ -632,17 +632,24 @@ public:
         ++optind;
 
         // Check access rights
-        if(access(input_arg, R_OK))
+        if (access(input_arg, R_OK))
             {
                 ::std::string err("Argument input, access right (read) failed for file '");
                 ((err += input_arg) += "': ") += strerror(errno);
                 error(err.c_str());
             }
-        if(access(ref_arg, R_OK))
+        if (access(ref_arg, R_OK))
             {
                 ::std::string
                 err("Switch -r, --ref=path, access right (read) failed for file '");
                 ((err += ref_arg) += "': ") += strerror(errno);
+                error(err.c_str());
+            }
+        if (head_given && access(head_arg, R_OK))
+            {
+                ::std::string
+                err("Switch -h, --head=path, access right (read) failed for file '");
+                ((err += head_arg) += "': ") += strerror(errno);
                 error(err.c_str());
             }
     }
@@ -716,28 +723,28 @@ public:
             \
             "number of segregating sites per population, both of which can be used in the HKA test.\n\n"
             "Options (default value in (), *required):\n"
-            " -r, --ref=path                          *Reference fasta file name\n"
-            " -h, --head=string                        Text file with BAM header\n"
-            " -g, --outgroup=string                    Name of outgroup sample\n"
-            " -o, --out=string                         Output file name\n"
-            " -m, --min-depth=int                      Minimum read depth to consider a site (3)\n"
-            " -x, --max-depth=int                      Maximum read depth to consider a site (255)\n"
-            " -q, --min-rms=int                        Minimum root-mean alignment score (25)\n"
-            " -s, --min-snp=int                        Minimum SNP quality score to consider site variable (25)\n"
-            " -a, --min-map=int                        Minimum mapping score to consider a site (13)\n"
-            " -b, --min-base=int                       Minimum base quality (13)\n"
-            " -k, --min-sites=double                   Proportion of sites to consider a window (1.0)\n"
-            " -n, --min-pops=double                    Minimum proportion of populations with coverage (1.0)\n"
-            " -i, --illumina                           Base qualities are Illumina 1.3+ (false)\n"
-            " -t, --subst                              Only count substitutions (false)\n"
-            " -e, --single                             Exclude singleton sites (false)\n"
-            " -p, --pop                                Output population-based divergence statistics (false)\n"
-            " -c, --hom                                Make genotypes homozygous derived (false)\n"
-            " -w, --win-size=double                    Size of a sliding window in kilobases (1.0)\n"
-            " -d, --dist=string                        Sequence distance metric (pdist)\n"
-            " -U, --usage                              Usage\n"
-            "     --help                               This message\n"
-            " -V, --version                            Version";
+            " -r, --ref=path                 *Reference fasta file name\n"
+            " -h, --head=path                 Text file with pop-sample mappings\n"
+            " -g, --outgroup=string           Name of outgroup sample\n"
+            " -o, --out=string                Output file name\n"
+            " -m, --min-depth=int             Minimum read depth to consider a site (3)\n"
+            " -x, --max-depth=int             Maximum read depth to consider a site (255)\n"
+            " -q, --min-rms=int               Minimum root-mean alignment score (25)\n"
+            " -s, --min-snp=int               Minimum SNP quality score to consider site variable (25)\n"
+            " -a, --min-map=int               Minimum mapping score to consider a site (13)\n"
+            " -b, --min-base=int              Minimum base quality (13)\n"
+            " -k, --min-sites=double          Proportion of sites to consider a window (1.0)\n"
+            " -n, --min-pops=double           Minimum proportion of populations with coverage (1.0)\n"
+            " -i, --illumina                  Base qualities are Illumina 1.3+ (false)\n"
+            " -t, --subst                     Only count substitutions (false)\n"
+            " -e, --single                    Exclude singleton sites (false)\n"
+            " -p, --pop                       Output population-based divergence statistics (false)\n"
+            " -c, --hom                       Make genotypes homozygous derived (false)\n"
+            " -w, --win-size=double           Size of a sliding window in kilobases (1.0)\n"
+            " -d, --dist=string               Sequence distance metric (pdist)\n"
+            " -U, --usage                     Usage\n"
+            "     --help                      This message\n"
+            " -V, --version                   Progam version";
     }
 
     static const char* hidden()
