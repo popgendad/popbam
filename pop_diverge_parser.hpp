@@ -463,10 +463,10 @@ public:
         min_base_arg(13), min_base_given(false),
         min_sites_arg(1.0), min_sites_given(false),
         min_pops_arg(1.0), min_pops_given(false),
-        illumina_flag(true),
-        subst_flag(true),
-        single_flag(true),
-        pop_flag(true),
+        illumina_flag(false),
+        subst_flag(false),
+        single_flag(false),
+        pop_flag(false),
         clean_hets(false),
         win_size_arg(1.0), win_size_given(false),
         dist_arg("pdist"), dist_given(false),
@@ -599,16 +599,16 @@ public:
                         CHECK_ERR(double_t, optarg, "-n, --min-pops=double")
                         break;
                     case 'i':
-                        illumina_flag = false;
+                        illumina_flag = true;
                         break;
                     case 't':
-                        subst_flag = false;
+                        subst_flag = true;
                         break;
                     case 'e':
-                        single_flag = false;
+                        single_flag = true;
                         break;
                     case 'p':
-                        pop_flag = false;
+                        pop_flag = true;
                         break;
                     case 'c':
                         clean_hets = true;
@@ -739,10 +739,10 @@ public:
             " -b, --min-base=int                       Minimum base quality (13)\n"
             " -k, --min-sites=double                   Proportion of sites to consider a window (1.0)\n"
             " -n, --min-pops=double                    Minimum proportion of populations with coverage (1.0)\n"
-            " -i, --illumina                           Base qualities are Illumina 1.3+ (true)\n"
-            " -t, --subst                              Only count substitutions (true)\n"
-            " -e, --single                             Exclude singleton sites (true)\n"
-            " -p, --pop                                Output population-based divergence statistics (true)\n"
+            " -i, --illumina                           Base qualities are Illumina 1.3+ (false)\n"
+            " -t, --subst                              Only count substitutions (false)\n"
+            " -e, --single                             Exclude singleton sites (false)\n"
+            " -p, --pop                                Output population-based divergence statistics (false)\n"
             " -c, --hom                                Make genotypes homozygous derived (false)\n"
             " -w, --win-size=double                    Size of a sliding window in kilobases (1.0)\n"
             " -d, --dist=string                        Sequence distance metric (pdist)\n"
