@@ -249,8 +249,7 @@ make_diverge (uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl,
             cb = call_base_diverge (ddb, param, n, pl);
 
             // resolve heterozygous sites
-            //if (!(param->clean_hets))
-            if (0)
+            if (param->clean_hets)
                 {
                     clean_hets (ddb->sm->n, cb, (int)ddb->ref_base[pos], param->min_snp_arg);
                 }

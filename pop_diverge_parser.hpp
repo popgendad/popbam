@@ -410,6 +410,7 @@ public:
     bool                           subst_flag;
     bool                           single_flag;
     bool                           pop_flag;
+    bool                           clean_hets;
     double                         win_size_arg;
     bool                           win_size_given;
     const char *                   dist_arg;
@@ -441,6 +442,7 @@ public:
         subst_flag(true),
         single_flag(true),
         pop_flag(true),
+        clean_hets(false),
         win_size_arg(1.0), win_size_given(false),
         dist_arg("pdist"), dist_given(false),
         input_arg(""),
@@ -465,6 +467,7 @@ public:
         subst_flag(true),
         single_flag(true),
         pop_flag(true),
+        clean_hets(false),
         win_size_arg(1.0), win_size_given(false),
         dist_arg("pdist"), dist_given(false),
         input_arg(""),
@@ -494,6 +497,7 @@ public:
             {"subst", 0, 0, 't'},
             {"single", 0, 0, 'e'},
             {"pop", 0, 0, 'p'},
+            {"hom", 0, 0, 'c'},
             {"win-size", 1, 0, 'w'},
             {"dist", 1, 0, 'd'},
             {"help", 0, 0, HELP_OPT},
@@ -501,7 +505,7 @@ public:
             {"version", 0, 0, 'V'},
             {0, 0, 0, 0}
         };
-        static const char *short_options = "VUF:r:h:g:o:m:x:q:s:a:b:k:n:itepw:d:";
+        static const char *short_options = "VUF:r:h:g:o:m:x:q:s:a:b:k:n:itepcw:d:";
 
         ::std::string err;
 #define CHECK_ERR(type,val,which) if(!err.empty()) { ::std::cerr << "Invalid " #type " '" << val << "' for [" which "]: " << err << "\n"; exit(1); }
@@ -605,6 +609,9 @@ public:
                         break;
                     case 'p':
                         pop_flag = false;
+                        break;
+                    case 'c':
+                        clean_hets = true;
                         break;
                     case 'w':
                         win_size_given = true;
@@ -736,6 +743,7 @@ public:
             " -t, --subst                              Only count substitutions (true)\n"
             " -e, --single                             Exclude singleton sites (true)\n"
             " -p, --pop                                Output population-based divergence statistics (true)\n"
+            " -c, --hom                                Make genotypes homozygous derived (false)\n"
             " -w, --win-size=double                    Size of a sliding window in kilobases (1.0)\n"
             " -d, --dist=string                        Sequence distance metric (pdist)\n"
             " -U, --usage                              Usage\n"
@@ -775,6 +783,7 @@ public:
         os << "subst_flag:" << subst_flag << "\n";
         os << "single_flag:" << single_flag << "\n";
         os << "pop_flag:" << pop_flag << "\n";
+        os << "clean_hets:" << clean_hets << "\n";
         os << "win_size_given:" << win_size_given << " win_size_arg:" << win_size_arg << "\n";
         os << "dist_given:" << dist_given << " dist_arg:" << dist_arg << "\n";
         os << "input_arg:" << input_arg << "\n";
