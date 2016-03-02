@@ -75,14 +75,14 @@ int
 bam_parse_region (bam_header_t *header, const char *str, int *ref_id, int *beg,
                   int *end)
 {
-    const char *name_lim = hts_parse_reg(str, beg, end);
+    const char *name_lim = hts_parse_reg (str, beg, end);
     if (name_lim)
         {
-            char *name = malloc(name_lim - str + 1);
-            memcpy(name, str, name_lim - str);
+            char *name = malloc (name_lim - str + 1);
+            memcpy (name, str, name_lim - str);
             name[name_lim - str] = '\0';
             *ref_id = bam_name2id(header, name);
-            free(name);
+            free (name);
         }
     else
         {

@@ -93,7 +93,6 @@ main_diverge_bam (pop_diverge_parser *param)
 
     // initialize the diverge data structre
     init_diverge_bam (ddb);
-    ddb->npops = ddb->sm->npops;
 
     // initialize error model
     ddb->em = errmod_init (0.17);
@@ -267,7 +266,7 @@ make_diverge (uint32_t tid, uint32_t pos, int n, const bam_pileup1_t *pl,
                     ddb->pop_sample_mask[i] = sample_cov & ddb->pop_mask[i];
                 }
 
-            if (bitcount64 (sample_cov) == ddb->sm->n)
+            if (bitcount64 (sample_cov) >= (int)(0.5 * ddb->sm->n))
                 {
                     // calculate the site type
                     ddb->types[ddb->num_sites] = calculate_sitetype (ddb->sm->n, cb);
@@ -358,8 +357,9 @@ calc_diverge (diverge_data_bam *ddb, const pop_diverge_parser *param)
 }
 
 int
-init_diverge_bam (diverge_data_bam *ddb)
+init_diverge_bam (diverge_data_bam *ddb, const pop_diverge_parser *param)
 {
+    ddb->npops = ddb->sm->npops;
     return 0;
 }
 
@@ -413,7 +413,7 @@ alloc_diverge_bam (diverge_data_bam *ddb, const pop_diverge_parser *param)
 }
 
 int
-init_diverge_vcf (diverge_data_vcf *ddv)
+init_diverge_vcf (diverge_data_vcf *ddv, const pop_diverge_parser *param)
 {
     return 0;
 }
@@ -440,11 +440,11 @@ void dealloc_diverge_bam (diverge_data_bam *ddb, const pop_diverge_parser *param
     delete [] ddb->hap.ref;
     if (param->pop_flag)
         {
-            delete [] ddb->ind_div;
+            delete [] ddb->pop_div;
         }
     else
         {
-            delete [] ddb->pop_div;
+            delete [] ddb->ind_div;
         }
     for (i = 0; i < n; i++)
         {
@@ -572,13 +572,13 @@ print_diverge_vcf (diverge_data_vcf *ddv, const pop_diverge_parser *param,
 // TODO: The set_min_pop_n function cannot currently take input from user
 
 int
-set_min_pop_n (diverge_data_bam *ddb)
+set_min_pop_n (diverge_data_bam *ddb, const pop_diverge_parser *param)
 {
     int i = 0;
 
     for (i = 0; i < ddb->npops; i++)
         {
-            ddb->min_pop_n[i] = (unsigned short)ddb->pop_nsmpl[i];
+            ddb->min_pop_n[i] = (uint16_t)(0.5 * ddb->pop_nsmpl[i]);
         }
     return 0;
 }
