@@ -92,7 +92,7 @@ main_diverge_bam (pop_diverge_parser *param)
     bam_smpl_add (ddb->sm, ddb->h, param->input_arg);
 
     // initialize the diverge data structre
-    init_diverge_bam (ddb);
+    init_diverge_bam (ddb, param);
 
     // initialize error model
     ddb->em = errmod_init (0.17);
@@ -188,7 +188,7 @@ main_diverge_bam (pop_diverge_parser *param)
 
             // set default minimum sample size as
             // the number of samples in the population
-            set_min_pop_n (ddb);
+            set_min_pop_n (ddb, param);
 
             // initialize pileup
             buf = bam_plbuf_init (make_diverge, param, ddb);
