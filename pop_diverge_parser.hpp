@@ -388,8 +388,6 @@ public:
     bool                           outgroup_given;
     const char *                   out_arg;
     bool                           out_given;
-    int                            format_arg;
-    bool                           format_given;
     int                            min_depth_arg;
     bool                           min_depth_given;
     int                            max_depth_arg;
@@ -429,7 +427,6 @@ public:
         head_arg(""), head_given(false),
         outgroup_arg(""), outgroup_given(false),
         out_arg(""), out_given(false),
-        format_arg(0), format_given(false),
         min_depth_arg(3), min_depth_given(false),
         max_depth_arg(255), max_depth_given(false),
         min_rms_arg(25), min_rms_given(false),
@@ -454,7 +451,6 @@ public:
         head_arg(""), head_given(false),
         outgroup_arg(""), outgroup_given(false),
         out_arg(""), out_given(false),
-        format_arg(0), format_given(false),
         min_depth_arg(3), min_depth_given(false),
         max_depth_arg(255), max_depth_given(false),
         min_rms_arg(25), min_rms_given(false),
@@ -484,7 +480,6 @@ public:
             {"head", 1, 0, 'h'},
             {"outgroup", 1, 0, 'g'},
             {"out", 1, 0, 'o'},
-            {"format", 1, 0, 'F'},
             {"min-depth", 1, 0, 'm'},
             {"max-depth", 1, 0, 'x'},
             {"min-rms", 1, 0, 'q'},
@@ -505,7 +500,7 @@ public:
             {"version", 0, 0, 'V'},
             {0, 0, 0, 0}
         };
-        static const char *short_options = "VUF:r:h:g:o:m:x:q:s:a:b:k:n:itepcw:d:";
+        static const char *short_options = "VUr:h:g:o:m:x:q:s:a:b:k:n:itepcw:d:";
 
         ::std::string err;
 #define CHECK_ERR(type,val,which) if(!err.empty()) { ::std::cerr << "Invalid " #type " '" << val << "' for [" which "]: " << err << "\n"; exit(1); }
@@ -552,11 +547,6 @@ public:
                     case 'o':
                         out_given = true;
                         out_arg = optarg;
-                        break;
-                    case 'F':
-                        format_given = true;
-                        format_arg = conv_int<int>((const char*)optarg, err, false);
-                        CHECK_ERR(int_t, optarg, "-F, --format=int")
                         break;
                     case 'm':
                         min_depth_given = true;
@@ -730,7 +720,6 @@ public:
             " -h, --head=string                        Text file with BAM header\n"
             " -g, --outgroup=string                    Name of outgroup sample\n"
             " -o, --out=string                         Output file name\n"
-            " -F, --format                             Output format (0)\n"
             " -m, --min-depth=int                      Minimum read depth to consider a site (3)\n"
             " -x, --max-depth=int                      Maximum read depth to consider a site (255)\n"
             " -q, --min-rms=int                        Minimum root-mean alignment score (25)\n"
@@ -770,7 +759,6 @@ public:
         os << "head_given:" << head_given << " head_arg:" << head_arg << "\n";
         os << "outgroup_given:" << outgroup_given << " outgroup_arg:" << outgroup_arg << "\n";
         os << "out_given:" << out_given << " out_arg:" << out_arg << "\n";
-        os << "format_given:" << format_given << " format_arg: " << format_arg << "\n";
         os << "min_depth_given:" << min_depth_given << " min_depth_arg:" << min_depth_arg << "\n";
         os << "max_depth_given:" << max_depth_given << " max_depth_arg:" << max_depth_arg << "\n";
         os << "min_rms_given:" << min_rms_given << " min_rms_arg:" << min_rms_arg << "\n";
