@@ -224,7 +224,7 @@ int
 main_diverge_vcf(pop_diverge_parser *param)
 {
     diverge_data_vcf *ddv;               //! diverge function data structure
-    init_diverge_vcf (ddv);
+    init_diverge_vcf (ddv, param);
     return 0;
 }
 
