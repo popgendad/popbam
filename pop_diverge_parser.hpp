@@ -463,11 +463,18 @@ public:
         min_base_arg(13), min_base_given(false),
         min_sites_arg(1.0), min_sites_given(false),
         min_pops_arg(1.0), min_pops_given(false),
+<<<<<<< HEAD
         illumina_flag(true),
         subst_flag(true),
         single_flag(true),
         pop_flag(true),
         clean_hets(false),
+=======
+        illumina_flag(false),
+        subst_flag(false),
+        single_flag(false),
+        pop_flag(false),
+>>>>>>> 38db4a4ab02cd25d0d234a800bb1a25b4d4aebac
         win_size_arg(1.0), win_size_given(false),
         dist_arg("pdist"), dist_given(false),
         input_arg(""),
@@ -599,16 +606,16 @@ public:
                         CHECK_ERR(double_t, optarg, "-n, --min-pops=double")
                         break;
                     case 'i':
-                        illumina_flag = false;
+                        illumina_flag = true;
                         break;
                     case 't':
-                        subst_flag = false;
+                        subst_flag = true;
                         break;
                     case 'e':
-                        single_flag = false;
+                        single_flag = true;
                         break;
                     case 'p':
-                        pop_flag = false;
+                        pop_flag = true;
                         break;
                     case 'c':
                         clean_hets = true;
