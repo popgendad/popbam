@@ -158,8 +158,8 @@ main_diverge_bam (pop_diverge_parser *param)
             // region is retrieved from the reference
             if (param->win_size_given)
                 {
-                    int k = bam_parse_region (ddb->h, win_coord.c_str(), &ref, &(ddb->beg),
-                                          &(ddb->end));
+                    int k = bam_parse_region (ddb->h, win_coord.c_str(), &ref,
+                                              &(ddb->beg), &(ddb->end));
                     if (k < 0)
                         {
                             fprintf (stderr, "Bad window coordinates: %s\n",
@@ -585,7 +585,7 @@ set_min_pop_n (diverge_data_bam *ddb, const pop_diverge_parser *param)
 int
 assign_pops (diverge_data_bam *ddb, const pop_diverge_parser *param)
 {
-    int i = 0;
+	int i = 0;
     int si = -1;
     kstring_t buf;
 

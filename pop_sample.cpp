@@ -76,7 +76,7 @@ bam_smpl_add (bam_sample_t *sm, bam_header_t *h, const char *bamfile)
                             kputs (bamfile, &bug);
                             kputc ('/', &bug);
                             kputs (r, &bug);
-                            add_pop_pair(sm, pop2sm, bug.s, s);
+                            add_pop_pair (sm, pop2sm, bug.s, s);
                             *w = os;
                         }
                     *u = oq;
@@ -93,20 +93,20 @@ bam_smpl_add (bam_sample_t *sm, bam_header_t *h, const char *bamfile)
         }
     if (n == 0)
         {
-            add_sample_pair(sm, sm2id, bamfile, bamfile);
-            add_pop_pair(sm, sm2id, bamfile, bamfile);
+            add_sample_pair (sm, sm2id, bamfile, bamfile);
+            add_pop_pair (sm, sm2id, bamfile, bamfile);
         }
-    free(buf.s);
-    free(bug.s);
+    free (buf.s);
+    free (bug.s);
     return 0;
 }
 
 bam_sample_t *
-bam_smpl_init(void)
+bam_smpl_init (void)
 {
     bam_sample_t *sm;
 
-    sm = (bam_sample_t*)calloc(1, sizeof(bam_sample_t));
+    sm = (bam_sample_t*)calloc (1, sizeof(bam_sample_t));
     sm->sm2popid = kh_init(sm);
     sm->rg2smid = kh_init(sm);
     sm->sm2id = kh_init(sm);
@@ -115,53 +115,53 @@ bam_smpl_init(void)
 }
 
 void
-bam_smpl_destroy(bam_sample_t *sm)
+bam_smpl_destroy (bam_sample_t *sm)
 {
     int i = 0;
     khint_t k;
     khash_t(sm) *rg2smid = (khash_t(sm)*)sm->rg2smid;
     khash_t(sm) *sm2popid = (khash_t(sm)*)sm->sm2popid;
 
-    if (sm == 0)
+    if (sm == NULL)
         {
             return;
         }
     for (i = 0; i < sm->n; i++)
         {
-            free(sm->smpl[i]);
+            free (sm->smpl[i]);
         }
-    free(sm->smpl);
+    free (sm->smpl);
     for (i = 0; i < sm->npops; i++)
         {
-            free(sm->popul[i]);
+            free (sm->popul[i]);
         }
-    free(sm->popul);
+    free (sm->popul);
 
     // deallocate strdups
     for (k = kh_begin(rg2smid); k != kh_end(rg2smid); ++k)
         {
             if (kh_exist(rg2smid, k))
                 {
-                    free((char*)kh_key(rg2smid, k));
+                    free ((char*)kh_key(rg2smid, k));
                 }
         }
     for (k = kh_begin(sm2popid); k != kh_end(sm2popid); ++k)
         {
             if (kh_exist(sm2popid, k))
                 {
-                    free((char*)kh_key(sm2popid, k));
+                    free ((char*)kh_key(sm2popid, k));
                 }
         }
     kh_destroy(sm, static_cast<kh_sm_t*>(sm->sm2popid));
     kh_destroy(sm, static_cast<kh_sm_t*>(sm->rg2smid));
     kh_destroy(sm, static_cast<kh_sm_t*>(sm->sm2id));
     kh_destroy(sm, static_cast<kh_sm_t*>(sm->pop2sm));
-    free(sm);
+    free (sm);
 }
 
 void
-add_sample_pair(bam_sample_t *sm, khash_t(sm) *sm2id, const char *key,
-                const char *val)
+add_sample_pair (bam_sample_t *sm, khash_t(sm) *sm2id, const char *key,
+                 const char *val)
 {
     int ret = 0;
     khint_t k_rg;
@@ -180,17 +180,17 @@ add_sample_pair(bam_sample_t *sm, khash_t(sm) *sm2id, const char *key,
     k_sm = kh_get(sm, sm2id, val);
     if (k_sm == kh_end(sm2id))
         {
-            //need to allocate for more samples?
+            // need to allocate for more samples?
             if (sm->n == sm->m)
                 {
                     sm->m = sm->m ? sm->m << 1 : 1;
                     sm->smpl = static_cast<char**>(realloc(sm->smpl, sizeof(void*)*sm->m));
                 }
 
-            //add sample name
-            sm->smpl[sm->n] = strdup(val);
+            // add sample name
+            sm->smpl[sm->n] = strdup (val);
 
-            //add new entry in sm2id hash table
+            // add new entry in sm2id hash table
             k_sm = kh_put(sm, sm2id, sm->smpl[sm->n], &ret);
 
             if (ret > 0)
@@ -199,7 +199,7 @@ add_sample_pair(bam_sample_t *sm, khash_t(sm) *sm2id, const char *key,
                 }
         }
 
-    //update rg2smid hash table
+    // update rg2smid hash table
     kh_val(rg2smid, k_rg) = kh_val(sm2id, k_sm);
 }
 
@@ -208,50 +208,50 @@ add_pop_pair (bam_sample_t *sm, khash_t(sm) *pop2sm, const char *key,
               const char *val)
 {
     int ret = 0;
-    khint_t k_rg;
     khint_t k_sm;
+    khint_t k_po;
     khash_t(sm) *sm2popid = (khash_t(sm)*)sm->sm2popid;
 
-    //is the key already in the sm2popid hash table?
-    k_rg = kh_get(sm, sm2popid, key);
+    // is the key already in the sm2popid hash table?
+    k_sm = kh_get(sm, sm2popid, key);
 
-    //duplicated @RG-ID
-    if (k_rg != kh_end(sm2popid))
+    // duplicated @RG-ID
+    if (k_sm != kh_end(sm2popid))
         {
             return;
         }
     else
         {
-            k_rg = kh_put(sm, sm2popid, strdup(key), &ret);
+            k_sm = kh_put(sm, sm2popid, strdup (key), &ret);
         }
 
-    //does val appear as a key in the pop2sm hash table?
-    k_sm = kh_get(sm, pop2sm, val);
+    // does val appear as a key in the pop2sm hash table?
+    k_po = kh_get(sm, pop2sm, val);
 
-    //if val does not appears as a key
-    if (k_sm == kh_end(pop2sm))
+    // if val does not appears as a key
+    if (k_po == kh_end(pop2sm))
         {
             //need to allocate more samples?
             if (sm->b == sm->npops)
                 {
                     sm->b = sm->b ? sm->b << 1 : 1;
-                    sm->popul = static_cast<char**>(realloc(sm->popul, sizeof(void*)*sm->b));
+                    sm->popul = static_cast<char**>(realloc (sm->popul, sizeof(void*)*sm->b));
                 }
 
-            //add sample name
-            sm->popul[sm->npops] = strdup(val);
+            // add sample name
+            sm->popul[sm->npops] = strdup (val);
 
-            //add new entry in pop2sm hash table
-            k_sm = kh_put(sm, pop2sm, sm->popul[sm->npops], &ret);
+            // add new entry in pop2sm hash table
+            k_po = kh_put(sm, pop2sm, sm->popul[sm->npops], &ret);
 
             if (ret > 0)
                 {
-                    kh_val(pop2sm, k_sm) = sm->npops++;
+                    kh_val(pop2sm, k_po) = sm->npops++;
                 }
         }
 
-    //update sm2popid hash table
-    kh_val(sm2popid, k_rg) = kh_val(pop2sm, k_sm);
+    // update sm2popid hash table
+    kh_val(sm2popid, k_sm) = kh_val(pop2sm, k_po);
 }
 
 int
@@ -264,9 +264,9 @@ bam_smpl_rg2smid (const bam_sample_t *sm, const char *fn, const char *rg,
     if (rg)
         {
             str->l = 0;
-            kputs(fn, str);
-            kputc('/', str);
-            kputs(rg, str);
+            kputs (fn, str);
+            kputc ('/', str);
+            kputs (rg, str);
             k = kh_get(sm, rg2smid, str->s);
         }
     else
@@ -277,8 +277,8 @@ bam_smpl_rg2smid (const bam_sample_t *sm, const char *fn, const char *rg,
 }
 
 int
-bam_smpl_sm2popid(const bam_sample_t *sm, const char *fn, const char *smpl,
-                  kstring_t *str)
+bam_smpl_sm2popid (const bam_sample_t *sm, const char *fn, const char *smpl,
+                   kstring_t *str)
 {
     khint_t k;
     khash_t(sm) *sm2popid = (khash_t(sm)*)sm->sm2popid;
@@ -286,9 +286,9 @@ bam_smpl_sm2popid(const bam_sample_t *sm, const char *fn, const char *smpl,
     if (smpl)
         {
             str->l = 0;
-            kputs(fn, str);
-            kputc('/', str);
-            kputs(smpl, str);
+            kputs (fn, str);
+            kputc ('/', str);
+            kputs (smpl, str);
             k = kh_get(sm, sm2popid, str->s);
         }
     else
