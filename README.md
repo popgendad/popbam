@@ -20,13 +20,7 @@ OBTAINING THE SOURCE CODE
 
 The POPBAM source code is available to download freely from GitLab at
 
-[https://gitlab.com/lummei/POPBAM]
-
-as either a gzipped tar file or a zipped file with the prefix
-
-	dgarriga-POPBAM-<version>
-
-where <version> is the current version number of POPBAM.
+[https://gitlab.com/evolgen/popbam]
 
 The only dependencies of the POPBAM program are the zlib compression library and headers
 and htslib which is available in the repositories of some linux distributions or
@@ -39,15 +33,7 @@ Please insure these are installed on your system before attempting to compile PO
 COMPILING THE SOURCE CODE
 -------------------------
 
-Once downloaded, you can extract the popbam/ directory using the command
-
-	dgarriga-POPBAM-<version>.tar.gz
-
-or 
-
-	unzip dgarriga-POPBAM-<version>.zip
-
-Move into the POPBAM source code directory by 
+Once, the repository is cloned, move into the POPBAM source code directory by 
 
 	cd popbam
 
