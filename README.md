@@ -20,7 +20,7 @@ OBTAINING THE SOURCE CODE
 
 The POPBAM source code is available to download freely from GitLab at
 
-[https://gitlab.com/evolgen/popbam]
+[https://github.com/popgendad/popbam]
 
 The only dependencies of the POPBAM program are the zlib compression library and headers
 and htslib which is available in the repositories of some linux distributions or
